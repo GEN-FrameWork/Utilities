@@ -1,0 +1,45 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "Janus Version",
+      "project": "CMakeLists.txt",
+      "projectTarget": "janus.exe",
+      "name": "Janus Version",
+      "args": [
+        "VERSION"
+      ]
+    }
+    ,
+    {
+      "type": "Janus Message",
+      "project": "CMakeLists.txt",
+      "projectTarget": "janus.exe",
+      "name": "Janus Message",
+      "args": [
+        "MESSAGE"
+      ]     
+    }   
+    ,
+    {
+      "type": "Janus LockComputer",
+      "project": "CMakeLists.txt",
+      "projectTarget": "janus.exe",
+      "name": "Janus LockComputer",
+      "args": [
+        "LOCKCOMPUTER"
+      ]
+    } 
+    ,
+    {
+      "type": "Janus Desktop",
+      "project": "CMakeLists.txt",
+      "projectTarget": "janus.exe",
+      "name": "Janus Desktop",
+      "args": [
+        "DESKTOP"
+      ]
+    }       
+  ]
+}

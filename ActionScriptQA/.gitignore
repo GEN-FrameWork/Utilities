@@ -1,0 +1,37 @@
+syntax: glob
+
+*.obj
+*.exe
+*.o
+*.a
+*.lib
+*.so*
+*.idb
+*.log
+*.sdf
+*.VC.db
+*.VC.VC.opendb
+*.vcxproj.user
+*.idb 
+*.tlog
+*.suo
+*.orig
+*.tix
+.~*
+*.bak
+*.raw
+*.dll
+*.pdb
+*.err
+*.ai
+*.d
+
+
+# Files compilated
+/**/Platforms/.vs
+/**/Platforms/Windows
+/**/Platforms/Linux
+/**/Platforms/STM32/EWARM/DataIOStream
+/**/Platforms/STM32/EWARM/TestDataIO
+/**/Platforms/Android
+/**/Platforms/out
