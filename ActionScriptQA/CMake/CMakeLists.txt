@@ -46,6 +46,8 @@ option(SCRIPT_LIB_LOG_FEATURE                                   "Script Lib Log"
 option(SCRIPT_LIB_CONSOLE_FEATURE                               "Script Lib Console"                                      ON ) 
 option(SCRIPT_LIB_WINDOW_FEATURE                                "Script Lib Window"                                       ON ) 
 option(SCRIPT_LIB_INPUTSIMULATE_FEATURE                         "Script Lib Input Simulated"                              ON )   
+# Trusted by default. Set ON for sandbox (restricted Lua libs; no auto Dir/Process).
+option(SCRIPT_LIB_SANDBOX_FEATURE                               "Script Lib Sandbox (restrict Lua + omit Dir/Process)"    OFF )
  
 
 # --------------------------------------------------------------------
