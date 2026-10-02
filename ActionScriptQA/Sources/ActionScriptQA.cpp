@@ -27,6 +27,7 @@
 #include "ActionScriptQA.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 #include <math.h>
@@ -55,6 +56,8 @@
 #include "XTrace.h"
 #include "XObserver.h"
 #include "XProcessManager.h"
+
+#include "XSleep.h"
 
 #include "HashMD5.h"
 
@@ -271,6 +274,34 @@ bool ACTIONSCRIPTQA::AppProc_FirstUpdate()
 
   xtimerscriptrun = GEN_XFACTORY.CreateTimer();
   if(!xtimerscriptrun) return false;
+
+  // Optional headless/CI autorun: ACTIONSCRIPTQA_AUTORUN=1 (or "si"/"yes"/"true")
+  if(!scriptsautorundone)
+    {
+      char* envautorun = getenv("ACTIONSCRIPTQA_AUTORUN");
+      if(envautorun)
+        {
+          XSTRING autorun;
+
+          autorun.Set(envautorun);
+          if((!autorun.Compare(__L("1"), true)) ||
+             (!autorun.Compare(__L("si"), true)) ||
+             (!autorun.Compare(__L("yes"), true)) ||
+             (!autorun.Compare(__L("true"), true)))
+            {
+              scriptsautorundone = true;
+
+              // Keep this console out of the way so InpSim mouse clicks hit the target UI.
+              if(GetConsole())
+                {
+                  GetConsole()->Minimize();
+                }
+
+              GEN_XSLEEP.MilliSeconds(400);
+              ExecScripts();
+            }
+        }
+    }
 
   //--------------------------------------------------------------------------------------
 
@@ -651,6 +682,8 @@ void ACTIONSCRIPTQA::Clean()
 
   xmutexshowallstatus         = NULL;
 
+  script                      = NULL;
+  scriptsautorundone          = false;
 }
 
 #pragma endregion

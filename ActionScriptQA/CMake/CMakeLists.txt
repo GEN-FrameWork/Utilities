@@ -30,6 +30,7 @@ option(APPFLOW_CFG_LOG_FEATURE                                  "Application CFG
 option(APPFLOW_CFG_SCRIPTS_FEATURE                              "Application Flow Scripts List"                           ON ) 
                
 option(DIO_FEATURE                                              "Data Input/Output"                                       ON )
+option(DIO_STREAMUART_FEATURE                                   "Stream UART"                                             ON )
 option(DIO_STREAMTLS_FEATURE                                    "Stream TLS"                                              ON )    
 option(DIO_CHECKCONNECTIONS_FEATURE                             "Check Connections"                                       ON )
 option(DIO_NETWORKTIMEPROTOCOL_FEATURE                          "Network Time Protocol"                                   ON )
@@ -42,9 +43,10 @@ option(SCRIPT_LUA_FEATURE                                       "Activate Script
 option(SCRIPT_JAVASCRIPT_FEATURE                                "Activate Script Javascript Language"                     ON )
 option(SCRIPT_LIB_SYSTEM_FEATURE                                "Script Lib System"                                       ON )    
 option(SCRIPT_LIB_PROCESS_FEATURE                               "Script Lib Process"                                      ON )    
+option(SCRIPT_LIB_TRACESERVER_FEATURE                           "Script Lib TraceServer"                                  ON )
 option(SCRIPT_LIB_LOG_FEATURE                                   "Script Lib Log"                                          ON )    
 option(SCRIPT_LIB_CONSOLE_FEATURE                               "Script Lib Console"                                      ON ) 
-option(SCRIPT_LIB_WINDOW_FEATURE                                "Script Lib Window"                                       ON ) 
+option(SCRIPT_LIB_SCREEN_FEATURE                                "Script Lib Screen"                                       ON ) 
 option(SCRIPT_LIB_INPUTSIMULATE_FEATURE                         "Script Lib Input Simulated"                              ON )   
 # Trusted by default. Set ON for sandbox (restricted Lua libs; no auto Dir/Process).
 option(SCRIPT_LIB_SANDBOX_FEATURE                               "Script Lib Sandbox (restrict Lua + omit Dir/Process)"    OFF )

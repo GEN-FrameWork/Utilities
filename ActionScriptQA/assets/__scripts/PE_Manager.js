@@ -1,8 +1,9 @@
 
 
-WND_BMP_ERROR = {   NOWINDOW: 0XFFFFFF,
-                    NOBITMAP: 0XFFFFFE
-                };
+WND_BMP_STATUS = {   OK: 0,
+                     NOWINDOW: 1,
+                     NOBITMAP: 2
+                 };
 
 
 var appname                      = "java.exe";
@@ -32,24 +33,36 @@ var posyEliminateTSRpanel        = 0;
     
 function PE_Manager_Ini()
 {
-  Window_SetFocus(appname, windowtitle);
+  Screen_SetFocus(appname, windowtitle);
 
-  posxEstablishTSRpanel = Window_GetPosX(appname, windowtitle, namebmpEstablishTSRpanel, namebmpEstablishTSRpanel2);
-  posyEstablishTSRpanel = Window_GetPosY(appname, windowtitle, namebmpEstablishTSRpanel, namebmpEstablishTSRpanel2);
+  var outEstablishX = { value: 0 };
+  var outEstablishY = { value: 0 };
+  var statusEstablish = Screen_GetPosX(appname, windowtitle, namebmpEstablishTSRpanel, namebmpEstablishTSRpanel2, outEstablishX);
+  Screen_GetPosY(appname, windowtitle, namebmpEstablishTSRpanel, namebmpEstablishTSRpanel2, outEstablishY);
+  posxEstablishTSRpanel = outEstablishX.value;
+  posyEstablishTSRpanel = outEstablishY.value;
   TracePrintColor(1, "x = %d e y = %d", posxEstablishTSRpanel, posyEstablishTSRpanel);
 
-  posxEliminateTSRpanel = Window_GetPosX(appname, windowtitle, namebmpEliminateTSRpanel2);
-  posyEliminateTSRpanel = Window_GetPosY(appname, windowtitle, namebmpEliminateTSRpanel2);
+  var outEliminateX = { value: 0 };
+  var outEliminateY = { value: 0 };
+  Screen_GetPosX(appname, windowtitle, namebmpEliminateTSRpanel2, outEliminateX);
+  Screen_GetPosY(appname, windowtitle, namebmpEliminateTSRpanel2, outEliminateY);
+  posxEliminateTSRpanel = outEliminateX.value;
+  posyEliminateTSRpanel = outEliminateY.value;
   TracePrintColor(1, "x = %d e y = %d", posxEliminateTSRpanel, posyEliminateTSRpanel);
 
-  posx = Window_GetPosX(appname, windowtitle);
-  posy = Window_GetPosY(appname, windowtitle);
+  var outWinX = { value: 0 };
+  var outWinY = { value: 0 };
+  Screen_GetPosX(appname, windowtitle, outWinX);
+  Screen_GetPosY(appname, windowtitle, outWinY);
+  posx = outWinX.value;
+  posy = outWinY.value;
   TracePrintColor(1, "x = %d e y = %d", posx, posy);
 
-  if(posxEstablishTSRpanel == WND_BMP_ERROR.NOWINDOW || posxEstablishTSRpanel == WND_BMP_ERROR.NOBITMAP)
+  if(statusEstablish != WND_BMP_STATUS.OK)
     {
-      TracePrintColor(1, "The TSR establishmet panel position bitmap position value has returned an error -> %06X", posxEstablishTSRpanel);
-      Log_AddEntry(LOG_LEVEL.WARNING, "KO", "[Script %s] The script can´t resolve the TSR establishmet panel position (error %06X)", scriptname, posxEstablishTSRpanel);
+      TracePrintColor(1, "The TSR establishmet panel position bitmap position value has returned an error -> status %d", statusEstablish);
+      Log_AddEntry(LOG_LEVEL.WARNING, "KO", "[Script %s] The script canï¿½t resolve the TSR establishmet panel position (status %d)", scriptname, statusEstablish);
 
       return false;
     }
@@ -59,7 +72,7 @@ function PE_Manager_Ini()
 
 function PE_Manager_UserLogout() {
 
-  Window_SetFocus(appname, windowtitle);
+  Screen_SetFocus(appname, windowtitle);
 
   InpSim_Mouse_Click(posx, posy);
   InpSim_Mouse_Click(posx + 70, posy + 40);
@@ -108,13 +121,14 @@ function PE_Manager_CleanTSR() {
 function PE_Manager_ActivateTSR()
 {
   
-  isActive = Window_GetPosX(appname, windowtitle, namebmpActivateTSR);
+  var outActive = { value: 0 };
+  var statusActive = Screen_GetPosX(appname, windowtitle, namebmpActivateTSR, outActive);
 
   //We search the non-acivated version of the bmp
-  if(isActive != WND_BMP_ERROR.NOBITMAP)
+  if(statusActive != WND_BMP_STATUS.NOBITMAP)
   {
-   TracePrintColor(1, "The CEM has not returned the TSR values-> %06X", isActive);
-   Log_AddEntry(LOG_LEVEL.INFO, "KO", "[LTV %s] The CEM does not confirm the LTV configuration values (posx returns error %06X).", ltvname, isActive);
+   TracePrintColor(1, "The CEM has not returned the TSR values-> status %d", statusActive);
+   Log_AddEntry(LOG_LEVEL.INFO, "KO", "[LTV %s] The CEM does not confirm the LTV configuration values (posx returns status %d).", ltvname, statusActive);
    PE_Manager_CleanTSR();
    return false;
   }
@@ -167,7 +181,7 @@ function PE_Manager_EstablishTSR(TSR)
   
   var isEstablished;
 
-  Window_SetFocus(appname, windowtitle);
+  Screen_SetFocus(appname, windowtitle);
 
   PE_Manager_CleanTSR();
 
@@ -224,11 +238,12 @@ function PE_Manager_EstablishTSR(TSR)
 
   TracePrintColor(1, "Established TSR bmp search start");
 
-  isEstablished = Window_GetPosX(appname, windowtitle, namebmpTSREstablished);
+  var outEstablished = { value: 0 };
+  var statusEstablished = Screen_GetPosX(appname, windowtitle, namebmpTSREstablished, outEstablished);
   
-  if(isEstablished == WND_BMP_ERROR.NOBITMAP)
+  if(statusEstablished == WND_BMP_STATUS.NOBITMAP || statusEstablished != WND_BMP_STATUS.OK)
   {
-    TracePrintColor(1, "The 'established TSR' confirmation bitmap has not been found -> %06X", isEstablished);
+    TracePrintColor(1, "The 'established TSR' confirmation bitmap has not been found -> status %d", statusEstablished);
     Log_AddEntry(LOG_LEVEL.INFO, "KO", "[LTV %s] The TSR has not been established.", TSR.name);
     return false;
   }

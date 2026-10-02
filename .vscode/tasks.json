@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "inputs": [
+    {
+      "id": "genUtility",
+      "type": "pickString",
+      "description": "Utility GEN a configurar con CMake Tools",
+      "options": [
+        "ActionScriptQA",
+        "APPUpdateCreator",
+        "TranslateScan"
+      ],
+      "default": "TranslateScan"
+    }
+  ],
+  "tasks": [
+    {
+      "label": "GEN: Seleccionar utility",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/.vscode/select-utility.ps1",
+        "${input:genUtility}"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true,
+        "focus": true
+      }
+    }
+  ]
+}

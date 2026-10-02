@@ -22,28 +22,31 @@ function main()
   
   Log_AddEntry(1, "Script", "[script %s] Exec application: %s", scriptname, appname);
  
-  Window_SetPosition(appname, windowtitle, 10, 10);
-  Window_Resize(appname, windowtitle, 700, 250);
-  Window_SetFocus(appname, windowtitle);
+  Screen_SetPosition(appname, windowtitle, 10, 10);
+  Screen_Resize(appname, windowtitle, 700, 250);
+  Screen_SetFocus(appname, windowtitle);
 
-  var posx = Window_GetPosX(appname, windowtitle, maskbitmapname, maskbitmapname2);
-  var posy = Window_GetPosY(appname, windowtitle, maskbitmapname, maskbitmapname2);
+  var outx = { value: 0 };
+  var outy = { value: 0 };
+  var status = Screen_GetPosXY(appname, windowtitle, maskbitmapname, maskbitmapname2, outx, outy);
+  var posx = outx.value;
+  var posy = outy.value;
 
-  TracePrintColor(1, "Position of %s %d, %d", appname, posx, posy);
+  TracePrintColor(1, "Position of %s %d, %d (status=%d)", appname, posx, posy, status);
 
-  Window_Minimize(appname, windowtitle, true);
+  Screen_Minimize(appname, windowtitle, true);
   Sleep(1000);
 
-  Window_Minimize(appname, windowtitle, false);
+  Screen_Minimize(appname, windowtitle, false);
   Sleep(1000);
 
-  Window_Maximize(appname, windowtitle, true);
+  Screen_Maximize(appname, windowtitle, true);
   Sleep(1000);
 
-  Window_Maximize(appname, windowtitle, false);
+  Screen_Maximize(appname, windowtitle, false);
   Sleep(1000);
 
-  Window_SetFocus(appname, windowtitle);
+  Screen_SetFocus(appname, windowtitle);
 
 
   //InpSim_Mouse_Click(posx, posy);
@@ -98,15 +101,15 @@ function main()
   InpSim_Key_ClickByLiteral("\\" , 1);
   InpSim_Key_ClickByLiteral("\"" , 1);
   
-  //InpSim_Key_ClickByLiteral("¿"  , 1);
-  //InpSim_Key_ClickByLiteral("¡"  , 1);
-  //InpSim_Key_ClickByLiteral("ñ"  , 1);
-  //InpSim_Key_ClickByLiteral("Ñ"  , 1);
-  //InpSim_Key_ClickByLiteral("·"  , 1);
+  //InpSim_Key_ClickByLiteral("ï¿½"  , 1);
+  //InpSim_Key_ClickByLiteral("ï¿½"  , 1);
+  //InpSim_Key_ClickByLiteral("ï¿½"  , 1);
+  //InpSim_Key_ClickByLiteral("ï¿½"  , 1);
+  //InpSim_Key_ClickByLiteral("ï¿½"  , 1);
  
   InpSim_Key_ClickByLiteral("ENTER", 1);
 
-  InpSim_Key_ClickByText("Texto De Prueba 0123456789 !@#$%^&*()_+-=[]{}|;:',.<¿¡ñÑ?/\\\"·", 1);
+  InpSim_Key_ClickByText("Texto De Prueba 0123456789 !@#$%^&*()_+-=[]{}|;:',.<ï¿½ï¿½ï¿½ï¿½?/\\\"ï¿½", 1);
   */
 
   /*

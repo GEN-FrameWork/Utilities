@@ -12,10 +12,12 @@ function main()
   
   TracePrintColor(1, "Start script");
   
-  var posx = Window_GetPosX(appname, windowtitle, maskbitmapname);
-  var posy = Window_GetPosY(appname, windowtitle, maskbitmapname);
+  var outx = { value: 0 };
+  var outy = { value: 0 };
+  var status = Screen_GetPosX(appname, windowtitle, maskbitmapname, outx);
+  Screen_GetPosY(appname, windowtitle, maskbitmapname, outy);
 
-  TracePrintColor(1, "Position of %s %d, %d  %08X, %08X", appname, posx, posy, posx, posy);
+  TracePrintColor(1, "Position of %s %d, %d (status=%d)", appname, outx.value, outy.value, status);
 
   //Sleep(5000);
   

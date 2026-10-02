@@ -25,20 +25,23 @@ function main()
 
   Log_AddEntry(1, "Script", "[script %s] Exec application: %s", scriptname, appname);
  
-  //Window_SetPosition(appname, windowtitle, 10, 10);
-  //Window_Resize(appname, windowtitle, 700, 250);
-  //Window_SetFocus(appname, windowtitle);
+  //Screen_SetPosition(appname, windowtitle, 10, 10);
+  //Screen_Resize(appname, windowtitle, 700, 250);
+  //Screen_SetFocus(appname, windowtitle);
 
-  Window_SetBmpFindCFG(0, 10);
+  Screen_SetBmpFindCFG(0, 10);
 
-  var posx = Window_GetPosX(appname, windowtitle, maskbitmapname, maskbitmapname2);
-  var posy = Window_GetPosY(appname, windowtitle, maskbitmapname, maskbitmapname2);
+  var outx = { value: 0 };
+  var outy = { value: 0 };
+  var status = Screen_GetPosXY(appname, windowtitle, maskbitmapname, maskbitmapname2, outx, outy);
+  var posx = outx.value;
+  var posy = outy.value;
 
-  TracePrintColor(1, "Position of %s %d, %d %08X, %08X", appname, posx, posy, posx, posy);
+  TracePrintColor(1, "Position of %s %d, %d (status=%d)", appname, posx, posy, status);
 
-  Window_Minimize(appname, windowtitle, false);
+  Screen_Minimize(appname, windowtitle, false);
 
-  if(posx != 0x00FFFFFE)
+  if(status == 0)
     {
       InpSim_Mouse_Click(posx, posy);
 
@@ -46,7 +49,7 @@ function main()
     }
    else 
     {
-      TracePrintColor(4, "Error in Position of %s %d, %d %08X, %08X !!!", appname, posx, posy, posx, posy);
+      TracePrintColor(4, "Error in Position of %s status=%d !!!", appname, status);
     }
 
   Log_AddEntry(1, "Script", "[script %s] Terminate application: %s", scriptname, appname);

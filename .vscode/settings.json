@@ -1,0 +1,21 @@
+﻿{
+  "cmake.useCMakePresets": "always",
+  "cmake.options.statusBarVisibility": "visible",
+  "cmake.configureOnOpen": false,
+  "cmake.autoSelectActiveFolder": false,
+  "cmake.skipConfigureIfCachePresent": true,
+  "cmake.sourceDirectory": "${workspaceFolder}/ActionScriptQA/CMake",
+  "cmake.defaultConfigurePreset": "2-windows-intel64",
+  "cmake.defaultBuildPreset": "2-windows-intel64",
+  "cmake.copyCompileCommands": "${workspaceFolder}/ActionScriptQA/CMake/compile_commands.json",
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/ActionScriptQA/CMake/compile_commands.json",
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}/ActionScriptQA/CMake"
+  ],
+  "files.associations": {
+    "*.cmake": "cmake",
+    "CMakeLists.txt": "cmake"
+  }
+}
+

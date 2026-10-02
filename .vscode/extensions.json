@@ -1,0 +1,18 @@
+{
+  "recommendations": [
+    "ms-vscode.cmake-tools",
+    "twxs.cmake",
+    "llvm-vs-code-extensions.vscode-clangd",
+    "anysphere.cpptools",
+    "anysphere.remote-wsl",
+    "ms-azuretools.vscode-docker",
+    "ms-python.python",
+    "bmewburn.vscode-intelephense-client",
+    "GitLab.gitlab-workflow",
+    "vadimcn.vscode-lldb"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.cpptools",
+    "ms-vscode.cpptools-extension-pack"
+  ]
+}

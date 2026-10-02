@@ -1,0 +1,9 @@
+[
+  {
+    "name": "GEN MSVC (via Visual Studio / vcvars)",
+    "visualStudio": "default",
+    "preferredGenerator": {
+      "name": "Ninja"
+    }
+  }
+]

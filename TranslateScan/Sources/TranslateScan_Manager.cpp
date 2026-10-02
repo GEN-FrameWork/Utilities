@@ -797,7 +797,6 @@ bool TRANSLATESCAN_MANAGER::Operation_Remark_InGroup_SearchLine(XPATH* pathfile,
       if(pathfile->Find(__L("Databases")                              , true) != XSTRING_NOTFOUND) result = __L("DATABASE");
       if(pathfile->Find(__L("DataIO")                                 , true) != XSTRING_NOTFOUND) result = __L("DATAIO");
       if(pathfile->Find(__L("Graphic")                                , true) != XSTRING_NOTFOUND) result = __L("GRAPHIC");
-      if(pathfile->Find(__L("Identification")                         , true) != XSTRING_NOTFOUND) result = __L("IDENTIFICATION");     
       if(pathfile->Find(__L("Input")                                  , true) != XSTRING_NOTFOUND) result = __L("INPUT");
       if(pathfile->Find(__L("MainProc")                               , true) != XSTRING_NOTFOUND) result = __L("MAIN_PROCEDURE");
       if(pathfile->Find(__L("Script")                                 , true) != XSTRING_NOTFOUND) result = __L("SCRIPT");

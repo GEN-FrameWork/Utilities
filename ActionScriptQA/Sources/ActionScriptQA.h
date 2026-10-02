@@ -136,6 +136,7 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
     XMUTEX*                         xmutexshowallstatus;
 
     SCRIPT*                         script;
+    bool                            scriptsautorundone;
 };
 
 #pragma endregion
