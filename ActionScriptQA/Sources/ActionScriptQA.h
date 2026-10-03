@@ -22,7 +22,9 @@
 #include "XDateTime.h"
 #include "XFSMachine.h"
 #include "XString.h"
+#include "XPath.h"
 #include "XScheduler.h"
+#include "XVector.h"
 
 #include "DIOStream.h"
 #include "DIOURL.h"
@@ -100,6 +102,27 @@ class GRPXEVENT;
 class ACTIONSCRIPTQA_CFG;
 class SCRIPT;
 
+enum ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE
+{
+  ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK = 0 ,
+  ACTIONSCRIPTQA_SCRIPTRECORD_STEP_TEXT      ,
+  ACTIONSCRIPTQA_SCRIPTRECORD_STEP_KEY       ,
+};
+
+
+class ACTIONSCRIPTQA_SCRIPTRECORD_STEP
+{
+  public:
+                                    ACTIONSCRIPTQA_SCRIPTRECORD_STEP  ();
+                                   ~ACTIONSCRIPTQA_SCRIPTRECORD_STEP  ();
+
+    ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE type;
+    XSTRING                         bitmapname;
+    XSTRING                         text;          // typed text or key literal (ENTER, TAB, ...)
+    int                             layoutx;
+    int                             layouty;
+};
+
 class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
 {
   public:
@@ -128,6 +151,21 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
     void                            HandleEvent_Script          (SCRIPT_XEVENT* event);
     void                            HandleEvent                 (XEVENT* xevent);  
 
+    bool                            ScriptRecord_IsActive       ();
+    bool                            ScriptRecord_Toggle         ();
+    bool                            ScriptRecord_Update         ();
+    bool                            ScriptRecord_UpdateKeys     ();
+    bool                            ScriptRecord_SelectApp      (int screenx, int screeny);
+    bool                            ScriptRecord_CaptureClick   (int screenx, int screeny);
+    bool                            ScriptRecord_FlushText      ();
+    bool                            ScriptRecord_AddKeyLiteral  (XCHAR* literal);
+    bool                            ScriptRecord_WriteScript    ();
+    bool                            ScriptRecord_Reset          ();
+    bool                            ScriptRecord_PrepareExisting();
+    void                            ScriptRecord_Print          (XCHAR* mask, ...);
+    void                            ScriptRecord_PathForScript  (XPATH& path);
+    void                            ScriptRecord_EscapeForJS    (XSTRING& source, XSTRING& target);
+
     void                            Clean                       ();
 
     XTIMER*                         xtimerupdateconsole;
@@ -137,6 +175,21 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
 
     SCRIPT*                         script;
     bool                            scriptsautorundone;
+
+    bool                            scriptrecord_active;
+    bool                            scriptrecord_appselected;
+    bool                            scriptrecord_mousewasdown;
+    bool                            scriptrecord_keywasdown[256];
+    XSTRING                         scriptrecord_textpending;
+    XSTRING                         scriptrecord_appname;
+    XPATH                           scriptrecord_apppath;
+    XSTRING                         scriptrecord_windowtitle;
+    void*                           scriptrecord_windowhandle;
+    XVECTOR<ACTIONSCRIPTQA_SCRIPTRECORD_STEP*> scriptrecord_steps;
+    XVECTOR<XSTRING*>               scriptrecord_existinglines;
+    XVECTOR<XDWORD>                 scriptrecord_sessionids;
+    XDWORD                          scriptrecord_sessionindex;
+    XDWORD                          scriptrecord_nextbitmapindex;
 };
 
 #pragma endregion
@@ -150,4 +203,3 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
 
 
 #endif
-

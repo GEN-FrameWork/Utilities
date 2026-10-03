@@ -121,6 +121,14 @@ bool ACTIONSCRIPTQA_CFG::DoVariableMapping()
       return false;
     }
 
+  AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, __L("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
+  AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, __L(" Script recorder (F1)"), 0, 2);
+
+  AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_OUTPUT   , &scriptrecord_outputscript , __L("Output .js under scripts/"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX, &scriptrecord_bitmapprefix , __L("Bitmap file name prefix")  , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREW , &scriptrecord_capturewidth  , __L("Capture width (pixels)")  , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREH , &scriptrecord_captureheight , __L("Capture height (pixels)") , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+
   return true;
 }
 
@@ -162,9 +170,66 @@ bool ACTIONSCRIPTQA_CFG::DoDefault()
   log_maxsize                           = 3000;
   log_reductionpercent                  = 10;
 
+  scriptrecord_outputscript             = __L("Tests_Recorded.js");
+  scriptrecord_bitmapprefix             = __L("rec_");
+  scriptrecord_capturewidth             = 96;
+  scriptrecord_captureheight            = 32;
+
   //------------------------------------------------------------------------------
 
   return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+* 
+* @fn         XSTRING* ACTIONSCRIPTQA_CFG::ScriptRecord_GetOutputScript()
+* @brief      ScriptRecord_GetOutputScript
+* @ingroup    
+* 
+* --------------------------------------------------------------------------------------------------------------------*/
+XSTRING* ACTIONSCRIPTQA_CFG::ScriptRecord_GetOutputScript()
+{
+  return &scriptrecord_outputscript;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+* 
+* @fn         XSTRING* ACTIONSCRIPTQA_CFG::ScriptRecord_GetBitmapPrefix()
+* @brief      ScriptRecord_GetBitmapPrefix
+* @ingroup    
+* 
+* --------------------------------------------------------------------------------------------------------------------*/
+XSTRING* ACTIONSCRIPTQA_CFG::ScriptRecord_GetBitmapPrefix()
+{
+  return &scriptrecord_bitmapprefix;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+* 
+* @fn         int ACTIONSCRIPTQA_CFG::ScriptRecord_GetCaptureWidth()
+* @brief      ScriptRecord_GetCaptureWidth
+* @ingroup    
+* 
+* --------------------------------------------------------------------------------------------------------------------*/
+int ACTIONSCRIPTQA_CFG::ScriptRecord_GetCaptureWidth()
+{
+  return scriptrecord_capturewidth;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+* 
+* @fn         int ACTIONSCRIPTQA_CFG::ScriptRecord_GetCaptureHeight()
+* @brief      ScriptRecord_GetCaptureHeight
+* @ingroup    
+* 
+* --------------------------------------------------------------------------------------------------------------------*/
+int ACTIONSCRIPTQA_CFG::ScriptRecord_GetCaptureHeight()
+{
+  return scriptrecord_captureheight;
 }
 
 
@@ -218,10 +283,10 @@ ACTIONSCRIPTQA_CFG::~ACTIONSCRIPTQA_CFG()
 * --------------------------------------------------------------------------------------------------------------------*/
 void ACTIONSCRIPTQA_CFG::Clean()
 {
-
+  scriptrecord_outputscript.Empty();
+  scriptrecord_bitmapprefix.Empty();
+  scriptrecord_capturewidth  = 96;
+  scriptrecord_captureheight = 32;
 }
 
 #pragma endregion
-
-
-

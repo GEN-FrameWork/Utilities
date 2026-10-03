@@ -50,6 +50,10 @@ option(SCRIPT_LIB_SCREEN_FEATURE                                "Script Lib Scre
 option(SCRIPT_LIB_INPUTSIMULATE_FEATURE                         "Script Lib Input Simulated"                              ON )   
 # Trusted by default. Set ON for sandbox (restricted Lua libs; no auto Dir/Process).
 option(SCRIPT_LIB_SANDBOX_FEATURE                               "Script Lib Sandbox (restrict Lua + omit Dir/Process)"    OFF )
+
+# Screen find/record bitmaps need decode+encode (SCRIPT_LIB_SCREEN alone does not enable formats).
+option(GRP_BITMAP_FILE_BMP_FEATURE                              "Graphics Bitmap File BMP"                                ON )
+option(GRP_BITMAP_FILE_PNG_FEATURE                              "Graphics Bitmap File PNG"                                ON )
  
 
 # --------------------------------------------------------------------

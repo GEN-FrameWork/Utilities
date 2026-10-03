@@ -27,7 +27,13 @@
 /*---- DEFINES & ENUMS  ----------------------------------------------------------------------------------------------*/
 #pragma region DEFINES_ENUMS
 
-#define ACTIONSCRIPTQACFG_SECTIONGENERAL     __L("general")
+#define ACTIONSCRIPTQACFG_SECTIONGENERAL          __L("general")
+
+#define ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD    __L("scriptrecord")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_OUTPUT     __L("outputscript")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX  __L("bitmapprefix")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREW   __L("capturewidth")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREH   __L("captureheight")
 
 #pragma endregion
 
@@ -41,11 +47,16 @@ class ACTIONSCRIPTQA_CFG : public APPFLOWCFG
   public:
 
     static bool                     GetIsInstanced                          ();
-    static ACTIONSCRIPTQA_CFG&                GetInstance                             (bool ini = true);
+    static ACTIONSCRIPTQA_CFG&      GetInstance                             (bool ini = true);
     static bool                     DelInstance                             ();
 
     bool                            DoVariableMapping                       (); 
     bool                            DoDefault                               ();
+
+    XSTRING*                        ScriptRecord_GetOutputScript            ();
+    XSTRING*                        ScriptRecord_GetBitmapPrefix            ();
+    int                             ScriptRecord_GetCaptureWidth            ();
+    int                             ScriptRecord_GetCaptureHeight           ();
 
   private:
                                     ACTIONSCRIPTQA_CFG                                (XCHAR* namefile);
@@ -56,7 +67,12 @@ class ACTIONSCRIPTQA_CFG : public APPFLOWCFG
 
     void                            Clean                                   ();
 
-    static ACTIONSCRIPTQA_CFG*                instance;
+    static ACTIONSCRIPTQA_CFG*      instance;
+
+    XSTRING                         scriptrecord_outputscript;
+    XSTRING                         scriptrecord_bitmapprefix;
+    int                             scriptrecord_capturewidth;
+    int                             scriptrecord_captureheight;
 };
 
 
@@ -72,4 +88,3 @@ class ACTIONSCRIPTQA_CFG : public APPFLOWCFG
 
 
 #endif
-
