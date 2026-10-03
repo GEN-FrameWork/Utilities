@@ -1,6 +1,8 @@
 // ----------------------------------------------------------------------------
 // Tests_UISystem.js — launch UI_System, click sidebar via image find (layout
-// fallback), assert XTrace feedback through TraceServer (UDP 10001).
+// fallback), assert #[TESTS_RESULT]# feedback through TraceServer (UDP 10001).
+// Catalog: tests_catalog.json (same folder as this script).
+// Script progress goes to ActionScriptQA console (not XTrace).
 // ----------------------------------------------------------------------------
 
 
@@ -51,18 +53,64 @@ function DumpTraces(scriptname, tag)
 }
 
 
-function WaitTraceContains(needle, timeoutms, scriptname)
+function ParseTestsResultError(line, id)
 {
-  var waited = 0;
-  var step   = 200;
-  var got    = "";
+  var marker = "#[TESTS_RESULT]# :," + id + ",";
+  var idx    = -1;
+  var rest   = "";
+  var end    = -1;
+  var i      = 0;
+  var ch     = "";
+  var num    = "";
+
+  if(line == "") return -999;
+
+  idx = line.indexOf(marker);
+  if(idx < 0) return -999;
+
+  rest = line.substring(idx + marker.length);
+  end  = rest.indexOf(",");
+  if(end >= 0)
+    {
+      rest = rest.substring(0, end);
+    }
+
+  for(i = 0; i < rest.length; i++)
+    {
+      ch = rest.substring(i, i + 1);
+      if((ch >= "0" && ch <= "9") || (ch == "-" && i == 0))
+        {
+          num = num + ch;
+        }
+       else
+        {
+          break;
+        }
+    }
+
+  if(num == "" || num == "-") return -999;
+
+  return parseInt(num, 10);
+}
+
+
+function WaitTestResult(id, timeoutms, scriptname)
+{
+  var waited      = 0;
+  var step        = 200;
+  var got         = "";
+  var needle      = "#[TESTS_RESULT]# :," + id + ",";
+  var description = TraceTests_GetDescription(id);
+  var error       = -999;
 
   while(waited < timeoutms)
     {
       got = TraceServer_Get(-1, needle, 1);
       if(got != "")
         {
-          return got;
+          error = ParseTestsResultError(got, id);
+          Log_AddEntry(1, "Script", "[script %s] TESTS_RESULT id=%d error=%d desc=%s line=%s", scriptname, id, error, description, got);
+          return error;
         }
 
       Sleep(step);
@@ -70,7 +118,15 @@ function WaitTraceContains(needle, timeoutms, scriptname)
     }
 
   DumpTraces(scriptname, needle);
-  return "";
+  Log_AddEntry(4, "Script", "[script %s] TIMEOUT TESTS_RESULT id=%d desc=%s", scriptname, id, description);
+  return -999;
+}
+
+
+function ReleaseTestsCatalog(scriptname)
+{
+  TraceTests_DeleteAll();
+  Log_AddEntry(1, "Script", "[script %s] TraceTests_DeleteAll", scriptname);
 }
 
 
@@ -130,39 +186,71 @@ function main()
   var winx        = 0;
   var winy        = 0;
   var status      = 1;
-  var got         = "";
+  var error       = -999;
+  var catalogpath = "";
+  var description = "";
 
   // layoutx/layouty = center of hit target (root ypos is BOTTOM edge).
+  // testid matches tests_catalog.json in this same scripts folder.
   var navitems = [
-    { bmp: "uisys_nav_resumen.png"      , eid: "nav-resumen-btn"      , x: 105, y: 94  },
-    { bmp: "uisys_nav_cpu.png"          , eid: "nav-cpu-btn"          , x: 105, y: 150 },
-    { bmp: "uisys_nav_memoria.png"      , eid: "nav-memoria-btn"      , x: 105, y: 206 },
-    { bmp: "uisys_nav_red.png"          , eid: "nav-red-btn"          , x: 105, y: 262 },
-    { bmp: "uisys_nav_disco.png"        , eid: "nav-disco-btn"        , x: 105, y: 318 },
-    { bmp: "uisys_nav_procesos.png"     , eid: "nav-procesos-btn"     , x: 105, y: 374 },
-    { bmp: "uisys_nav_alertas.png"      , eid: "nav-alertas-btn"      , x: 105, y: 430 },
-    { bmp: "uisys_nav_configuracion.png", eid: "nav-configuracion-btn", x: 105, y: 486 }
+    { bmp: "uisys_nav_resumen.png"      , eid: "nav-resumen-btn"      , x: 105, y: 94  , testid: 1001 },
+    { bmp: "uisys_nav_cpu.png"          , eid: "nav-cpu-btn"          , x: 105, y: 150 , testid: 1002 },
+    { bmp: "uisys_nav_memoria.png"      , eid: "nav-memoria-btn"      , x: 105, y: 206 , testid: 1003 },
+    { bmp: "uisys_nav_red.png"          , eid: "nav-red-btn"          , x: 105, y: 262 , testid: 1004 },
+    { bmp: "uisys_nav_disco.png"        , eid: "nav-disco-btn"        , x: 105, y: 318 , testid: 1005 },
+    { bmp: "uisys_nav_procesos.png"     , eid: "nav-procesos-btn"     , x: 105, y: 374 , testid: 1006 },
+    { bmp: "uisys_nav_alertas.png"      , eid: "nav-alertas-btn"      , x: 105, y: 430 , testid: 1007 },
+    { bmp: "uisys_nav_configuracion.png", eid: "nav-configuracion-btn", x: 105, y: 486 , testid: 1008 }
   ];
 
   Log_Ini("scripts.log", "ActionScript");
   Log_CFG_SetFilters("Script", 7);
 
-  Log_AddEntry(1, "Script", "[script %s] Start UI_System TraceServer feedback test", scriptname);
-  TracePrintColor(1, "[%s] Start UI_System TraceServer feedback test", scriptname);
+  Log_AddEntry(1, "Script", "[script %s] Start UI_System TESTS_RESULT feedback test", scriptname);
+  Console_Printf("[%s] Start UI_System TESTS_RESULT feedback test\n", scriptname);
 
   if(!System_IsWindows())
     {
       Log_AddEntry(1, "Script", "[script %s] SKIP on non-Windows (%s)", scriptname, System_GetType());
-      TracePrintColor(1, "[%s] SKIP on %s", scriptname, System_GetType());
+      Console_Printf("[%s] SKIP on %s\n", scriptname, System_GetType());
       return;
+    }
+
+  catalogpath = GetPathScript() + "tests_catalog.json";
+  if(!TraceTests_Load(catalogpath))
+    {
+      failcount = failcount + 1;
+      Log_AddEntry(4, "Script", "[script %s] FAIL TraceTests_Load(%s)", scriptname, catalogpath);
+      Console_Printf("[%s] FAIL TraceTests_Load\n", scriptname);
+      Log_AddEntry(1, "Script", "[script %s] Result ok=%d fail=%d", scriptname, okcount, failcount);
+      return;
+    }
+
+  okcount = okcount + 1;
+  Log_AddEntry(1, "Script", "[script %s] PASS TraceTests_Load %s", scriptname, catalogpath);
+
+  for(i = 0; i < navitems.length; i++)
+    {
+      if(!TraceTests_Exists(navitems[i].testid))
+        {
+          failcount = failcount + 1;
+          Log_AddEntry(4, "Script", "[script %s] FAIL catalog missing id=%d", scriptname, navitems[i].testid);
+        }
+    }
+
+  if(!TraceTests_Exists(1099))
+    {
+      failcount = failcount + 1;
+      Log_AddEntry(4, "Script", "[script %s] FAIL catalog missing id=1099", scriptname);
     }
 
   if(!TraceServer_Ini(10001))
     {
       failcount = failcount + 1;
       Log_AddEntry(4, "Script", "[script %s] FAIL TraceServer_Ini(10001)", scriptname);
-      TracePrintColor(4, "[%s] FAIL TraceServer_Ini", scriptname);
+      Console_Printf("[%s] FAIL TraceServer_Ini\n", scriptname);
       Log_AddEntry(1, "Script", "[script %s] Result ok=%d fail=%d", scriptname, okcount, failcount);
+      ReleaseTestsCatalog(scriptname);
       return;
     }
 
@@ -184,24 +272,26 @@ function main()
     {
       failcount = failcount + 1;
       Log_AddEntry(4, "Script", "[script %s] FAIL ExecApplication (tried relative UI_System builds)", scriptname);
-      TracePrintColor(4, "[%s] FAIL ExecApplication", scriptname);
+      Console_Printf("[%s] FAIL ExecApplication\n", scriptname);
       TraceServer_End();
       Log_AddEntry(1, "Script", "[script %s] Result ok=%d fail=%d", scriptname, okcount, failcount);
+      ReleaseTestsCatalog(scriptname);
       return;
     }
 
   okcount = okcount + 1;
   Log_AddEntry(1, "Script", "[script %s] PASS ExecApplication %s", scriptname, apppath);
-  TracePrintColor(1, "[%s] Launched %s", scriptname, apppath);
+  Console_Printf("[%s] Launched %s\n", scriptname, apppath);
 
   if(!WaitWindow(appname, windowtitle, 30000))
     {
       failcount = failcount + 1;
       Log_AddEntry(4, "Script", "[script %s] FAIL window '%s' not found", scriptname, windowtitle);
-      TracePrintColor(4, "[%s] FAIL window not found", scriptname);
+      Console_Printf("[%s] FAIL window not found\n", scriptname);
       TerminateAplication(appname);
       TraceServer_End();
       Log_AddEntry(1, "Script", "[script %s] Result ok=%d fail=%d", scriptname, okcount, failcount);
+      ReleaseTestsCatalog(scriptname);
       return;
     }
 
@@ -210,7 +300,7 @@ function main()
   winy = outy.value;
   okcount = okcount + 1;
   Log_AddEntry(1, "Script", "[script %s] PASS window pos=%d,%d", scriptname, winx, winy);
-  TracePrintColor(1, "[%s] Window '%s' pos=%d,%d", scriptname, windowtitle, winx, winy);
+  Console_Printf("[%s] Window '%s' pos=%d,%d\n", scriptname, windowtitle, winx, winy);
 
   Screen_SetPosition(appname, windowtitle, 40, 40);
   Sleep(500);
@@ -233,6 +323,7 @@ function main()
     {
       outx = { value: 0 };
       outy = { value: 0 };
+      description = TraceTests_GetDescription(navitems[i].testid);
 
       TraceServer_Clear();
       Sleep(150);
@@ -240,24 +331,24 @@ function main()
       if(!ClickNav(appname, windowtitle, navitems[i].bmp, navitems[i].x, navitems[i].y, outx, outy, scriptname))
         {
           failcount = failcount + 1;
-          TracePrintColor(4, "[%s] FAIL click %s", scriptname, navitems[i].bmp);
+          Console_Printf("[%s] FAIL click %s\n", scriptname, navitems[i].bmp);
           continue;
         }
 
-      TracePrintColor(1, "[%s] Clicked %s at %d,%d", scriptname, navitems[i].bmp, outx.value, outy.value);
+      Console_Printf("[%s] Clicked %s at %d,%d (id=%d %s)\n", scriptname, navitems[i].bmp, outx.value, outy.value, navitems[i].testid, description);
 
-      got = WaitTraceContains("UI Element [" + navitems[i].eid + "]: Selected!", 5000, scriptname);
-      if(got != "")
+      error = WaitTestResult(navitems[i].testid, 5000, scriptname);
+      if(error == 0)
         {
           okcount = okcount + 1;
-          Log_AddEntry(1, "Script", "[script %s] PASS trace: %s", scriptname, navitems[i].eid);
-          TracePrintColor(1, "[%s] PASS trace %s", scriptname, navitems[i].eid);
+          Log_AddEntry(1, "Script", "[script %s] PASS TESTS_RESULT id=%d %s", scriptname, navitems[i].testid, description);
+          Console_Printf("[%s] PASS id=%d %s\n", scriptname, navitems[i].testid, description);
         }
        else
         {
           failcount = failcount + 1;
-          Log_AddEntry(4, "Script", "[script %s] FAIL missing trace: %s (count=%d)", scriptname, navitems[i].eid, TraceServer_GetCount());
-          TracePrintColor(4, "[%s] FAIL missing trace %s", scriptname, navitems[i].eid);
+          Log_AddEntry(4, "Script", "[script %s] FAIL TESTS_RESULT id=%d error=%d %s (count=%d)", scriptname, navitems[i].testid, error, description, TraceServer_GetCount());
+          Console_Printf("[%s] FAIL id=%d error=%d\n", scriptname, navitems[i].testid, error);
         }
 
       Sleep(450);
@@ -267,30 +358,31 @@ function main()
   Sleep(150);
   outx = { value: 0 };
   outy = { value: 0 };
+  description = TraceTests_GetDescription(1099);
 
   // Close button center ~ (1414, 24) in design canvas.
   if(!ClickNav(appname, windowtitle, "uisys_btn_chrome_close.png", 1414, 24, outx, outy, scriptname))
     {
       failcount = failcount + 1;
-      TracePrintColor(4, "[%s] FAIL click close", scriptname);
+      Console_Printf("[%s] FAIL click close\n", scriptname);
       TerminateAplicationWithWindow(appname, windowtitle);
     }
    else
     {
-      TracePrintColor(1, "[%s] Clicked close at %d,%d", scriptname, outx.value, outy.value);
+      Console_Printf("[%s] Clicked close at %d,%d (id=1099 %s)\n", scriptname, outx.value, outy.value, description);
 
-      got = WaitTraceContains("UI Element [btn_chrome_close]: Selected!", 5000, scriptname);
-      if(got != "")
+      error = WaitTestResult(1099, 5000, scriptname);
+      if(error == 0)
         {
           okcount = okcount + 1;
-          Log_AddEntry(1, "Script", "[script %s] PASS trace close btn_chrome_close", scriptname);
-          TracePrintColor(1, "[%s] PASS trace btn_chrome_close", scriptname);
+          Log_AddEntry(1, "Script", "[script %s] PASS TESTS_RESULT id=1099 %s", scriptname, description);
+          Console_Printf("[%s] PASS id=1099 %s\n", scriptname, description);
         }
        else
         {
           failcount = failcount + 1;
-          Log_AddEntry(4, "Script", "[script %s] FAIL missing close trace (count=%d)", scriptname, TraceServer_GetCount());
-          TracePrintColor(4, "[%s] FAIL missing close trace", scriptname);
+          Log_AddEntry(4, "Script", "[script %s] FAIL TESTS_RESULT id=1099 error=%d (count=%d)", scriptname, error, TraceServer_GetCount());
+          Console_Printf("[%s] FAIL id=1099 error=%d\n", scriptname, error);
           TerminateAplicationWithWindow(appname, windowtitle);
         }
     }
@@ -299,18 +391,19 @@ function main()
   TraceServer_End();
 
   Log_AddEntry(1, "Script", "[script %s] Result ok=%d fail=%d", scriptname, okcount, failcount);
-  TracePrintColor(1, "[%s] Result ok=%d fail=%d", scriptname, okcount, failcount);
+  Console_Printf("[%s] Result ok=%d fail=%d\n", scriptname, okcount, failcount);
 
   if(failcount != 0)
     {
-      TracePrintColor(4, "[%s] UI_System TraceServer feedback FAILED", scriptname);
+      Console_Printf("[%s] UI_System TraceServer feedback FAILED\n", scriptname);
       Log_AddEntry(4, "Script", "[script %s] UI_System TraceServer feedback FAILED", scriptname);
     }
    else
     {
-      TracePrintColor(1, "[%s] UI_System TraceServer feedback OK", scriptname);
+      Console_Printf("[%s] UI_System TraceServer feedback OK\n", scriptname);
       Log_AddEntry(1, "Script", "[script %s] UI_System TraceServer feedback OK", scriptname);
     }
 
+  ReleaseTestsCatalog(scriptname);
   Log_AddEntry(1, "Script", "[script %s] End script.", scriptname);
 }

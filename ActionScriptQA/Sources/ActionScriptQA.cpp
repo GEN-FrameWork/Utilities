@@ -87,6 +87,7 @@
 #include "Script_Language_G.h"
 #include "Script_Language_Lua.h"
 #include "Script_Language_Javascript.h"
+#include "Script_Lib_Console.h"
 
 #include "ActionScriptQA_CFG.h"
 
@@ -606,6 +607,15 @@ void ACTIONSCRIPTQA::AdjustLibraries(SCRIPT* script)
   #ifdef SCRIPT_LIB_CFG_ACTIVE
   
   SCRIPT_SET_LIB_CFG(script, APP_CFG);
+
+  #endif
+
+  #ifdef SCRIPT_LIB_CONSOLE_ACTIVE
+
+  if(actionscriptqa && actionscriptqa->GetConsole())
+    {
+      SCRIPT_SET_LIB_CONSOLE(script, actionscriptqa->GetConsole());
+    }
 
   #endif
 }
