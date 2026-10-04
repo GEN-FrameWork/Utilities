@@ -128,6 +128,8 @@ bool ACTIONSCRIPTQA_CFG::DoVariableMapping()
   AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX, &scriptrecord_bitmapprefix , __L("Bitmap file name prefix")  , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
   AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREW , &scriptrecord_capturewidth  , __L("Capture width (pixels)")  , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
   AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREH , &scriptrecord_captureheight , __L("Capture height (pixels)") , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITTO   , &scriptrecord_waittimeoutms, __L("WaitBitmap timeout (ms)") , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITIV   , &scriptrecord_waitintervalms,__L("WaitBitmap interval (ms)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
 
   return true;
 }
@@ -174,6 +176,8 @@ bool ACTIONSCRIPTQA_CFG::DoDefault()
   scriptrecord_bitmapprefix             = __L("rec_");
   scriptrecord_capturewidth             = 96;
   scriptrecord_captureheight            = 32;
+  scriptrecord_waittimeoutms            = 10000;
+  scriptrecord_waitintervalms           = 500;
 
   //------------------------------------------------------------------------------
 
@@ -234,6 +238,32 @@ int ACTIONSCRIPTQA_CFG::ScriptRecord_GetCaptureHeight()
 
 
 /**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         int ACTIONSCRIPTQA_CFG::ScriptRecord_GetWaitTimeoutMs()
+* @brief      ScriptRecord_GetWaitTimeoutMs
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+int ACTIONSCRIPTQA_CFG::ScriptRecord_GetWaitTimeoutMs()
+{
+  return scriptrecord_waittimeoutms;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         int ACTIONSCRIPTQA_CFG::ScriptRecord_GetWaitIntervalMs()
+* @brief      ScriptRecord_GetWaitIntervalMs
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+int ACTIONSCRIPTQA_CFG::ScriptRecord_GetWaitIntervalMs()
+{
+  return scriptrecord_waitintervalms;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
 * 
 * @fn         ACTIONSCRIPTQA_CFG::ACTIONSCRIPTQA_CFG(XCHAR* namefile) : APPCFG(namefile)
 * @brief      Constructor
@@ -285,8 +315,10 @@ void ACTIONSCRIPTQA_CFG::Clean()
 {
   scriptrecord_outputscript.Empty();
   scriptrecord_bitmapprefix.Empty();
-  scriptrecord_capturewidth  = 96;
-  scriptrecord_captureheight = 32;
+  scriptrecord_capturewidth   = 96;
+  scriptrecord_captureheight  = 32;
+  scriptrecord_waittimeoutms  = 10000;
+  scriptrecord_waitintervalms = 500;
 }
 
 #pragma endregion

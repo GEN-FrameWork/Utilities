@@ -48,12 +48,16 @@ option(SCRIPT_LIB_LOG_FEATURE                                   "Script Lib Log"
 option(SCRIPT_LIB_CONSOLE_FEATURE                               "Script Lib Console"                                      ON ) 
 option(SCRIPT_LIB_SCREEN_FEATURE                                "Script Lib Screen"                                       ON ) 
 option(SCRIPT_LIB_INPUTSIMULATE_FEATURE                         "Script Lib Input Simulated"                              ON )   
+option(SCRIPT_LIB_FILECSV_FEATURE                               "Script Lib File CSV (read/write)"                        ON )
 # Trusted by default. Set ON for sandbox (restricted Lua libs; no auto Dir/Process).
 option(SCRIPT_LIB_SANDBOX_FEATURE                               "Script Lib Sandbox (restrict Lua + omit Dir/Process)"    OFF )
 
 # Screen find/record bitmaps need decode+encode (SCRIPT_LIB_SCREEN alone does not enable formats).
 option(GRP_BITMAP_FILE_BMP_FEATURE                              "Graphics Bitmap File BMP"                                ON )
 option(GRP_BITMAP_FILE_PNG_FEATURE                              "Graphics Bitmap File PNG"                                ON )
+
+# FileCSV uses XFILECSV.
+option(XFILE_CSV_FEATURE                                        "XFile CSV format"                                        ON )
  
 
 # --------------------------------------------------------------------

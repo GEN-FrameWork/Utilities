@@ -34,6 +34,8 @@
 #define ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX  __L("bitmapprefix")
 #define ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREW   __L("capturewidth")
 #define ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREH   __L("captureheight")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITTO     __L("waittimeoutms")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITIV     __L("waitintervalms")
 
 #pragma endregion
 
@@ -57,6 +59,8 @@ class ACTIONSCRIPTQA_CFG : public APPFLOWCFG
     XSTRING*                        ScriptRecord_GetBitmapPrefix            ();
     int                             ScriptRecord_GetCaptureWidth            ();
     int                             ScriptRecord_GetCaptureHeight           ();
+    int                             ScriptRecord_GetWaitTimeoutMs           ();
+    int                             ScriptRecord_GetWaitIntervalMs          ();
 
   private:
                                     ACTIONSCRIPTQA_CFG                                (XCHAR* namefile);
@@ -73,6 +77,8 @@ class ACTIONSCRIPTQA_CFG : public APPFLOWCFG
     XSTRING                         scriptrecord_bitmapprefix;
     int                             scriptrecord_capturewidth;
     int                             scriptrecord_captureheight;
+    int                             scriptrecord_waittimeoutms;
+    int                             scriptrecord_waitintervalms;
 };
 
 

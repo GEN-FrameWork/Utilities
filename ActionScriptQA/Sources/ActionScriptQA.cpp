@@ -770,6 +770,7 @@ void ACTIONSCRIPTQA::Clean()
   scriptrecord_active           = false;
   scriptrecord_appselected      = false;
   scriptrecord_mousewasdown     = false;
+  scriptrecord_rbuttonwasdown   = false;
   scriptrecord_windowhandle     = NULL;
   scriptrecord_sessionindex     = 1;
   scriptrecord_nextbitmapindex  = 1;
@@ -836,6 +837,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_Reset()
 
   scriptrecord_appselected      = false;
   scriptrecord_mousewasdown     = false;
+  scriptrecord_rbuttonwasdown   = false;
   scriptrecord_windowhandle     = NULL;
   scriptrecord_sessionindex     = 1;
   scriptrecord_nextbitmapindex  = 1;
@@ -883,8 +885,9 @@ bool ACTIONSCRIPTQA::ScriptRecord_Toggle()
   XSTRING* outname = APPFLOW_CFG.ScriptRecord_GetOutputScript();
   ScriptRecord_Print(__L("[ScriptRecord] ON (F1 again or ESC to finish)."));
   ScriptRecord_Print(__L("[ScriptRecord] 1) Left-click a window of the app under test."));
-  ScriptRecord_Print(__L("[ScriptRecord] 2) Left-click UI targets to capture bitmaps."));
-  ScriptRecord_Print(__L("[ScriptRecord] 3) Type text (login/password); ENTER/TAB/BACKSPACE recorded as keys."));
+  ScriptRecord_Print(__L("[ScriptRecord] 2) Left-click UI targets (mouse click steps)."));
+  ScriptRecord_Print(__L("[ScriptRecord] 3) Right-click a zone to wait/assert it appears on screen."));
+  ScriptRecord_Print(__L("[ScriptRecord] 4) Type text (login/password); ENTER/TAB/BACKSPACE recorded as keys."));
   if(outname) ScriptRecord_Print(__L("[ScriptRecord] Output script: %s"), outname->Get());
   ScriptRecord_Print(__L("[ScriptRecord] Session function: Recorded_%03d  (next bitmap %03d)"), (int)scriptrecord_sessionindex, (int)scriptrecord_nextbitmapindex);
 
@@ -905,9 +908,10 @@ bool ACTIONSCRIPTQA::ScriptRecord_Update()
   return false;
   #else
 
-  bool down = ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0);
+  bool ldown = ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0);
+  bool rdown = ((GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0);
 
-  if(down && !scriptrecord_mousewasdown)
+  if(ldown && !scriptrecord_mousewasdown)
     {
       POINT pt;
 
@@ -919,12 +923,23 @@ bool ACTIONSCRIPTQA::ScriptRecord_Update()
             }
            else
             {
-              ScriptRecord_CaptureClick(pt.x, pt.y);
+              ScriptRecord_CaptureClick(pt.x, pt.y, ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK);
             }
         }
     }
 
-  scriptrecord_mousewasdown = down;
+  if(rdown && !scriptrecord_rbuttonwasdown)
+    {
+      POINT pt;
+
+      if(scriptrecord_appselected && GetCursorPos(&pt))
+        {
+          ScriptRecord_CaptureClick(pt.x, pt.y, ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT);
+        }
+    }
+
+  scriptrecord_mousewasdown   = ldown;
+  scriptrecord_rbuttonwasdown = rdown;
 
   if(scriptrecord_appselected)
     {
@@ -1221,18 +1236,19 @@ bool ACTIONSCRIPTQA::ScriptRecord_SelectApp(int screenx, int screeny)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
-* @fn         bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny)
-* @brief      Capture bitmap around click and append a script step
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny, ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype)
+* @brief      Capture bitmap around cursor: CLICK (LMB) or WAIT/assert (RMB)
 * @ingroup
 *
 * --------------------------------------------------------------------------------------------------------------------*/
-bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny)
+bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny, ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype)
 {
   #ifndef WINDOWS
   return false;
   #else
 
   if(!scriptrecord_appselected) return false;
+  if((steptype != ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK) && (steptype != ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT)) return false;
 
   ScriptRecord_FlushText();
 
@@ -1350,7 +1366,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny)
 
   XSTRING* prefix = APPFLOW_CFG.ScriptRecord_GetBitmapPrefix();
   XSTRING  bmpname;
-  bmpname.Format(__L("%s%03d.png"), prefix ? prefix->Get() : __L("rec_"), (int)(scriptrecord_nextbitmapindex + scriptrecord_steps.GetSize()));
+  bmpname.Format(__L("%s%03d.png"), prefix ? prefix->Get() : __L("rec_"), (int)scriptrecord_nextbitmapindex);
 
   XPATH xpathbmp;
   GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_GRAPHICS, xpathbmp);
@@ -1382,17 +1398,28 @@ bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny)
       return false;
     }
 
+  scriptrecord_nextbitmapindex++;
+
   ACTIONSCRIPTQA_SCRIPTRECORD_STEP* step = GEN_NEW ACTIONSCRIPTQA_SCRIPTRECORD_STEP();
   if(!step) return false;
 
-  step->type       = ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK;
+  step->type       = steptype;
   step->bitmapname = bmpname;
   step->layoutx    = layoutx;
   step->layouty    = layouty;
   scriptrecord_steps.Add(step);
 
-  ScriptRecord_Print(__L("[ScriptRecord] Step %d: %s capt %dx%d at client %d,%d layout %d,%d"),
-                     (int)scriptrecord_steps.GetSize(), bmpname.Get(), captw, capth, ptclient.x, ptclient.y, layoutx, layouty);
+  if(steptype == ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT)
+    {
+      ScriptRecord_Print(__L("[ScriptRecord] Step %d: WAIT %s capt %dx%d (assert appears)"),
+                         (int)scriptrecord_steps.GetSize(), bmpname.Get(), captw, capth);
+    }
+   else
+    {
+      ScriptRecord_Print(__L("[ScriptRecord] Step %d: CLICK %s capt %dx%d at client %d,%d layout %d,%d"),
+                         (int)scriptrecord_steps.GetSize(), bmpname.Get(), captw, capth, ptclient.x, ptclient.y, layoutx, layouty);
+    }
+
   ScriptRecord_WriteScript();
 
   return true;
@@ -1600,6 +1627,97 @@ bool ACTIONSCRIPTQA::ScriptRecord_PrepareExisting()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_ExistingHasHelpers()
+* @brief      True if kept script lines already include evidence helpers
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_ExistingHasHelpers()
+{
+  for(XDWORD c=0; c<scriptrecord_existinglines.GetSize(); c++)
+    {
+      XSTRING* line = scriptrecord_existinglines.Get(c);
+      if(!line) continue;
+      if(line->Find(__L("function EvidenceStart"), false) != XSTRING_NOTFOUND) return true;
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_WriteCommonHelpers(XFILETXT& file)
+* @brief      Write shared WaitWindow / naming / evidence helpers for recorded scripts
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_WriteCommonHelpers(XFILETXT& file)
+{
+  file.AddLine(__L("function WaitWindow(appname, windowtitle, timeoutms)"));
+  file.AddLine(__L("{"));
+  file.AddLine(__L("  var outx = { value: 0 };"));
+  file.AddLine(__L("  var outy = { value: 0 };"));
+  file.AddLine(__L("  var waited = 0;"));
+  file.AddLine(__L("  while(waited < timeoutms)"));
+  file.AddLine(__L("    {"));
+  file.AddLine(__L("      Sleep(500);"));
+  file.AddLine(__L("      waited = waited + 500;"));
+  file.AddLine(__L("      if(Screen_GetPosXY(appname, windowtitle, outx, outy) == 0) return true;"));
+  file.AddLine(__L("    }"));
+  file.AddLine(__L("  return false;"));
+  file.AddLine(__L("}"));
+  file.AddLine(__L(""));
+  file.AddLine(__L("function ScriptBaseName(scriptname)"));
+  file.AddLine(__L("{"));
+  file.AddLine(__L("  var base = scriptname;"));
+  file.AddLine(__L("  var dot  = -1;"));
+  file.AddLine(__L("  if(base == \"\" || base == null || base == undefined) base = GetNameScript();"));
+  file.AddLine(__L("  dot = base.indexOf(\".\");"));
+  file.AddLine(__L("  if(dot >= 0) base = base.substring(0, dot);"));
+  file.AddLine(__L("  return base;"));
+  file.AddLine(__L("}"));
+  file.AddLine(__L(""));
+  file.AddLine(__L("function ListTestFileName(scriptname)"));
+  file.AddLine(__L("{"));
+  file.AddLine(__L("  return ScriptBaseName(scriptname) + \"_ListTest.json\";"));
+  file.AddLine(__L("}"));
+  file.AddLine(__L(""));
+  file.AddLine(__L("function EvidenceFileName(scriptname)"));
+  file.AddLine(__L("{"));
+  file.AddLine(__L("  return ScriptBaseName(scriptname) + \"_\" + FileCSV_GetShortDateTime() + \".csv\";"));
+  file.AddLine(__L("}"));
+  file.AddLine(__L(""));
+  file.AddLine(__L("function EvidenceStart(scriptname)"));
+  file.AddLine(__L("{"));
+  file.AddLine(__L("  var dir  = GetPathScript() + \"evidence\";"));
+  file.AddLine(__L("  var path = dir + \"\\\\\" + EvidenceFileName(scriptname);"));
+  file.AddLine(__L("  MakeDir(dir);"));
+  file.AddLine(__L("  if(!FileCSV_Create(path)) return false;"));
+  file.AddLine(__L("  if(!FileCSV_SetHeader(\"ID\", \"Description\", \"Result\")) return false;"));
+  file.AddLine(__L("  if(!FileCSV_Save()) return false;"));
+  file.AddLine(__L("  return true;"));
+  file.AddLine(__L("}"));
+  file.AddLine(__L(""));
+  file.AddLine(__L("function EvidenceAdd(id, description, result)"));
+  file.AddLine(__L("{"));
+  file.AddLine(__L("  var idstr = \"\";"));
+  file.AddLine(__L("  if(id !== \"\" && id !== null && id !== undefined) idstr = \"\" + (id | 0);"));
+  file.AddLine(__L("  return FileCSV_AddRecord(idstr, description, result);"));
+  file.AddLine(__L("}"));
+  file.AddLine(__L(""));
+  file.AddLine(__L("function EvidenceEnd()"));
+  file.AddLine(__L("{"));
+  file.AddLine(__L("  return FileCSV_Close();"));
+  file.AddLine(__L("}"));
+  file.AddLine(__L(""));
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+* 
 * @fn         bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
 * @brief      Write / refresh the recorded .js under scripts/ (append session if file exists)
 * @ingroup
@@ -1626,6 +1744,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
     }
 
   XSTRING line;
+  bool    needhelpers = true;
 
   if(scriptrecord_existinglines.GetSize())
     {
@@ -1635,40 +1754,35 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
           if(existing) file.AddLine(*existing);
         }
 
-      // Ensure a blank separator before the new session function.
+      needhelpers = !ScriptRecord_ExistingHasHelpers();
+
+      // Ensure a blank separator before helpers / new session function.
       XSTRING* last = scriptrecord_existinglines.Get(scriptrecord_existinglines.GetSize()-1);
       if(!last || !last->IsEmpty()) file.AddLine(__L(""));
+
+      if(needhelpers)
+        {
+          ScriptRecord_WriteCommonHelpers(file);
+        }
     }
    else
     {
       file.AddLine(__L("// ----------------------------------------------------------------------------"));
       line.Format(__L("// %s - auto-generated by ActionScriptQA script recorder (F1)"), outname->Get());
       file.AddLine(line);
+      file.AddLine(__L("// Evidence CSV: evidence/<GetNameScript()>_<datetime>.csv"));
+      file.AddLine(__L("// Optional ListTest: <GetNameScript()>_ListTest.json (loaded if present)."));
       file.AddLine(__L("// New recording sessions append function Recorded_NNN() and refresh the entry point."));
       file.AddLine(__L("// ----------------------------------------------------------------------------"));
       file.AddLine(__L(""));
-      file.AddLine(__L("function WaitWindow(appname, windowtitle, timeoutms)"));
-      file.AddLine(__L("{"));
-      file.AddLine(__L("  var outx = { value: 0 };"));
-      file.AddLine(__L("  var outy = { value: 0 };"));
-      file.AddLine(__L("  var waited = 0;"));
-      file.AddLine(__L("  while(waited < timeoutms)"));
-      file.AddLine(__L("    {"));
-      file.AddLine(__L("      Sleep(500);"));
-      file.AddLine(__L("      waited = waited + 500;"));
-      file.AddLine(__L("      if(Screen_GetPosXY(appname, windowtitle, outx, outy) == 0) return true;"));
-      file.AddLine(__L("    }"));
-      file.AddLine(__L("  return false;"));
-      file.AddLine(__L("}"));
-      file.AddLine(__L(""));
+      ScriptRecord_WriteCommonHelpers(file);
     }
 
   line.Format(__L("function Recorded_%03d()"), (int)scriptrecord_sessionindex);
   file.AddLine(line);
   file.AddLine(__L("{"));
 
-  line.Format(__L("  var scriptname  = \"%s\";"), outname->Get());
-  file.AddLine(line);
+  file.AddLine(__L("  var scriptname  = GetNameScript();"));
   line.Format(__L("  var session     = \"Recorded_%03d\";"), (int)scriptrecord_sessionindex);
   file.AddLine(line);
   line.Format(__L("  var appname     = \"%s\";"), scriptrecord_appname.Get());
@@ -1682,21 +1796,61 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   file.AddLine(__L("  var outy = { value: 0 };"));
   file.AddLine(__L("  var i = 0;"));
   file.AddLine(__L("  var status = 1;"));
+  file.AddLine(__L("  var stepresult = \"PASS\";"));
+  file.AddLine(__L("  var stepdesc = \"\";"));
+  file.AddLine(__L("  var catalogpath = \"\";"));
+  file.AddLine(__L("  var listloaded = false;"));
   file.AddLine(__L(""));
   file.AddLine(__L("  Console_Printf(\"[%s] Start %s\\n\", scriptname, session);"));
+  file.AddLine(__L(""));
+  file.AddLine(__L("  if(!EvidenceStart(scriptname))"));
+  file.AddLine(__L("    {"));
+  file.AddLine(__L("      Console_Printf(\"[%s] FAIL EvidenceStart/FileCSV\\n\", scriptname);"));
+  file.AddLine(__L("      return;"));
+  file.AddLine(__L("    }"));
+  file.AddLine(__L("  Console_Printf(\"[%s] Evidence CSV %s\\n\", scriptname, FileCSV_GetPath());"));
+  file.AddLine(__L(""));
+  file.AddLine(__L("  catalogpath = GetPathScript() + ListTestFileName(scriptname);"));
+  file.AddLine(__L("  if(IsItExists(catalogpath))"));
+  file.AddLine(__L("    {"));
+  file.AddLine(__L("      if(TraceTests_Load(catalogpath))"));
+  file.AddLine(__L("        {"));
+  file.AddLine(__L("          listloaded = true;"));
+  file.AddLine(__L("          EvidenceAdd(\"\", \"TraceTests_Load\", \"PASS\");"));
+  file.AddLine(__L("          Console_Printf(\"[%s] ListTest loaded %s\\n\", scriptname, catalogpath);"));
+  file.AddLine(__L("        }"));
+  file.AddLine(__L("       else"));
+  file.AddLine(__L("        {"));
+  file.AddLine(__L("          EvidenceAdd(\"\", \"TraceTests_Load\", \"FAIL\");"));
+  file.AddLine(__L("          Console_Printf(\"[%s] FAIL TraceTests_Load %s\\n\", scriptname, catalogpath);"));
+  file.AddLine(__L("        }"));
+  file.AddLine(__L("    }"));
+  file.AddLine(__L("   else"));
+  file.AddLine(__L("    {"));
+  file.AddLine(__L("      EvidenceAdd(\"\", \"TraceTests_Load\", \"SKIP\");"));
+  file.AddLine(__L("      Console_Printf(\"[%s] ListTest not found (optional) %s\\n\", scriptname, catalogpath);"));
+  file.AddLine(__L("    }"));
   file.AddLine(__L(""));
   file.AddLine(__L("  if(!ExecApplication(apppath))"));
   file.AddLine(__L("    {"));
   file.AddLine(__L("      Console_Printf(\"[%s] FAIL ExecApplication %s\\n\", scriptname, apppath);"));
+  file.AddLine(__L("      EvidenceAdd(\"\", \"ExecApplication\", \"FAIL\");"));
+  file.AddLine(__L("      if(listloaded) TraceTests_DeleteAll();"));
+  file.AddLine(__L("      EvidenceEnd();"));
   file.AddLine(__L("      return;"));
   file.AddLine(__L("    }"));
+  file.AddLine(__L("  EvidenceAdd(\"\", \"ExecApplication\", \"PASS\");"));
   file.AddLine(__L(""));
   file.AddLine(__L("  if(!WaitWindow(appname, windowtitle, 30000))"));
   file.AddLine(__L("    {"));
   file.AddLine(__L("      Console_Printf(\"[%s] FAIL window not found\\n\", scriptname);"));
+  file.AddLine(__L("      EvidenceAdd(\"\", \"WaitWindow\", \"FAIL\");"));
+  file.AddLine(__L("      if(listloaded) TraceTests_DeleteAll();"));
+  file.AddLine(__L("      EvidenceEnd();"));
   file.AddLine(__L("      TerminateAplication(appname);"));
   file.AddLine(__L("      return;"));
   file.AddLine(__L("    }"));
+  file.AddLine(__L("  EvidenceAdd(\"\", \"WaitWindow\", \"PASS\");"));
   file.AddLine(__L(""));
   file.AddLine(__L("  Screen_SetBmpFindCFG(12, 40);"));
   file.AddLine(__L("  Sleep(300);"));
@@ -1723,6 +1877,17 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
                 line.Format(__L("    { type: \"key\", value: \"%s\" }%s"), escaped.Get(), comma);
                 break;
 
+          case ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT :
+                {
+                  ScriptRecord_EscapeForJS(step->bitmapname, escaped);
+                  int waitto = APPFLOW_CFG.ScriptRecord_GetWaitTimeoutMs();
+                  int waitiv = APPFLOW_CFG.ScriptRecord_GetWaitIntervalMs();
+                  if(waitto < 0) waitto = 10000;
+                  if(waitiv < 1) waitiv = 500;
+                  line.Format(__L("    { type: \"wait\", bmp: \"%s\", timeoutms: %d, intervalms: %d }%s"), escaped.Get(), waitto, waitiv, comma);
+                }
+                break;
+
           case ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK :
           default :
                 ScriptRecord_EscapeForJS(step->bitmapname, escaped);
@@ -1737,11 +1902,14 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   file.AddLine(__L("    {"));
   file.AddLine(__L("      Screen_SetFocus(appname, windowtitle);"));
   file.AddLine(__L("      Sleep(80);"));
+  file.AddLine(__L("      stepresult = \"PASS\";"));
+  file.AddLine(__L("      stepdesc = actions[i].type;"));
   file.AddLine(__L(""));
   file.AddLine(__L("      if(actions[i].type == \"click\")"));
   file.AddLine(__L("        {"));
   file.AddLine(__L("          outx = { value: 0 };"));
   file.AddLine(__L("          outy = { value: 0 };"));
+  file.AddLine(__L("          stepdesc = \"click \" + actions[i].bmp;"));
   file.AddLine(__L("          status = Screen_GetPosXY(appname, windowtitle, actions[i].bmp, outx, outy);"));
   file.AddLine(__L("          if(status != 0)"));
   file.AddLine(__L("            {"));
@@ -1762,23 +1930,43 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   file.AddLine(__L("            }"));
   file.AddLine(__L("           else"));
   file.AddLine(__L("            {"));
+  file.AddLine(__L("              stepresult = \"FAIL\";"));
   file.AddLine(__L("              Console_Printf(\"[%s] FAIL find %s\\n\", scriptname, actions[i].bmp);"));
+  file.AddLine(__L("            }"));
+  file.AddLine(__L("        }"));
+  file.AddLine(__L("      else if(actions[i].type == \"wait\")"));
+  file.AddLine(__L("        {"));
+  file.AddLine(__L("          stepdesc = \"wait \" + actions[i].bmp;"));
+  file.AddLine(__L("          if(Screen_WaitBitmap(appname, windowtitle, actions[i].bmp, actions[i].timeoutms, actions[i].intervalms))"));
+  file.AddLine(__L("            {"));
+  file.AddLine(__L("              Console_Printf(\"[%s] PASS wait %s\\n\", scriptname, actions[i].bmp);"));
+  file.AddLine(__L("            }"));
+  file.AddLine(__L("           else"));
+  file.AddLine(__L("            {"));
+  file.AddLine(__L("              stepresult = \"FAIL\";"));
+  file.AddLine(__L("              Console_Printf(\"[%s] FAIL wait %s (timeout)\\n\", scriptname, actions[i].bmp);"));
   file.AddLine(__L("            }"));
   file.AddLine(__L("        }"));
   file.AddLine(__L("      else if(actions[i].type == \"text\")"));
   file.AddLine(__L("        {"));
+  file.AddLine(__L("          stepdesc = \"text\";"));
   file.AddLine(__L("          InpSim_Key_ClickByText(actions[i].value, 40);"));
   file.AddLine(__L("          Console_Printf(\"[%s] Type text (%d chars)\\n\", scriptname, actions[i].value.length);"));
   file.AddLine(__L("          Sleep(200);"));
   file.AddLine(__L("        }"));
   file.AddLine(__L("      else if(actions[i].type == \"key\")"));
   file.AddLine(__L("        {"));
+  file.AddLine(__L("          stepdesc = \"key \" + actions[i].value;"));
   file.AddLine(__L("          InpSim_Key_ClickByLiteral(actions[i].value, 40);"));
   file.AddLine(__L("          Console_Printf(\"[%s] Key %s\\n\", scriptname, actions[i].value);"));
   file.AddLine(__L("          Sleep(200);"));
   file.AddLine(__L("        }"));
+  file.AddLine(__L(""));
+  file.AddLine(__L("      EvidenceAdd(i + 1, stepdesc, stepresult);"));
   file.AddLine(__L("    }"));
   file.AddLine(__L(""));
+  file.AddLine(__L("  if(listloaded) TraceTests_DeleteAll();"));
+  file.AddLine(__L("  EvidenceEnd();"));
   file.AddLine(__L("  Console_Printf(\"[%s] End %s\\n\", scriptname, session);"));
   file.AddLine(__L("}"));
   file.AddLine(__L(""));

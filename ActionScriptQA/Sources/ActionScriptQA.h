@@ -33,6 +33,8 @@
 
 #include "APPFlowConsole.h"
 
+class XFILETXT;
+
 #pragma endregion
 
 
@@ -105,6 +107,7 @@ class SCRIPT;
 enum ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE
 {
   ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK = 0 ,
+  ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT      ,
   ACTIONSCRIPTQA_SCRIPTRECORD_STEP_TEXT      ,
   ACTIONSCRIPTQA_SCRIPTRECORD_STEP_KEY       ,
 };
@@ -156,10 +159,12 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
     bool                            ScriptRecord_Update         ();
     bool                            ScriptRecord_UpdateKeys     ();
     bool                            ScriptRecord_SelectApp      (int screenx, int screeny);
-    bool                            ScriptRecord_CaptureClick   (int screenx, int screeny);
+    bool                            ScriptRecord_CaptureClick   (int screenx, int screeny, ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype);
     bool                            ScriptRecord_FlushText      ();
     bool                            ScriptRecord_AddKeyLiteral  (XCHAR* literal);
     bool                            ScriptRecord_WriteScript    ();
+    bool                            ScriptRecord_WriteCommonHelpers(XFILETXT& file);
+    bool                            ScriptRecord_ExistingHasHelpers();
     bool                            ScriptRecord_Reset          ();
     bool                            ScriptRecord_PrepareExisting();
     void                            ScriptRecord_Print          (XCHAR* mask, ...);
@@ -179,6 +184,7 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
     bool                            scriptrecord_active;
     bool                            scriptrecord_appselected;
     bool                            scriptrecord_mousewasdown;
+    bool                            scriptrecord_rbuttonwasdown;
     bool                            scriptrecord_keywasdown[256];
     XSTRING                         scriptrecord_textpending;
     XSTRING                         scriptrecord_appname;

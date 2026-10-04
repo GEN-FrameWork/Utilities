@@ -1,0 +1,14 @@
+ID;Description;Result
+;TraceTests_Load;PASS
+;TraceServer_Ini;PASS
+;ExecApplication;PASS
+;WaitWindow;PASS
+1001;UI_System: nav Resumen selected;PASS
+1002;UI_System: nav CPU selected;PASS
+1003;UI_System: nav Memoria selected;FAIL
+1004;UI_System: nav Red selected;PASS
+1005;UI_System: nav Disco selected;PASS
+1006;UI_System: nav Procesos selected;PASS
+1007;UI_System: nav Alertas selected;PASS
+1008;UI_System: nav Configuracion selected;PASS
+1099;UI_System: chrome close selected;PASS
