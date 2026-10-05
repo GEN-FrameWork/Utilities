@@ -126,6 +126,20 @@ class ACTIONSCRIPTQA_SCRIPTRECORD_STEP
     int                             layouty;
 };
 
+
+class ACTIONSCRIPTQA_SCRIPTRECORD_SESSION
+{
+  public:
+                                    ACTIONSCRIPTQA_SCRIPTRECORD_SESSION ();
+                                   ~ACTIONSCRIPTQA_SCRIPTRECORD_SESSION ();
+
+    XDWORD                          id;
+    XSTRING                         appname;
+    XPATH                           apppath;
+    XSTRING                         windowtitle;
+    XSTRING                         appkey;        // EnsureApplication_<appkey>
+};
+
 class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
 {
   public:
@@ -154,17 +168,38 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
     void                            HandleEvent_Script          (SCRIPT_XEVENT* event);
     void                            HandleEvent                 (XEVENT* xevent);  
 
+    bool                            Test_GetBaseName            (XSTRING& scriptentry, XSTRING& basename);
+    bool                            Test_GetRootPath            (XSTRING& basename, XPATH& testroot);
+    bool                            Test_EnsureLayout           (XSTRING& basename);
+    bool                            Test_BindGraphics           (XSTRING& basename);
+    bool                            Test_RestoreDefaultGraphics ();
+    bool                            Test_LoadAndRun             (XSTRING& scriptentry);
+
     bool                            ScriptRecord_IsActive       ();
     bool                            ScriptRecord_Toggle         ();
+    bool                            ScriptRecord_ClearRecorded  ();
     bool                            ScriptRecord_Update         ();
     bool                            ScriptRecord_UpdateKeys     ();
     bool                            ScriptRecord_SelectApp      (int screenx, int screeny);
     bool                            ScriptRecord_CaptureClick   (int screenx, int screeny, ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype);
-    bool                            ScriptRecord_FlushText      ();
+    bool                            ScriptRecord_FlushText      (bool writescript = true);
     bool                            ScriptRecord_AddKeyLiteral  (XCHAR* literal);
     bool                            ScriptRecord_WriteScript    ();
     bool                            ScriptRecord_WriteCommonHelpers(XFILETXT& file);
+    bool                            ScriptRecord_WriteEnsureApplicationForApp(XFILETXT& file, XSTRING& appname, XPATH& apppath, XSTRING& windowtitle, XSTRING& appkey);
+    bool                            ScriptRecord_WriteMain      (XFILETXT& file, ACTIONSCRIPTQA_SCRIPTRECORD_SESSION* currentsession);
     bool                            ScriptRecord_ExistingHasHelpers();
+    bool                            ScriptRecord_ExistingHasEnsureAppKey(XSTRING& appkey);
+    bool                            ScriptRecord_ExistingHasReadyMap();
+    bool                            ScriptRecord_ParseQuotedAssign(XSTRING* line, XCHAR* varname, XSTRING& outvalue);
+    void                            ScriptRecord_MakeAppKey     (XSTRING& appname, XSTRING& appkey);
+    bool                            ScriptRecord_IsBrowserApp   (XSTRING& appname, XPATH& apppath);
+    void                            ScriptRecord_BrowserWindowTitle(XSTRING& appname, XPATH& apppath, XSTRING& windowtitle);
+    void                            ScriptRecord_AddJSVarString (XFILETXT& file, XCHAR* varname, XSTRING& value);
+    bool                            ScriptRecord_GetWindowTextSafe(void* hwnd, XSTRING& title, XDWORD timeoutms = 300);
+    bool                            ScriptRecord_GetRecordedBaseName(XSTRING& basename);
+    bool                            ScriptRecord_ResolveScriptPath(XPATH& xpath);
+    bool                            ScriptRecord_PrepareRecordedLayout();
     bool                            ScriptRecord_Reset          ();
     bool                            ScriptRecord_PrepareExisting();
     void                            ScriptRecord_Print          (XCHAR* mask, ...);
@@ -193,7 +228,9 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
     void*                           scriptrecord_windowhandle;
     XVECTOR<ACTIONSCRIPTQA_SCRIPTRECORD_STEP*> scriptrecord_steps;
     XVECTOR<XSTRING*>               scriptrecord_existinglines;
-    XVECTOR<XDWORD>                 scriptrecord_sessionids;
+    XVECTOR<ACTIONSCRIPTQA_SCRIPTRECORD_SESSION*> scriptrecord_sessions;
+    XVECTOR<XSTRING*>               scriptrecord_ensurekeyswritten;
+    bool                            scriptrecord_readymapwritten;
     XDWORD                          scriptrecord_sessionindex;
     XDWORD                          scriptrecord_nextbitmapindex;
 };

@@ -1,0 +1,7 @@
+ID;Description;Result
+;TraceTests_Load;SKIP
+1;click rec_001.png;PASS
+2;click rec_002.png;PASS
+3;click rec_003.png;PASS
+4;click rec_004.png;PASS
+5;click rec_005.png;PASS

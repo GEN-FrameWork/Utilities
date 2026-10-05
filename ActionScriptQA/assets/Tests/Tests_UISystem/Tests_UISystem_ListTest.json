@@ -1,0 +1,13 @@
+{
+  "tests": [
+    { "id": 1001, "description": "UI_System: nav Resumen selected" },
+    { "id": 1002, "description": "UI_System: nav CPU selected" },
+    { "id": 1003, "description": "UI_System: nav Memoria selected" },
+    { "id": 1004, "description": "UI_System: nav Red selected" },
+    { "id": 1005, "description": "UI_System: nav Disco selected" },
+    { "id": 1006, "description": "UI_System: nav Procesos selected" },
+    { "id": 1007, "description": "UI_System: nav Alertas selected" },
+    { "id": 1008, "description": "UI_System: nav Configuracion selected" },
+    { "id": 1099, "description": "UI_System: chrome close selected" }
+  ]
+}

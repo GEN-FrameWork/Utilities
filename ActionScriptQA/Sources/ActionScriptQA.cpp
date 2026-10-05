@@ -103,6 +103,64 @@
 
 #ifdef WINDOWS
 #include <windows.h>
+
+struct ACTIONSCRIPTQA_FINDWND
+{
+  XSTRING* appname;
+  XSTRING* windowtitle;
+  HWND     found;
+};
+
+static BOOL CALLBACK ActionScriptQA_EnumFindWindow(HWND enumhwnd, LPARAM lparam)
+{
+  ACTIONSCRIPTQA_FINDWND* find = (ACTIONSCRIPTQA_FINDWND*)lparam;
+  if(!find || !IsWindowVisible(enumhwnd)) return TRUE;
+
+  XCHAR titlebuf[1024];
+  titlebuf[0] = 0;
+
+  DWORD_PTR getresult = 0;
+  if(!SendMessageTimeout(enumhwnd, WM_GETTEXT, (WPARAM)1024, (LPARAM)titlebuf, SMTO_ABORTIFHUNG | SMTO_BLOCK, 200, &getresult))
+    {
+      return TRUE;
+    }
+  titlebuf[1023] = 0;
+  if(!titlebuf[0]) return TRUE;
+
+  bool titlematch = find->windowtitle && !find->windowtitle->IsEmpty() &&
+                    (find->windowtitle->Compare(titlebuf, true) == 0);
+
+  DWORD pid = 0;
+  GetWindowThreadProcessId(enumhwnd, &pid);
+  bool namematch = false;
+  if(pid && find->appname && !find->appname->IsEmpty())
+    {
+      HANDLE hproc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+      if(!hproc) hproc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+      if(hproc)
+        {
+          XCHAR pathbuf[MAX_PATH + 1];
+          pathbuf[0] = 0;
+          DWORD pathsize = MAX_PATH;
+          if(QueryFullProcessImageName(hproc, 0, pathbuf, &pathsize) && pathbuf[0])
+            {
+              XPATH   fullpath = pathbuf;
+              XSTRING name;
+              fullpath.GetNamefileExt(name);
+              if(!name.IsEmpty() && name.Compare((*find->appname), true) == 0) namematch = true;
+            }
+          CloseHandle(hproc);
+        }
+    }
+
+  if(namematch || titlematch)
+    {
+      find->found = enumhwnd;
+      return FALSE;
+    }
+
+  return TRUE;
+}
 #endif
 
 #include "XMemory_Control.h"
@@ -185,6 +243,35 @@ ACTIONSCRIPTQA_SCRIPTRECORD_STEP::~ACTIONSCRIPTQA_SCRIPTRECORD_STEP()
 
 
 /**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         ACTIONSCRIPTQA_SCRIPTRECORD_SESSION::ACTIONSCRIPTQA_SCRIPTRECORD_SESSION()
+* @brief      Constructor
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+ACTIONSCRIPTQA_SCRIPTRECORD_SESSION::ACTIONSCRIPTQA_SCRIPTRECORD_SESSION()
+{
+  id = 0;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         ACTIONSCRIPTQA_SCRIPTRECORD_SESSION::~ACTIONSCRIPTQA_SCRIPTRECORD_SESSION()
+* @brief      Destructor
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+ACTIONSCRIPTQA_SCRIPTRECORD_SESSION::~ACTIONSCRIPTQA_SCRIPTRECORD_SESSION()
+{
+  appname.Empty();
+  apppath.Empty();
+  windowtitle.Empty();
+  appkey.Empty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
 * 
 * @fn         bool ACTIONSCRIPTQA::InitFSMachine()
 * @brief      InitFSMachine
@@ -258,6 +345,7 @@ bool ACTIONSCRIPTQA::AppProc_Ini()
 
   GEN_XPATHSMANAGER.AddPathSection(XPATHSMANAGERSECTIONTYPE_GRAPHICS           ,  APPFLOW_DEFAULT_DIRECTORY_GRAPHICS);
   GEN_XPATHSMANAGER.AddPathSection(XPATHSMANAGERSECTIONTYPE_SCRIPTS            ,  APPFLOW_DEFAULT_DIRECTORY_SCRIPTS);
+  GEN_XPATHSMANAGER.AddPathSection(XPATHSMANAGERSECTIONTYPE_TESTS              ,  APPFLOW_DEFAULT_DIRECTORY_TESTS);
 
   GEN_XPATHSMANAGER.CreateAllPathSectionOnDisk();
 
@@ -508,6 +596,11 @@ bool ACTIONSCRIPTQA::KeyValidSecuences(int key)
               ScriptRecord_Toggle();
               return true;
             }
+          if(scancode == 0x3F) // F5
+            {
+              ScriptRecord_ClearRecorded();
+              return true;
+            }
         }
     }
 
@@ -553,7 +646,18 @@ bool ACTIONSCRIPTQA::ExecScripts()
       xtimerglobal->Reset();
     }
 
-  SCRIPT::LoadScriptAndRun(APPFLOW_CFG.Scripts_GetAll(), AdjustLibraries);
+  XVECTOR<XSTRING*>* listscripts = APPFLOW_CFG.Scripts_GetAll();
+  if(listscripts)
+    {
+      for(XDWORD c=0; c<listscripts->GetSize(); c++)
+        {
+          XSTRING* entry = listscripts->Get(c);
+          if(!entry || entry->IsEmpty()) continue;
+          Test_LoadAndRun(*entry);
+        }
+    }
+
+  Test_RestoreDefaultGraphics();
                                                  
   Show_BlankLine();
                                                   
@@ -567,6 +671,165 @@ bool ACTIONSCRIPTQA::ExecScripts()
 
   Show_BlankLine();
   Show_BlankLine();
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::Test_GetBaseName(XSTRING& scriptentry, XSTRING& basename)
+* @brief      Basename of a CFG script entry (strip path and extension)
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::Test_GetBaseName(XSTRING& scriptentry, XSTRING& basename)
+{
+  basename.Empty();
+  if(scriptentry.IsEmpty()) return false;
+
+  XPATH entry = scriptentry.Get();
+  entry.GetNamefile(basename);
+  if(basename.IsEmpty())
+    {
+      basename = scriptentry.Get();
+    }
+
+  return !basename.IsEmpty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::Test_GetRootPath(XSTRING& basename, XPATH& testroot)
+* @brief      Absolute path assets/Tests/<basename>
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::Test_GetRootPath(XSTRING& basename, XPATH& testroot)
+{
+  testroot.Empty();
+  if(basename.IsEmpty()) return false;
+
+  if(!GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_TESTS, testroot)) return false;
+  testroot.Slash_Add();
+  testroot += basename.Get();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::Test_EnsureLayout(XSTRING& basename)
+* @brief      Create Tests/<basename>/{graphics,evidences}
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::Test_EnsureLayout(XSTRING& basename)
+{
+  XPATH testroot;
+  if(!Test_GetRootPath(basename, testroot)) return false;
+
+  XDIR* xdir = GEN_XFACTORY.Create_Dir();
+  if(!xdir) return false;
+
+  if(!xdir->Exist(testroot)) xdir->Make(testroot, true);
+
+  XPATH graphics = testroot;
+  graphics.Slash_Add();
+  graphics += __L("graphics");
+  if(!xdir->Exist(graphics)) xdir->Make(graphics, true);
+
+  XPATH evidences = testroot;
+  evidences.Slash_Add();
+  evidences += __L("evidences");
+  if(!xdir->Exist(evidences)) xdir->Make(evidences, true);
+
+  GEN_XFACTORY.Delete_Dir(xdir);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::Test_BindGraphics(XSTRING& basename)
+* @brief      Point GRAPHICS section at Tests/<basename>/graphics
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::Test_BindGraphics(XSTRING& basename)
+{
+  if(basename.IsEmpty()) return false;
+
+  XSTRING section;
+  section.Format(__L("%s/%s/graphics"), APPFLOW_DEFAULT_DIRECTORY_TESTS, basename.Get());
+  return GEN_XPATHSMANAGER.AddPathSection(XPATHSMANAGERSECTIONTYPE_GRAPHICS, section.Get());
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::Test_RestoreDefaultGraphics()
+* @brief      Restore GRAPHICS section to assets/graphics
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::Test_RestoreDefaultGraphics()
+{
+  return GEN_XPATHSMANAGER.AddPathSection(XPATHSMANAGERSECTIONTYPE_GRAPHICS, APPFLOW_DEFAULT_DIRECTORY_GRAPHICS);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::Test_LoadAndRun(XSTRING& scriptentry)
+* @brief      Load and run one test from assets/Tests/<base>/<base>.js
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::Test_LoadAndRun(XSTRING& scriptentry)
+{
+  XSTRING basename;
+  if(!Test_GetBaseName(scriptentry, basename)) return false;
+  if(!Test_EnsureLayout(basename)) return false;
+  if(!Test_BindGraphics(basename)) return false;
+
+  XPATH xpath;
+  if(!Test_GetRootPath(basename, xpath)) return false;
+  xpath.Slash_Add();
+
+  // Keep original extension from CFG entry when present; default to .js
+  XPATH entrypath = scriptentry.Get();
+  XSTRING nameext;
+  entrypath.GetNamefileExt(nameext);
+  if(nameext.IsEmpty())
+    {
+      nameext = basename.Get();
+      nameext += __L(".js");
+    }
+  xpath += nameext.Get();
+
+  SCRIPT* script = SCRIPT::Create(nameext.Get());
+  if(!script)
+    {
+      ScriptRecord_Print(__L("[Tests] Cannot create script engine for %s"), nameext.Get());
+      Test_RestoreDefaultGraphics();
+      return false;
+    }
+
+  AdjustLibraries(script);
+
+  if(!script->Load(xpath))
+    {
+      ScriptRecord_Print(__L("[Tests] Cannot load %s"), xpath.Get());
+      GEN_DELETE script;
+      Test_RestoreDefaultGraphics();
+      return false;
+    }
+
+  ScriptRecord_Print(__L("[Tests] Running %s"), xpath.Get());
+  script->Run();
+  GEN_DELETE script;
 
   return true;
 }
@@ -774,6 +1037,7 @@ void ACTIONSCRIPTQA::Clean()
   scriptrecord_windowhandle     = NULL;
   scriptrecord_sessionindex     = 1;
   scriptrecord_nextbitmapindex  = 1;
+  scriptrecord_readymapwritten  = false;
   scriptrecord_appname.Empty();
   scriptrecord_apppath.Empty();
   scriptrecord_windowtitle.Empty();
@@ -797,6 +1061,81 @@ bool ACTIONSCRIPTQA::ScriptRecord_IsActive()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_GetRecordedBaseName(XSTRING& basename)
+* @brief      Basename for the recorder output (default Tests_Recorded)
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_GetRecordedBaseName(XSTRING& basename)
+{
+  basename.Empty();
+
+  XSTRING* outname = APPFLOW_CFG.ScriptRecord_GetOutputScript();
+  if(!outname || outname->IsEmpty())
+    {
+      basename = __L("Tests_Recorded");
+      return true;
+    }
+
+  return Test_GetBaseName(*outname, basename);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_ResolveScriptPath(XPATH& xpath)
+* @brief      Path of the recorded script: assets/Tests/<base>/<base>.js
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_ResolveScriptPath(XPATH& xpath)
+{
+  XSTRING basename;
+  if(!ScriptRecord_GetRecordedBaseName(basename)) return false;
+  if(!Test_GetRootPath(basename, xpath)) return false;
+
+  xpath.Slash_Add();
+
+  XSTRING* outname = APPFLOW_CFG.ScriptRecord_GetOutputScript();
+  if(outname && !outname->IsEmpty())
+    {
+      XPATH entry = outname->Get();
+      XSTRING nameext;
+      entry.GetNamefileExt(nameext);
+      if(nameext.IsEmpty())
+        {
+          nameext = basename.Get();
+          nameext += __L(".js");
+        }
+      xpath += nameext.Get();
+    }
+   else
+    {
+      xpath += __L("Tests_Recorded.js");
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_PrepareRecordedLayout()
+* @brief      Ensure Tests_Recorded layout and bind its graphics folder
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_PrepareRecordedLayout()
+{
+  XSTRING basename;
+  if(!ScriptRecord_GetRecordedBaseName(basename)) return false;
+  if(!Test_EnsureLayout(basename)) return false;
+  return Test_BindGraphics(basename);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         void ACTIONSCRIPTQA::ScriptRecord_Print(XCHAR* mask, ...)
 * @brief      ScriptRecord_Print
 * @ingroup
@@ -814,7 +1153,8 @@ void ACTIONSCRIPTQA::ScriptRecord_Print(XCHAR* mask, ...)
   va_end(arg);
 
   outstring.Add(__L("\n"));
-  console->Printf(outstring.Get());
+  // Use Print (not Printf): the message may contain '%' from window titles / URLs.
+  console->Print(outstring.Get());
 }
 
 
@@ -833,7 +1173,11 @@ bool ACTIONSCRIPTQA::ScriptRecord_Reset()
   scriptrecord_existinglines.DeleteContents();
   scriptrecord_existinglines.DeleteAll();
 
-  scriptrecord_sessionids.DeleteAll();
+  scriptrecord_sessions.DeleteContents();
+  scriptrecord_sessions.DeleteAll();
+
+  scriptrecord_ensurekeyswritten.DeleteContents();
+  scriptrecord_ensurekeyswritten.DeleteAll();
 
   scriptrecord_appselected      = false;
   scriptrecord_mousewasdown     = false;
@@ -841,6 +1185,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_Reset()
   scriptrecord_windowhandle     = NULL;
   scriptrecord_sessionindex     = 1;
   scriptrecord_nextbitmapindex  = 1;
+  scriptrecord_readymapwritten  = false;
   scriptrecord_appname.Empty();
   scriptrecord_apppath.Empty();
   scriptrecord_windowtitle.Empty();
@@ -864,9 +1209,17 @@ bool ACTIONSCRIPTQA::ScriptRecord_Toggle()
     {
       if(scriptrecord_appselected)
         {
-          ScriptRecord_FlushText();
-          ScriptRecord_WriteScript();
-          ScriptRecord_Print(__L("[ScriptRecord] Saved script and left record mode."));
+          ScriptRecord_Print(__L("[ScriptRecord] Finishing session: flushing text..."));
+          ScriptRecord_FlushText(false);
+          ScriptRecord_Print(__L("[ScriptRecord] Finishing session: writing script..."));
+          if(ScriptRecord_WriteScript())
+            {
+              ScriptRecord_Print(__L("[ScriptRecord] Saved script and left record mode."));
+            }
+           else
+            {
+              ScriptRecord_Print(__L("[ScriptRecord] ERROR writing script; left record mode anyway."));
+            }
         }
        else
         {
@@ -875,23 +1228,88 @@ bool ACTIONSCRIPTQA::ScriptRecord_Toggle()
 
       scriptrecord_active = false;
       ScriptRecord_Reset();
+      Test_RestoreDefaultGraphics();
       return true;
     }
 
   ScriptRecord_Reset();
   scriptrecord_active = true;
+  ScriptRecord_PrepareRecordedLayout();
   ScriptRecord_PrepareExisting();
 
+  XSTRING basename;
+  ScriptRecord_GetRecordedBaseName(basename);
   XSTRING* outname = APPFLOW_CFG.ScriptRecord_GetOutputScript();
-  ScriptRecord_Print(__L("[ScriptRecord] ON (F1 again or ESC to finish)."));
+  ScriptRecord_Print(__L("[ScriptRecord] ON (F1/ESC finish, F5 discard+delete Tests_Recorded)."));
   ScriptRecord_Print(__L("[ScriptRecord] 1) Left-click a window of the app under test."));
   ScriptRecord_Print(__L("[ScriptRecord] 2) Left-click UI targets (mouse click steps)."));
   ScriptRecord_Print(__L("[ScriptRecord] 3) Right-click a zone to wait/assert it appears on screen."));
   ScriptRecord_Print(__L("[ScriptRecord] 4) Type text (login/password); ENTER/TAB/BACKSPACE recorded as keys."));
-  if(outname) ScriptRecord_Print(__L("[ScriptRecord] Output script: %s"), outname->Get());
+  ScriptRecord_Print(__L("[ScriptRecord] Output: Tests/%s/%s"), basename.Get(), outname ? outname->Get() : __L("Tests_Recorded.js"));
   ScriptRecord_Print(__L("[ScriptRecord] Session function: Recorded_%03d  (next bitmap %03d)"), (int)scriptrecord_sessionindex, (int)scriptrecord_nextbitmapindex);
 
   return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_ClearRecorded()
+* @brief      F5: leave record mode without saving, then delete Tests_Recorded (and contents)
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_ClearRecorded()
+{
+  if(scriptrecord_active)
+    {
+      scriptrecord_active = false;
+      ScriptRecord_Reset();
+      Test_RestoreDefaultGraphics();
+      ScriptRecord_Print(__L("[ScriptRecord] Record mode cancelled (F5)."));
+    }
+
+  XSTRING basename;
+  if(!ScriptRecord_GetRecordedBaseName(basename))
+    {
+      ScriptRecord_Print(__L("[ScriptRecord] ERROR resolving recorded test name."));
+      return false;
+    }
+
+  XPATH testroot;
+  if(!Test_GetRootPath(basename, testroot))
+    {
+      ScriptRecord_Print(__L("[ScriptRecord] ERROR resolving Tests/%s path."), basename.Get());
+      return false;
+    }
+
+  XDIR* xdir = GEN_XFACTORY.Create_Dir();
+  if(!xdir)
+    {
+      ScriptRecord_Print(__L("[ScriptRecord] ERROR creating XDIR."));
+      return false;
+    }
+
+  bool status = true;
+  if(xdir->Exist(testroot))
+    {
+      status = xdir->Delete(testroot, true);
+      if(status)
+        {
+          ScriptRecord_Print(__L("[ScriptRecord] Deleted Tests/%s (directory and files)."), basename.Get());
+        }
+       else
+        {
+          ScriptRecord_Print(__L("[ScriptRecord] ERROR deleting Tests/%s."), basename.Get());
+        }
+    }
+   else
+    {
+      ScriptRecord_Print(__L("[ScriptRecord] Nothing to delete: Tests/%s (missing)."), basename.Get());
+    }
+
+  GEN_XFACTORY.Delete_Dir(xdir);
+  return status;
 }
 
 
@@ -973,6 +1391,8 @@ void ACTIONSCRIPTQA::ScriptRecord_EscapeForJS(XSTRING& source, XSTRING& target)
           case __C('\n') : target.Add(__L("\\n"));  break;
           case __C('\r') : target.Add(__L("\\r"));  break;
           case __C('\t') : target.Add(__L("\\t"));  break;
+          // '%' must not reach XSTRING::Format / Printf masks (FormatArg can hang on "%...").
+          case __C('%')  : target.Add(__L("_"));    break;
                 default  : target.Add(ch);          break;
         }
     }
@@ -986,7 +1406,7 @@ void ACTIONSCRIPTQA::ScriptRecord_EscapeForJS(XSTRING& source, XSTRING& target)
 * @ingroup
 *
 * --------------------------------------------------------------------------------------------------------------------*/
-bool ACTIONSCRIPTQA::ScriptRecord_FlushText()
+bool ACTIONSCRIPTQA::ScriptRecord_FlushText(bool writescript)
 {
   if(scriptrecord_textpending.IsEmpty()) return true;
 
@@ -999,7 +1419,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_FlushText()
 
   ScriptRecord_Print(__L("[ScriptRecord] Step %d: text \"%s\" (%d chars)"), (int)scriptrecord_steps.GetSize(), scriptrecord_textpending.Get(), (int)scriptrecord_textpending.GetSize());
   scriptrecord_textpending.Empty();
-  ScriptRecord_WriteScript();
+  if(writescript) ScriptRecord_WriteScript();
 
   return true;
 }
@@ -1155,7 +1575,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_SelectApp(int screenx, int screeny)
   pt.y = screeny;
 
   HWND hwnd = WindowFromPoint(pt);
-  if(!hwnd) 
+  if(!hwnd)
     {
       ScriptRecord_Print(__L("[ScriptRecord] No window under cursor."));
       return false;
@@ -1164,69 +1584,85 @@ bool ACTIONSCRIPTQA::ScriptRecord_SelectApp(int screenx, int screeny)
   hwnd = GetAncestor(hwnd, GA_ROOT);
   if(!hwnd) return false;
 
-  XVECTOR<XPROCESS*> applist;
-  XPROCESS*          found = NULL;
-
-  if(!GEN_XPROCESSMANAGER.Application_GetRunningList(applist, true))
+  // Resolve process from HWND directly (avoid Application_GetRunningList — very slow with browsers).
+  DWORD pid = 0;
+  GetWindowThreadProcessId(hwnd, &pid);
+  if(!pid)
     {
-      ScriptRecord_Print(__L("[ScriptRecord] Application_GetRunningList failed."));
+      ScriptRecord_Print(__L("[ScriptRecord] Cannot get process id for window."));
       return false;
     }
 
-  for(XDWORD c=0; c<applist.GetSize(); c++)
+  XCHAR pathbuf[MAX_PATH + 1];
+  pathbuf[0] = 0;
+
+  HANDLE hproc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+  if(!hproc)
     {
-      XPROCESS* process = applist.Get(c);
-      if(!process) continue;
-      if(process->GetWindowHandle() == (void*)hwnd)
+      hproc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+    }
+
+  if(hproc)
+    {
+      DWORD pathsize = MAX_PATH;
+      if(!QueryFullProcessImageName(hproc, 0, pathbuf, &pathsize))
         {
-          found = process;
-          break;
+          pathbuf[0] = 0;
         }
+      CloseHandle(hproc);
     }
 
-  if(!found)
+  if(!pathbuf[0])
     {
-      ScriptRecord_Print(__L("[ScriptRecord] Window not matched in running app list."));
-      applist.DeleteContents();
-      applist.DeleteAll();
+      ScriptRecord_Print(__L("[ScriptRecord] Cannot resolve executable path for window."));
       return false;
     }
 
-  if(found->GetName() && (found->GetName()->Find(APPLICATION_NAMEFILE, true) != XSTRING_NOTFOUND))
+  XPATH  fullpath = pathbuf;
+  XSTRING appname;
+  fullpath.GetNamefileExt(appname);
+  if(appname.IsEmpty())
+    {
+      ScriptRecord_Print(__L("[ScriptRecord] Cannot resolve executable name for window."));
+      return false;
+    }
+
+  if(appname.Find(APPLICATION_NAMEFILE, true) != XSTRING_NOTFOUND)
     {
       ScriptRecord_Print(__L("[ScriptRecord] Ignored click on ActionScriptQA itself."));
-      applist.DeleteContents();
-      applist.DeleteAll();
       return false;
     }
 
-  scriptrecord_windowhandle = found->GetWindowHandle();
-  scriptrecord_appname      = found->GetName() ? found->GetName()->Get() : __L("");
-  scriptrecord_windowtitle  = found->GetWindowTitle() ? found->GetWindowTitle()->Get() : __L("");
+  scriptrecord_windowhandle = (void*)hwnd;
+  scriptrecord_appname      = appname.Get();
+  scriptrecord_apppath      = fullpath.Get();
+  ScriptRecord_PathForScript(scriptrecord_apppath);
 
-  // GetPath() already holds the full executable path when available.
-  if(found->GetPath() && !found->GetPath()->IsEmpty())
+  // Browsers: never call GetWindowText (can hang) and use a stable short title for Screen_* Find().
+  if(ScriptRecord_IsBrowserApp(scriptrecord_appname, scriptrecord_apppath))
     {
-      scriptrecord_apppath = found->GetPath()->Get();
+      ScriptRecord_BrowserWindowTitle(scriptrecord_appname, scriptrecord_apppath, scriptrecord_windowtitle);
     }
    else
     {
-      scriptrecord_apppath = scriptrecord_appname.Get();
+      if(!ScriptRecord_GetWindowTextSafe(hwnd, scriptrecord_windowtitle, 300))
+        {
+          scriptrecord_windowtitle.Empty();
+        }
     }
-
-  ScriptRecord_PathForScript(scriptrecord_apppath);
 
   scriptrecord_appselected = true;
 
   ScriptRecord_Print(__L("[ScriptRecord] App selected: %s"), scriptrecord_appname.Get());
   ScriptRecord_Print(__L("[ScriptRecord] Path: %s"), scriptrecord_apppath.Get());
   ScriptRecord_Print(__L("[ScriptRecord] Window: %s"), scriptrecord_windowtitle.Get());
+  if(ScriptRecord_IsBrowserApp(scriptrecord_appname, scriptrecord_apppath))
+    {
+      ScriptRecord_Print(__L("[ScriptRecord] Browser detected: Ensure will use OpenURL (edit url in script)."));
+    }
   ScriptRecord_Print(__L("[ScriptRecord] Click UI controls to capture bitmaps..."));
 
   ScriptRecord_WriteScript();
-
-  applist.DeleteContents();
-  applist.DeleteAll();
 
   return true;
 
@@ -1255,39 +1691,22 @@ bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny, ACTIONS
   HWND hwnd = (HWND)scriptrecord_windowhandle;
   if(!hwnd || !IsWindow(hwnd))
     {
-      // Re-resolve by title/name: some apps recreate the HWND after first interaction.
-      XVECTOR<XPROCESS*> applist;
-      HWND               foundhwnd = NULL;
+      // Re-resolve by title/name without Application_GetRunningList (browsers make that very slow).
+      ACTIONSCRIPTQA_FINDWND data;
+      data.appname     = &scriptrecord_appname;
+      data.windowtitle = &scriptrecord_windowtitle;
+      data.found       = NULL;
 
-      if(GEN_XPROCESSMANAGER.Application_GetRunningList(applist, true))
-        {
-          for(XDWORD c=0; c<applist.GetSize(); c++)
-            {
-              XPROCESS* process = applist.Get(c);
-              if(!process || !process->GetWindowHandle()) continue;
+      EnumWindows(ActionScriptQA_EnumFindWindow, (LPARAM)&data);
 
-              bool namematch  = process->GetName() && !process->GetName()->Compare(scriptrecord_appname, true);
-              bool titlematch = process->GetWindowTitle() && !process->GetWindowTitle()->Compare(scriptrecord_windowtitle, true);
-              if(namematch || titlematch)
-                {
-                  foundhwnd = (HWND)process->GetWindowHandle();
-                  if(foundhwnd && IsWindow(foundhwnd)) break;
-                  foundhwnd = NULL;
-                }
-            }
-        }
-
-      applist.DeleteContents();
-      applist.DeleteAll();
-
-      if(!foundhwnd)
+      if(!data.found)
         {
           ScriptRecord_Print(__L("[ScriptRecord] Target window no longer valid."));
           return false;
         }
 
-      scriptrecord_windowhandle = (void*)foundhwnd;
-      hwnd = foundhwnd;
+      scriptrecord_windowhandle = (void*)data.found;
+      hwnd = data.found;
       ScriptRecord_Print(__L("[ScriptRecord] Target window handle refreshed."));
     }
 
@@ -1452,17 +1871,16 @@ bool ACTIONSCRIPTQA::ScriptRecord_PrepareExisting()
 {
   scriptrecord_existinglines.DeleteContents();
   scriptrecord_existinglines.DeleteAll();
-  scriptrecord_sessionids.DeleteAll();
-  scriptrecord_sessionindex    = 1;
-  scriptrecord_nextbitmapindex = 1;
-
-  XSTRING* outname = APPFLOW_CFG.ScriptRecord_GetOutputScript();
-  if(!outname || outname->IsEmpty()) return false;
+  scriptrecord_sessions.DeleteContents();
+  scriptrecord_sessions.DeleteAll();
+  scriptrecord_ensurekeyswritten.DeleteContents();
+  scriptrecord_ensurekeyswritten.DeleteAll();
+  scriptrecord_sessionindex     = 1;
+  scriptrecord_nextbitmapindex  = 1;
+  scriptrecord_readymapwritten  = false;
 
   XPATH xpath;
-  GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_SCRIPTS, xpath);
-  xpath.Slash_Add();
-  xpath += outname->Get();
+  if(!ScriptRecord_ResolveScriptPath(xpath)) return false;
 
   XSTRING* prefix = APPFLOW_CFG.ScriptRecord_GetBitmapPrefix();
   XCHAR*   pref   = prefix && !prefix->IsEmpty() ? prefix->Get() : __L("rec_");
@@ -1492,7 +1910,39 @@ bool ACTIONSCRIPTQA::ScriptRecord_PrepareExisting()
                     {
                       hasrecorded = true;
                       if(n > maxrecorded) maxrecorded = n;
-                      scriptrecord_sessionids.Add((XDWORD)n);
+
+                      ACTIONSCRIPTQA_SCRIPTRECORD_SESSION* session = GEN_NEW ACTIONSCRIPTQA_SCRIPTRECORD_SESSION();
+                      if(session)
+                        {
+                          session->id = (XDWORD)n;
+
+                          for(int d=c+1; d<file.GetNLines(); d++)
+                            {
+                              XSTRING* look = file.GetLine(d);
+                              if(!look) continue;
+                              if(look->Find(__L("function "), false) != XSTRING_NOTFOUND) break;
+
+                              XSTRING value;
+                              if(ScriptRecord_ParseQuotedAssign(look, __L("appname"), value))
+                                {
+                                  session->appname = value.Get();
+                                  ScriptRecord_MakeAppKey(session->appname, session->appkey);
+                                }
+                              else if(ScriptRecord_ParseQuotedAssign(look, __L("apppath"), value))
+                                {
+                                  session->apppath = value.Get();
+                                }
+                              else if(ScriptRecord_ParseQuotedAssign(look, __L("windowtitle"), value))
+                                {
+                                  session->windowtitle = value.Get();
+                                }
+
+                              if(!session->appname.IsEmpty() && !session->apppath.IsEmpty() && !session->windowtitle.IsEmpty())
+                                break;
+                            }
+
+                          scriptrecord_sessions.Add(session);
+                        }
                     }
                 }
 
@@ -1560,7 +2010,12 @@ bool ACTIONSCRIPTQA::ScriptRecord_PrepareExisting()
                   scriptrecord_existinglines.Add(copy);
                 }
 
-              scriptrecord_sessionids.Add(1);
+              ACTIONSCRIPTQA_SCRIPTRECORD_SESSION* session = GEN_NEW ACTIONSCRIPTQA_SCRIPTRECORD_SESSION();
+              if(session)
+                {
+                  session->id = 1;
+                  scriptrecord_sessions.Add(session);
+                }
               scriptrecord_sessionindex = 2;
               ScriptRecord_Print(__L("[ScriptRecord] Existing main() migrated to Recorded_001."));
             }
@@ -1579,7 +2034,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_PrepareExisting()
 
           if(scriptrecord_existinglines.GetSize())
             {
-              ScriptRecord_Print(__L("[ScriptRecord] Appending to existing script (%d kept lines)."), (int)scriptrecord_existinglines.GetSize());
+              ScriptRecord_Print(__L("[ScriptRecord] Appending to existing script (%d kept lines, %d sessions)."), (int)scriptrecord_existinglines.GetSize(), (int)scriptrecord_sessions.GetSize());
             }
         }
 
@@ -1647,6 +2102,358 @@ bool ACTIONSCRIPTQA::ScriptRecord_ExistingHasHelpers()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_ExistingHasReadyMap()
+* @brief      True if kept script lines already declare __qa_application_ready
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_ExistingHasReadyMap()
+{
+  for(XDWORD c=0; c<scriptrecord_existinglines.GetSize(); c++)
+    {
+      XSTRING* line = scriptrecord_existinglines.Get(c);
+      if(!line) continue;
+      if(line->Find(__L("__qa_application_ready"), false) != XSTRING_NOTFOUND) return true;
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_ExistingHasEnsureAppKey(XSTRING& appkey)
+* @brief      True if EnsureApplication_<appkey> already exists in kept lines
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_ExistingHasEnsureAppKey(XSTRING& appkey)
+{
+  if(appkey.IsEmpty()) return false;
+
+  XSTRING needle;
+  needle.Format(__L("function EnsureApplication_%s"), appkey.Get());
+
+  for(XDWORD c=0; c<scriptrecord_existinglines.GetSize(); c++)
+    {
+      XSTRING* line = scriptrecord_existinglines.Get(c);
+      if(!line) continue;
+      if(line->Find(needle.Get(), false) != XSTRING_NOTFOUND) return true;
+    }
+
+  for(XDWORD c=0; c<scriptrecord_ensurekeyswritten.GetSize(); c++)
+    {
+      XSTRING* key = scriptrecord_ensurekeyswritten.Get(c);
+      if(key && key->Compare(appkey) == 0) return true;
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_ParseQuotedAssign(XSTRING* line, XCHAR* varname, XSTRING& outvalue)
+* @brief      Parse  var varname = "value";  from a script line
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_ParseQuotedAssign(XSTRING* line, XCHAR* varname, XSTRING& outvalue)
+{
+  outvalue.Empty();
+  if(!line || !varname) return false;
+
+  XSTRING pattern;
+  pattern.Format(__L("var %s"), varname);
+  int pos = line->Find(pattern.Get(), false);
+  if(pos == XSTRING_NOTFOUND) return false;
+
+  int q1 = line->FindCharacter(__C('\"'), (XDWORD)pos);
+  if(q1 < 0) return false;
+  int q2 = line->FindCharacter(__C('\"'), (XDWORD)(q1 + 1));
+  if(q2 < 0 || q2 <= q1 + 1) return false;
+
+  outvalue.Set(line->Get() + q1 + 1, (XDWORD)(q2 - q1 - 1));
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void ACTIONSCRIPTQA::ScriptRecord_MakeAppKey(XSTRING& appname, XSTRING& appkey)
+* @brief      Build a JS-safe EnsureApplication_<key> suffix from the exe name
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+void ACTIONSCRIPTQA::ScriptRecord_MakeAppKey(XSTRING& appname, XSTRING& appkey)
+{
+  appkey.Empty();
+
+  XSTRING probe;
+  for(XDWORD c=0; c<appname.GetSize(); c++)
+    {
+      XCHAR ch = appname.Get()[c];
+      if(probe.Character_IsAlpha(ch) || probe.Character_IsNumber(ch, false))
+        {
+          appkey.Add(ch);
+        }
+       else if(appkey.GetSize() && appkey.Character_GetLast() != __C('_'))
+        {
+          appkey.Add(__C('_'));
+        }
+    }
+
+  while(appkey.GetSize() && appkey.Character_GetLast() == __C('_'))
+    {
+      appkey.DeleteLastCharacter();
+    }
+
+  if(appkey.IsEmpty()) appkey = __L("app");
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_IsBrowserApp(XSTRING& appname, XPATH& apppath)
+* @brief      True if the captured process looks like Chrome, Edge or Firefox
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_IsBrowserApp(XSTRING& appname, XPATH& apppath)
+{
+  XSTRING probe;
+
+  probe = appname.Get();
+  probe.ToLowerCase();
+  if(probe.Find(__L("chrome"), false)  != XSTRING_NOTFOUND) return true;
+  if(probe.Find(__L("msedge"), false)  != XSTRING_NOTFOUND) return true;
+  if(probe.Find(__L("firefox"), false) != XSTRING_NOTFOUND) return true;
+  if(probe.Compare(__L("edge.exe"), false) == 0) return true;
+  if(probe.Compare(__L("edge"), false) == 0) return true;
+
+  probe = apppath.Get();
+  probe.ToLowerCase();
+  if(probe.Find(__L("chrome"), false)  != XSTRING_NOTFOUND) return true;
+  if(probe.Find(__L("msedge"), false)  != XSTRING_NOTFOUND) return true;
+  if(probe.Find(__L("firefox"), false) != XSTRING_NOTFOUND) return true;
+  if(probe.Find(__L("\\edge\\"), false) != XSTRING_NOTFOUND) return true;
+  if(probe.Find(__L("/edge/"), false) != XSTRING_NOTFOUND) return true;
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void ACTIONSCRIPTQA::ScriptRecord_BrowserWindowTitle(...)
+* @brief      Stable short title for browsers (page titles change and may contain '%' / crash FormatArg)
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+void ACTIONSCRIPTQA::ScriptRecord_BrowserWindowTitle(XSTRING& appname, XPATH& apppath, XSTRING& windowtitle)
+{
+  XSTRING probe = appname.Get();
+  probe.ToLowerCase();
+
+  if(probe.Find(__L("msedge"), false) != XSTRING_NOTFOUND || probe.Compare(__L("edge.exe"), false) == 0)
+    {
+      windowtitle = __L("Microsoft Edge");
+      return;
+    }
+
+  if(probe.Find(__L("firefox"), false) != XSTRING_NOTFOUND)
+    {
+      windowtitle = __L("Mozilla Firefox");
+      return;
+    }
+
+  probe = apppath.Get();
+  probe.ToLowerCase();
+  if(probe.Find(__L("msedge"), false) != XSTRING_NOTFOUND || probe.Find(__L("\\edge\\"), false) != XSTRING_NOTFOUND || probe.Find(__L("/edge/"), false) != XSTRING_NOTFOUND)
+    {
+      windowtitle = __L("Microsoft Edge");
+      return;
+    }
+
+  if(probe.Find(__L("firefox"), false) != XSTRING_NOTFOUND)
+    {
+      windowtitle = __L("Mozilla Firefox");
+      return;
+    }
+
+  // Default browser family (chrome / chromium).
+  windowtitle = __L("Google Chrome");
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void ACTIONSCRIPTQA::ScriptRecord_AddJSVarString(...)
+* @brief      Emit  var name = "value";  without XSTRING::Format (avoids FormatArg hangs)
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+void ACTIONSCRIPTQA::ScriptRecord_AddJSVarString(XFILETXT& file, XCHAR* varname, XSTRING& value)
+{
+  if(!varname) return;
+
+  XSTRING escaped;
+  ScriptRecord_EscapeForJS(value, escaped);
+
+  XSTRING line;
+  line  = __L("  var ");
+  line += varname;
+  line += __L("     = \"");
+  line += escaped;
+  line += __L("\";");
+  file.AddLine(line);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_GetWindowTextSafe(...)
+* @brief      Read window title with timeout (GetWindowText can hang on browser UI threads)
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_GetWindowTextSafe(void* hwndvoid, XSTRING& title, XDWORD timeoutms)
+{
+  title.Empty();
+
+  #ifndef WINDOWS
+  return false;
+  #else
+
+  HWND hwnd = (HWND)hwndvoid;
+  if(!hwnd || !IsWindow(hwnd)) return false;
+
+  DWORD_PTR lenresult = 0;
+  if(!SendMessageTimeout(hwnd, WM_GETTEXTLENGTH, 0, 0, SMTO_ABORTIFHUNG | SMTO_BLOCK, timeoutms, &lenresult))
+    {
+      return false;
+    }
+
+  int len = (int)lenresult;
+  if(len <= 0) return false;
+  if(len > 1023) len = 1023;
+
+  XCHAR titlebuf[1024];
+  titlebuf[0] = 0;
+
+  DWORD_PTR getresult = 0;
+  if(!SendMessageTimeout(hwnd, WM_GETTEXT, (WPARAM)1024, (LPARAM)titlebuf, SMTO_ABORTIFHUNG | SMTO_BLOCK, timeoutms, &getresult))
+    {
+      return false;
+    }
+
+  titlebuf[1023] = 0;
+  if(!titlebuf[0]) return false;
+
+  title = titlebuf;
+  // Neutralize '%' so later Format/Printf of derived messages cannot hang FormatArg.
+  title.Character_Change(__C('%'), __C('_'));
+  return true;
+
+  #endif
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_WriteEnsureApplicationForApp(...)
+* @brief      Write EnsureApplication_<key>() — launch once, focus, leave ready for tests
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_WriteEnsureApplicationForApp(XFILETXT& file, XSTRING& appname, XPATH& apppath, XSTRING& windowtitle, XSTRING& appkey)
+{
+  XSTRING line;
+  XPATH   pathscript = apppath;
+  ScriptRecord_PathForScript(pathscript);
+
+  bool isbrowser = ScriptRecord_IsBrowserApp(appname, apppath);
+
+  line.Format(__L("function EnsureApplication_%s()"), appkey.Get());
+  file.AddLine(line);
+  file.AddLine(__L("{"));
+  ScriptRecord_AddJSVarString(file, __L("appname"), appname);
+  {
+    XSTRING pathstr = pathscript.Get();
+    ScriptRecord_AddJSVarString(file, __L("apppath"), pathstr);
+  }
+  ScriptRecord_AddJSVarString(file, __L("windowtitle"), windowtitle);
+  if(isbrowser)
+    {
+      file.AddLine(__L("  // Browser detected: URL cannot be captured - edit this value before running."));
+      file.AddLine(__L("  var url         = \"https://EDIT_ME/\";"));
+    }
+  file.AddLine(__L("  var key         = appname;"));
+  file.AddLine(__L(""));
+  file.AddLine(__L("  // Already prepared in this script run: only restore focus."));
+  file.AddLine(__L("  if(__qa_application_ready[key])"));
+  file.AddLine(__L("    {"));
+  file.AddLine(__L("      Screen_SetFocus(appname, windowtitle);"));
+  file.AddLine(__L("      Sleep(200);"));
+  file.AddLine(__L("      return true;"));
+  file.AddLine(__L("    }"));
+  file.AddLine(__L(""));
+  file.AddLine(__L("  if(WaitWindow(appname, windowtitle, 1500))"));
+  file.AddLine(__L("    {"));
+  file.AddLine(__L("      Console_Printf(\"[EnsureApplication] Already running: %s / %s\\n\", appname, windowtitle);"));
+  file.AddLine(__L("    }"));
+  file.AddLine(__L("   else"));
+  file.AddLine(__L("    {"));
+  if(isbrowser)
+    {
+      file.AddLine(__L("      if(!OpenURL(url))"));
+      file.AddLine(__L("        {"));
+      file.AddLine(__L("          Console_Printf(\"[EnsureApplication] FAIL OpenURL %s\\n\", url);"));
+      file.AddLine(__L("          return false;"));
+      file.AddLine(__L("        }"));
+      file.AddLine(__L(""));
+      file.AddLine(__L("      if(!WaitWindow(appname, windowtitle, 30000))"));
+      file.AddLine(__L("        {"));
+      file.AddLine(__L("          Console_Printf(\"[EnsureApplication] FAIL window not found: %s\\n\", windowtitle);"));
+      file.AddLine(__L("          TerminateAplication(appname);"));
+      file.AddLine(__L("          return false;"));
+      file.AddLine(__L("        }"));
+      file.AddLine(__L(""));
+      file.AddLine(__L("      Console_Printf(\"[EnsureApplication] Opened URL %s\\n\", url);"));
+    }
+   else
+    {
+      file.AddLine(__L("      if(!ExecApplication(apppath))"));
+      file.AddLine(__L("        {"));
+      file.AddLine(__L("          Console_Printf(\"[EnsureApplication] FAIL ExecApplication %s\\n\", apppath);"));
+      file.AddLine(__L("          return false;"));
+      file.AddLine(__L("        }"));
+      file.AddLine(__L(""));
+      file.AddLine(__L("      if(!WaitWindow(appname, windowtitle, 30000))"));
+      file.AddLine(__L("        {"));
+      file.AddLine(__L("          Console_Printf(\"[EnsureApplication] FAIL window not found: %s\\n\", windowtitle);"));
+      file.AddLine(__L("          TerminateAplication(appname);"));
+      file.AddLine(__L("          return false;"));
+      file.AddLine(__L("        }"));
+      file.AddLine(__L(""));
+      file.AddLine(__L("      Console_Printf(\"[EnsureApplication] Started %s\\n\", apppath);"));
+    }
+  file.AddLine(__L("    }"));
+  file.AddLine(__L(""));
+  file.AddLine(__L("  Screen_SetFocus(appname, windowtitle);"));
+  file.AddLine(__L("  Sleep(300);"));
+  file.AddLine(__L("  __qa_application_ready[key] = true;"));
+  file.AddLine(__L("  Console_Printf(\"[EnsureApplication] Ready: %s / %s\\n\", appname, windowtitle);"));
+  file.AddLine(__L("  return true;"));
+  file.AddLine(__L("}"));
+  file.AddLine(__L(""));
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool ACTIONSCRIPTQA::ScriptRecord_WriteCommonHelpers(XFILETXT& file)
 * @brief      Write shared WaitWindow / naming / evidence helpers for recorded scripts
 * @ingroup
@@ -1654,6 +2461,8 @@ bool ACTIONSCRIPTQA::ScriptRecord_ExistingHasHelpers()
 * --------------------------------------------------------------------------------------------------------------------*/
 bool ACTIONSCRIPTQA::ScriptRecord_WriteCommonHelpers(XFILETXT& file)
 {
+  file.AddLine(__L("var __qa_application_ready = {};"));
+  file.AddLine(__L(""));
   file.AddLine(__L("function WaitWindow(appname, windowtitle, timeoutms)"));
   file.AddLine(__L("{"));
   file.AddLine(__L("  var outx = { value: 0 };"));
@@ -1690,7 +2499,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteCommonHelpers(XFILETXT& file)
   file.AddLine(__L(""));
   file.AddLine(__L("function EvidenceStart(scriptname)"));
   file.AddLine(__L("{"));
-  file.AddLine(__L("  var dir  = GetPathScript() + \"evidence\";"));
+  file.AddLine(__L("  var dir  = GetPathScript() + \"evidences\";"));
   file.AddLine(__L("  var path = dir + \"\\\\\" + EvidenceFileName(scriptname);"));
   file.AddLine(__L("  MakeDir(dir);"));
   file.AddLine(__L("  if(!FileCSV_Create(path)) return false;"));
@@ -1718,6 +2527,55 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteCommonHelpers(XFILETXT& file)
 
 /**-------------------------------------------------------------------------------------------------------------------
 * 
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_WriteMain(XFILETXT& file, ACTIONSCRIPTQA_SCRIPTRECORD_SESSION* currentsession)
+* @brief      Write main(): EnsureApplication_<app> before each app's tests (once per app)
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_WriteMain(XFILETXT& file, ACTIONSCRIPTQA_SCRIPTRECORD_SESSION* currentsession)
+{
+  XSTRING line;
+  XSTRING lastkey;
+
+  file.AddLine(__L("function main()"));
+  file.AddLine(__L("{"));
+
+  for(XDWORD c=0; c<scriptrecord_sessions.GetSize(); c++)
+    {
+      ACTIONSCRIPTQA_SCRIPTRECORD_SESSION* session = scriptrecord_sessions.Get(c);
+      if(!session) continue;
+
+      if(!session->appkey.IsEmpty() && session->appkey.Compare(lastkey) != 0)
+        {
+          line.Format(__L("  if(!EnsureApplication_%s()) return;"), session->appkey.Get());
+          file.AddLine(line);
+          lastkey = session->appkey.Get();
+        }
+
+      line.Format(__L("  Recorded_%03d();"), (int)session->id);
+      file.AddLine(line);
+    }
+
+  if(currentsession)
+    {
+      if(!currentsession->appkey.IsEmpty() && currentsession->appkey.Compare(lastkey) != 0)
+        {
+          line.Format(__L("  if(!EnsureApplication_%s()) return;"), currentsession->appkey.Get());
+          file.AddLine(line);
+        }
+
+      line.Format(__L("  Recorded_%03d();"), (int)currentsession->id);
+      file.AddLine(line);
+    }
+
+  file.AddLine(__L("}"));
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+* 
 * @fn         bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
 * @brief      Write / refresh the recorded .js under scripts/ (append session if file exists)
 * @ingroup
@@ -1728,13 +2586,23 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   XSTRING* outname = APPFLOW_CFG.ScriptRecord_GetOutputScript();
   if(!outname || outname->IsEmpty()) return false;
 
+  ScriptRecord_PrepareRecordedLayout();
+
   XPATH xpath;
-  GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_SCRIPTS, xpath);
-  xpath.Slash_Add();
-  xpath += outname->Get();
+  if(!ScriptRecord_ResolveScriptPath(xpath)) return false;
 
   XPATH apppathscript = scriptrecord_apppath;
   ScriptRecord_PathForScript(apppathscript);
+
+  XSTRING appkey;
+  ScriptRecord_MakeAppKey(scriptrecord_appname, appkey);
+
+  ACTIONSCRIPTQA_SCRIPTRECORD_SESSION currentsession;
+  currentsession.id          = scriptrecord_sessionindex;
+  currentsession.appname     = scriptrecord_appname.Get();
+  currentsession.apppath     = apppathscript.Get();
+  currentsession.windowtitle = scriptrecord_windowtitle.Get();
+  currentsession.appkey      = appkey.Get();
 
   XFILETXT file;
   if(!file.Create(xpath))
@@ -1745,6 +2613,14 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
 
   XSTRING line;
   bool    needhelpers = true;
+
+  // Full rewrite (no prior kept lines): allow Ensure helpers to be emitted again.
+  if(!scriptrecord_existinglines.GetSize())
+    {
+      scriptrecord_ensurekeyswritten.DeleteContents();
+      scriptrecord_ensurekeyswritten.DeleteAll();
+      scriptrecord_readymapwritten = false;
+    }
 
   if(scriptrecord_existinglines.GetSize())
     {
@@ -1763,6 +2639,13 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
       if(needhelpers)
         {
           ScriptRecord_WriteCommonHelpers(file);
+          scriptrecord_readymapwritten = true;
+        }
+       else if(!ScriptRecord_ExistingHasReadyMap() && !scriptrecord_readymapwritten)
+        {
+          file.AddLine(__L("var __qa_application_ready = {};"));
+          file.AddLine(__L(""));
+          scriptrecord_readymapwritten = true;
         }
     }
    else
@@ -1770,14 +2653,54 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
       file.AddLine(__L("// ----------------------------------------------------------------------------"));
       line.Format(__L("// %s - auto-generated by ActionScriptQA script recorder (F1)"), outname->Get());
       file.AddLine(line);
-      file.AddLine(__L("// Evidence CSV: evidence/<GetNameScript()>_<datetime>.csv"));
+      file.AddLine(__L("// Evidence CSV: evidences/<GetNameScript()>_<datetime>.csv"));
       file.AddLine(__L("// Optional ListTest: <GetNameScript()>_ListTest.json (loaded if present)."));
+      file.AddLine(__L("// Layout: assets/Tests/<scriptbase>/{graphics,evidences}/ + <scriptbase>.js"));
+      file.AddLine(__L("// App launch: EnsureApplication_<app>() in main() before that app's tests."));
       file.AddLine(__L("// New recording sessions append function Recorded_NNN() and refresh the entry point."));
       file.AddLine(__L("// ----------------------------------------------------------------------------"));
       file.AddLine(__L(""));
       ScriptRecord_WriteCommonHelpers(file);
+      scriptrecord_readymapwritten = true;
     }
 
+  // EnsureApplication_<key> for every known app that does not already have one.
+  ScriptRecord_Print(__L("[ScriptRecord] WriteScript: ensuring application helpers..."));
+  for(XDWORD c=0; c<scriptrecord_sessions.GetSize(); c++)
+    {
+      ACTIONSCRIPTQA_SCRIPTRECORD_SESSION* session = scriptrecord_sessions.Get(c);
+      if(!session || session->appkey.IsEmpty()) continue;
+      if(ScriptRecord_ExistingHasEnsureAppKey(session->appkey)) continue;
+
+      // Prefer stable browser titles when rewriting Ensure from older sessions.
+      if(ScriptRecord_IsBrowserApp(session->appname, session->apppath))
+        {
+          ScriptRecord_BrowserWindowTitle(session->appname, session->apppath, session->windowtitle);
+        }
+
+      ScriptRecord_WriteEnsureApplicationForApp(file, session->appname, session->apppath, session->windowtitle, session->appkey);
+
+      XSTRING* keycopy = GEN_NEW XSTRING();
+      if(keycopy)
+        {
+          (*keycopy) = session->appkey.Get();
+          scriptrecord_ensurekeyswritten.Add(keycopy);
+        }
+    }
+
+  if(!appkey.IsEmpty() && !ScriptRecord_ExistingHasEnsureAppKey(appkey))
+    {
+      ScriptRecord_WriteEnsureApplicationForApp(file, scriptrecord_appname, apppathscript, scriptrecord_windowtitle, appkey);
+
+      XSTRING* keycopy = GEN_NEW XSTRING();
+      if(keycopy)
+        {
+          (*keycopy) = appkey.Get();
+          scriptrecord_ensurekeyswritten.Add(keycopy);
+        }
+    }
+
+  ScriptRecord_Print(__L("[ScriptRecord] WriteScript: writing Recorded_%03d (%d steps)..."), (int)scriptrecord_sessionindex, (int)scriptrecord_steps.GetSize());
   line.Format(__L("function Recorded_%03d()"), (int)scriptrecord_sessionindex);
   file.AddLine(line);
   file.AddLine(__L("{"));
@@ -1785,12 +2708,12 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   file.AddLine(__L("  var scriptname  = GetNameScript();"));
   line.Format(__L("  var session     = \"Recorded_%03d\";"), (int)scriptrecord_sessionindex);
   file.AddLine(line);
-  line.Format(__L("  var appname     = \"%s\";"), scriptrecord_appname.Get());
-  file.AddLine(line);
-  line.Format(__L("  var apppath     = \"%s\";"), apppathscript.Get());
-  file.AddLine(line);
-  line.Format(__L("  var windowtitle = \"%s\";"), scriptrecord_windowtitle.Get());
-  file.AddLine(line);
+  ScriptRecord_AddJSVarString(file, __L("appname"), scriptrecord_appname);
+  {
+    XSTRING pathstr = apppathscript.Get();
+    ScriptRecord_AddJSVarString(file, __L("apppath"), pathstr);
+  }
+  ScriptRecord_AddJSVarString(file, __L("windowtitle"), scriptrecord_windowtitle);
 
   file.AddLine(__L("  var outx = { value: 0 };"));
   file.AddLine(__L("  var outy = { value: 0 };"));
@@ -1831,27 +2754,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   file.AddLine(__L("      Console_Printf(\"[%s] ListTest not found (optional) %s\\n\", scriptname, catalogpath);"));
   file.AddLine(__L("    }"));
   file.AddLine(__L(""));
-  file.AddLine(__L("  if(!ExecApplication(apppath))"));
-  file.AddLine(__L("    {"));
-  file.AddLine(__L("      Console_Printf(\"[%s] FAIL ExecApplication %s\\n\", scriptname, apppath);"));
-  file.AddLine(__L("      EvidenceAdd(\"\", \"ExecApplication\", \"FAIL\");"));
-  file.AddLine(__L("      if(listloaded) TraceTests_DeleteAll();"));
-  file.AddLine(__L("      EvidenceEnd();"));
-  file.AddLine(__L("      return;"));
-  file.AddLine(__L("    }"));
-  file.AddLine(__L("  EvidenceAdd(\"\", \"ExecApplication\", \"PASS\");"));
-  file.AddLine(__L(""));
-  file.AddLine(__L("  if(!WaitWindow(appname, windowtitle, 30000))"));
-  file.AddLine(__L("    {"));
-  file.AddLine(__L("      Console_Printf(\"[%s] FAIL window not found\\n\", scriptname);"));
-  file.AddLine(__L("      EvidenceAdd(\"\", \"WaitWindow\", \"FAIL\");"));
-  file.AddLine(__L("      if(listloaded) TraceTests_DeleteAll();"));
-  file.AddLine(__L("      EvidenceEnd();"));
-  file.AddLine(__L("      TerminateAplication(appname);"));
-  file.AddLine(__L("      return;"));
-  file.AddLine(__L("    }"));
-  file.AddLine(__L("  EvidenceAdd(\"\", \"WaitWindow\", \"PASS\");"));
-  file.AddLine(__L(""));
+  file.AddLine(__L("  // Application is started/focused from main() via EnsureApplication_<app>() before this test."));
   file.AddLine(__L("  Screen_SetBmpFindCFG(12, 40);"));
   file.AddLine(__L("  Sleep(300);"));
   file.AddLine(__L(""));
@@ -1878,22 +2781,20 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
                 break;
 
           case ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT :
-                {
-                  ScriptRecord_EscapeForJS(step->bitmapname, escaped);
-                  int waitto = APPFLOW_CFG.ScriptRecord_GetWaitTimeoutMs();
-                  int waitiv = APPFLOW_CFG.ScriptRecord_GetWaitIntervalMs();
-                  if(waitto < 0) waitto = 10000;
-                  if(waitiv < 1) waitiv = 500;
-                  line.Format(__L("    { type: \"wait\", bmp: \"%s\", timeoutms: %d, intervalms: %d }%s"), escaped.Get(), waitto, waitiv, comma);
-                }
+                line.Format(__L("    { type: \"wait\", bmp: \"%s\", timeoutms: %d, intervalms: %d }%s"),
+                            step->bitmapname.Get(),
+                            APPFLOW_CFG.ScriptRecord_GetWaitTimeoutMs(),
+                            APPFLOW_CFG.ScriptRecord_GetWaitIntervalMs(),
+                            comma);
                 break;
 
           case ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK :
           default :
-                ScriptRecord_EscapeForJS(step->bitmapname, escaped);
-                line.Format(__L("    { type: \"click\", bmp: \"%s\", x: %d, y: %d }%s"), escaped.Get(), step->layoutx, step->layouty, comma);
+                line.Format(__L("    { type: \"click\", bmp: \"%s\", x: %d, y: %d }%s"),
+                            step->bitmapname.Get(), step->layoutx, step->layouty, comma);
                 break;
         }
+
       file.AddLine(line);
     }
   file.AddLine(__L("  ];"));
@@ -1971,17 +2872,9 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   file.AddLine(__L("}"));
   file.AddLine(__L(""));
 
-  file.AddLine(__L("function main()"));
-  file.AddLine(__L("{"));
-  for(XDWORD c=0; c<scriptrecord_sessionids.GetSize(); c++)
-    {
-      line.Format(__L("  Recorded_%03d();"), (int)scriptrecord_sessionids.Get(c));
-      file.AddLine(line);
-    }
-  line.Format(__L("  Recorded_%03d();"), (int)scriptrecord_sessionindex);
-  file.AddLine(line);
-  file.AddLine(__L("}"));
+  ScriptRecord_WriteMain(file, &currentsession);
 
+  ScriptRecord_Print(__L("[ScriptRecord] WriteScript: flushing file to disk..."));
   if(!file.WriteAllFile())
     {
       file.Close();
@@ -1990,6 +2883,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
     }
 
   file.Close();
+  ScriptRecord_Print(__L("[ScriptRecord] WriteScript: done."));
   return true;
 }
 
