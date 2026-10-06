@@ -262,7 +262,7 @@ bool XTRACEMONITOR_CFG::DoVariableMapping()
 	// SERVERS
 	for(int c=0; c<XTRACEMONITOR_CFG_MAXSERVERS; c++)
 		{
-			section.Format(__L("%s %02d"), XTRACEMONITOR_CFG_SECTION_SERVERS, c+1);
+			section.Format(_L("%s %02d"), XTRACEMONITOR_CFG_SECTION_SERVERS, c+1);
 
 			AddValue(XFILECFG_VALUETYPE_INT      	, section.Get()		, XTRACEMONITOR_CFG_SERVERS_TYPE    	,	&servers[c].type);
       AddValue(XFILECFG_VALUETYPE_STRING		, section.Get()		, XTRACEMONITOR_CFG_SERVERS_NAME			,	&servers[c].name);
@@ -273,7 +273,7 @@ bool XTRACEMONITOR_CFG::DoVariableMapping()
 	// ORIGINS
 	for(int c=0; c<XTRACEMONITOR_CFG_MAXORIGINS; c++)
 		{
-			section.Format(__L("%s %02d"), XTRACEMONITOR_CFG_SECTION_ORIGINS, c+1);
+			section.Format(_L("%s %02d"), XTRACEMONITOR_CFG_SECTION_ORIGINS, c+1);
 
 			AddValue(XFILECFG_VALUETYPE_BOOLEAN 	, section.Get()		, XTRACEMONITOR_CFG_ORIGINS_ISACTIVE	,	&origins[c].isactive);
       AddValue(XFILECFG_VALUETYPE_BOOLEAN 	, section.Get()		, XTRACEMONITOR_CFG_ORIGINS_SHOWIP    ,	&origins[c].showip);
@@ -308,17 +308,17 @@ bool XTRACEMONITOR_CFG::DoDefault()
   isshowstatusmsg               = true;
   isshowcommandmsg              = false;
   statusmsgrefresh              = 8;
-  rootoriginname                = __L("All");
-  localnointernetoriginname     = __L("Local (no internet)");
-  windowsmessageoriginname      = __L("Windows messages");
-  UARToriginname                = __L("UART");
+  rootoriginname                = _L("All");
+  localnointernetoriginname     = _L("Local (no internet)");
+  windowsmessageoriginname      = _L("Windows messages");
+  UARToriginname                = _L("UART");
   maxtextsize                   = 512;
-  savedir                       = __L("savedir");
+  savedir                       = _L("savedir");
   serverIPselected              = 0;
   serverUARTselected            = 0;
 
   filters_istextactive          = false;
-  filters_text                  = __L("");
+  filters_text                  = _L("");
   filters_levels                = 0x000000FF;
   filters_istreevisible         = false;
   filters_treewidth             = 264;
@@ -326,31 +326,31 @@ bool XTRACEMONITOR_CFG::DoDefault()
 
 
   dyndns_ischangeavailable      = false;
-  dyndns_login                  = __L("");
-  dyndns_password               = __L("");
+  dyndns_login                  = _L("");
+  dyndns_password               = _L("");
 
-  //defaulturl                    = __L("xdebug.kicks-ass.org");
+  //defaulturl                    = _L("xdebug.kicks-ass.org");
   //defaultport                   = 10222;
-  //defaultuart                   = __L("0,115200,8,N,1,NONE");
+  //defaultuart                   = _L("0,115200,8,N,1,NONE");
 
   servers[0].type               = XTRACEMONITOR_CFG_TYPESERVER_UDP;
-	servers[0].name               = __L("Old Config Kick-Ass");
-	servers[0].config             = __L("xdebug.kicks-ass.org:10021");
+	servers[0].name               = _L("Old Config Kick-Ass");
+	servers[0].config             = _L("xdebug.kicks-ass.org:10021");
 
   servers[1].type               = XTRACEMONITOR_CFG_TYPESERVER_UDP;
-	servers[1].name               = __L("GEN Default Config");
+	servers[1].name               = _L("GEN Default Config");
 	servers[1].config             = GEN_XTRACE_NET_DEFAULT_01;
 
   servers[2].type               = XTRACEMONITOR_CFG_TYPESERVER_UART;
-	servers[2].name               = __L("UART STM32");
-	servers[2].config             = __L("0,115200,8,N,1,NONE");
+	servers[2].name               = _L("UART STM32");
+	servers[2].config             = _L("0,115200,8,N,1,NONE");
 
 
 	origins[0].isactive           = true;
   origins[0].showip             = true;
-	origins[0].name			          = __L("Local");
-	origins[0].URL			          = __L("xdebug.kicks-ass.org");
-	origins[0].IP				          = __L("");
+	origins[0].name			          = _L("Local");
+	origins[0].URL			          = _L("xdebug.kicks-ass.org");
+	origins[0].IP				          = _L("");
 
   return true;
 }

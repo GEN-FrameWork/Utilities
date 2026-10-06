@@ -1025,3 +1025,141 @@
 19/01/2025 19:12:31 INFO    End        Disabling App status                 ... : Ok.
 19/01/2025 19:12:31 INFO    End        Disabling LOG system                 ... : Ok.
 19/01/2025 19:12:31 INFO    End        -------------------------------------------------------------------------------------------------------------
+05/10/2026 20:48:29 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+05/10/2026 20:48:29 INFO    Ini        S.O. version: Microsoft Windows 11 Pro Build(26300)  64 bits
+05/10/2026 20:48:29 INFO    Ini        Total memory 33362924 Kb, free 18013792 Kb (53%).
+05/10/2026 20:48:29 INFO    Ini        Activating LOG system                ... : Ok.
+05/10/2026 20:48:29 INFO    Ini        Activating App status                ... : Ok.
+05/10/2026 20:48:29 INFO    Ini        Activating Internet status           ... : Ok.
+05/10/2026 20:48:32 WARNING Status     Key pressed: 0x4C [L]
+05/10/2026 20:48:58 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+05/10/2026 20:48:58 INFO    Ini        S.O. version: Microsoft Windows 11 Pro Build(26300)  64 bits
+05/10/2026 20:48:59 INFO    Ini        Total memory 33362924 Kb, free 18077104 Kb (54%).
+05/10/2026 20:48:59 INFO    Ini        Activating LOG system                ... : Ok.
+05/10/2026 20:48:59 INFO    Ini        Activating App status                ... : Ok.
+05/10/2026 20:48:59 INFO    Ini        Activating Internet status           ... : Ok.
+05/10/2026 20:49:01 WARNING Status     Key pressed: 0x4C [L]
+05/10/2026 20:58:58 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+05/10/2026 20:58:58 INFO    Ini        Version S.O.: Microsoft Windows 11 Pro Build(26300)  64 bits
+05/10/2026 20:58:58 INFO    Ini        Memoria total 33362924 Kb, libre 17357908 Kb (52%).
+05/10/2026 20:58:58 INFO    Ini        Activando sistema de LOG             ... : Correcto.
+05/10/2026 20:58:58 INFO    Ini        Activando estado aplicacion          ... : Correcto.
+05/10/2026 20:58:58 INFO    Ini        Activando estado Internet            ... : Correcto.
+06/10/2026 17:44:31 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+06/10/2026 17:44:31 INFO    Ini        Version S.O.: Microsoft Windows 11 Pro Build(26300)  64 bits
+06/10/2026 17:44:31 INFO    Ini        Memoria total 33362924 Kb, libre 15587860 Kb (46%).
+06/10/2026 17:44:31 INFO    Ini        Activando sistema de LOG             ... : Correcto.
+06/10/2026 17:44:32 INFO    Ini        Activando estado aplicacion          ... : Correcto.
+06/10/2026 17:44:32 INFO    Ini        Activando estado Internet            ... : Correcto.
+06/10/2026 17:44:34 WARNING Status     Key pressed: 0x4C [L]
+06/10/2026 17:51:16 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+06/10/2026 17:51:16 INFO    Ini        Version S.O.: Microsoft Windows 11 Pro Build(26300)  64 bits
+06/10/2026 17:51:17 INFO    Ini        Memoria total 33362924 Kb, libre 15862992 Kb (47%).
+06/10/2026 17:51:17 INFO    Ini        Activando sistema de LOG             ... : Correcto.
+06/10/2026 17:51:17 INFO    Ini        Activando estado aplicacion          ... : Correcto.
+06/10/2026 17:51:17 INFO    Ini        Activando estado Internet            ... : Correcto.
+06/10/2026 17:51:20 WARNING Status     Key pressed: 0x4C [L]
+06/10/2026 17:59:49 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+06/10/2026 17:59:50 INFO    Ini        Version S.O.: Microsoft Windows 11 Pro Build(26300)  64 bits
+06/10/2026 17:59:50 INFO    Ini        Memoria total 33362924 Kb, libre 15971896 Kb (47%).
+06/10/2026 17:59:50 INFO    Ini        Activando sistema de LOG             ... : Correcto.
+06/10/2026 17:59:50 INFO    Ini        Activando estado aplicacion          ... : Correcto.
+06/10/2026 17:59:50 INFO    Ini        Activando estado Internet            ... : Correcto.
+06/10/2026 17:59:54 WARNING Status     Key pressed: 0x4C [L]
+06/10/2026 18:00:16 WARNING Status     Key pressed: 0x1B [?]
+06/10/2026 18:00:16 INFO    General    Aplicacion cerrada por el usuario
+06/10/2026 18:00:17 INFO    End        Desactivando estado Internet         ... : Correcto.
+06/10/2026 18:00:17 INFO    End        Desactivando estado aplicacion       ... : Correcto.
+06/10/2026 18:00:17 INFO    End        Desactivando sistema de LOG          ... : Correcto.
+06/10/2026 18:00:17 INFO    End        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:03:55 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:03:55 INFO    Ini        Version S.O.: Microsoft Windows 11 Pro Build(26300)  64 bits
+06/10/2026 18:03:55 INFO    Ini        Memoria total 33362924 Kb, libre 12154356 Kb (36%).
+06/10/2026 18:03:55 INFO    Ini        Activando sistema de LOG             ... : Correcto.
+06/10/2026 18:03:56 INFO    Ini        Activando estado aplicacion          ... : Correcto.
+06/10/2026 18:03:56 INFO    Ini        Activando estado Internet            ... : Correcto.
+06/10/2026 18:04:02 WARNING Status     Key pressed: 0x4C [L]
+06/10/2026 18:04:17 WARNING Status     Key pressed: 0x1B [?]
+06/10/2026 18:04:17 INFO    General    Aplicacion cerrada por el usuario
+06/10/2026 18:04:17 INFO    End        Desactivando estado Internet         ... : Correcto.
+06/10/2026 18:04:17 INFO    End        Desactivando estado aplicacion       ... : Correcto.
+06/10/2026 18:04:17 INFO    End        Desactivando sistema de LOG          ... : Correcto.
+06/10/2026 18:04:17 INFO    End        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:05:45 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:05:45 INFO    Ini        Version S.O.: Microsoft Windows 11 Pro Build(26300)  64 bits
+06/10/2026 18:05:45 INFO    Ini        Memoria total 33362924 Kb, libre 11981384 Kb (35%).
+06/10/2026 18:05:45 INFO    Ini        Activando sistema de LOG             ... : Correcto.
+06/10/2026 18:05:46 INFO    Ini        Activando estado aplicacion          ... : Correcto.
+06/10/2026 18:05:46 INFO    Ini        Activando estado Internet            ... : Correcto.
+06/10/2026 18:05:51 WARNING Status     Key pressed: 0x4C [L]
+06/10/2026 18:08:13 WARNING Status     Key pressed: 0x1B [?]
+06/10/2026 18:08:13 INFO    General    Aplicacion cerrada por el usuario
+06/10/2026 18:08:14 INFO    End        Desactivando estado Internet         ... : Correcto.
+06/10/2026 18:08:14 INFO    End        Desactivando estado aplicacion       ... : Correcto.
+06/10/2026 18:08:14 INFO    End        Desactivando sistema de LOG          ... : Correcto.
+06/10/2026 18:08:14 INFO    End        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:16:15 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:16:15 INFO    Ini        Version S.O.: Microsoft Windows 11 Pro Build(26300)  64 bits
+06/10/2026 18:16:15 INFO    Ini        Memoria total 33362924 Kb, libre 12270188 Kb (36%).
+06/10/2026 18:16:15 INFO    Ini        Activando sistema de LOG             ... : Correcto.
+06/10/2026 18:16:15 INFO    Ini        Activando estado aplicacion          ... : Correcto.
+06/10/2026 18:16:15 INFO    Ini        Activando estado Internet            ... : Correcto.
+06/10/2026 18:16:18 WARNING Status     Key pressed: 0x4C [L]
+06/10/2026 18:17:30 WARNING Status     Key pressed: 0x1B [?]
+06/10/2026 18:17:30 INFO    General    Aplicacion cerrada por el usuario
+06/10/2026 18:17:30 INFO    End        Desactivando estado Internet         ... : Correcto.
+06/10/2026 18:17:30 INFO    End        Desactivando estado aplicacion       ... : Correcto.
+06/10/2026 18:17:30 INFO    End        Desactivando sistema de LOG          ... : Correcto.
+06/10/2026 18:17:30 INFO    End        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:22:24 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:22:24 INFO    Ini        Version S.O.: Microsoft Windows 11 Pro Build(26300)  64 bits
+06/10/2026 18:22:24 INFO    Ini        Memoria total 33362924 Kb, libre 11939388 Kb (35%).
+06/10/2026 18:22:24 INFO    Ini        Activando sistema de LOG             ... : Correcto.
+06/10/2026 18:22:25 INFO    Ini        Activando estado aplicacion          ... : Correcto.
+06/10/2026 18:22:25 INFO    Ini        Activando estado Internet            ... : Correcto.
+06/10/2026 18:22:27 WARNING Status     Key pressed: 0x4C [L]
+06/10/2026 18:22:52 WARNING Status     Key pressed: 0x1B [?]
+06/10/2026 18:22:53 INFO    General    Aplicacion cerrada por el usuario
+06/10/2026 18:22:53 INFO    End        Desactivando estado Internet         ... : Correcto.
+06/10/2026 18:22:53 INFO    End        Desactivando estado aplicacion       ... : Correcto.
+06/10/2026 18:22:53 INFO    End        Desactivando sistema de LOG          ... : Correcto.
+06/10/2026 18:22:53 INFO    End        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:28:54 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:28:54 INFO    Ini        Version S.O.: Microsoft Windows 11 Pro Build(26300)  64 bits
+06/10/2026 18:28:54 INFO    Ini        Memoria total 33362924 Kb, libre 12302148 Kb (36%).
+06/10/2026 18:28:54 INFO    Ini        Activando sistema de LOG             ... : Correcto.
+06/10/2026 18:28:55 INFO    Ini        Activando estado aplicacion          ... : Correcto.
+06/10/2026 18:28:55 INFO    Ini        Activando estado Internet            ... : Correcto.
+06/10/2026 18:28:58 WARNING Status     Key pressed: 0x4C [L]
+06/10/2026 18:29:39 WARNING Status     Key pressed: 0x1B [?]
+06/10/2026 18:29:39 INFO    General    Aplicacion cerrada por el usuario
+06/10/2026 18:29:39 INFO    End        Desactivando estado Internet         ... : Correcto.
+06/10/2026 18:29:39 INFO    End        Desactivando estado aplicacion       ... : Correcto.
+06/10/2026 18:29:39 INFO    End        Desactivando sistema de LOG          ... : Correcto.
+06/10/2026 18:29:39 INFO    End        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:31:29 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:31:29 INFO    Ini        Version S.O.: Microsoft Windows 11 Pro Build(26300)  64 bits
+06/10/2026 18:31:29 INFO    Ini        Memoria total 33362924 Kb, libre 12627152 Kb (37%).
+06/10/2026 18:31:29 INFO    Ini        Activando sistema de LOG             ... : Correcto.
+06/10/2026 18:31:30 INFO    Ini        Activando estado aplicacion          ... : Correcto.
+06/10/2026 18:31:30 INFO    Ini        Activando estado Internet            ... : Correcto.
+06/10/2026 18:31:32 WARNING Status     Key pressed: 0x4C [L]
+06/10/2026 18:32:14 WARNING Status     Key pressed: 0x1B [?]
+06/10/2026 18:32:14 INFO    General    Aplicacion cerrada por el usuario
+06/10/2026 18:32:14 INFO    End        Desactivando estado Internet         ... : Correcto.
+06/10/2026 18:32:14 INFO    End        Desactivando estado aplicacion       ... : Correcto.
+06/10/2026 18:32:14 INFO    End        Desactivando sistema de LOG          ... : Correcto.
+06/10/2026 18:32:14 INFO    End        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:33:20 INFO    Ini        -------------------------------------------------------------------------------------------------------------
+06/10/2026 18:33:20 INFO    Ini        Version S.O.: Microsoft Windows 11 Pro Build(26300)  64 bits
+06/10/2026 18:33:21 INFO    Ini        Memoria total 33362924 Kb, libre 13740948 Kb (41%).
+06/10/2026 18:33:21 INFO    Ini        Activando sistema de LOG             ... : Correcto.
+06/10/2026 18:33:21 INFO    Ini        Activando estado aplicacion          ... : Correcto.
+06/10/2026 18:33:21 INFO    Ini        Activando estado Internet            ... : Correcto.
+06/10/2026 18:33:23 WARNING Status     Key pressed: 0x4C [L]
+06/10/2026 18:42:50 WARNING Status     Key pressed: 0x1B [?]
+06/10/2026 18:42:50 INFO    General    Aplicacion cerrada por el usuario
+06/10/2026 18:42:50 INFO    End        Desactivando estado Internet         ... : Correcto.
+06/10/2026 18:42:50 INFO    End        Desactivando estado aplicacion       ... : Correcto.
+06/10/2026 18:42:50 INFO    End        Desactivando sistema de LOG          ... : Correcto.
+06/10/2026 18:42:50 INFO    End        -------------------------------------------------------------------------------------------------------------

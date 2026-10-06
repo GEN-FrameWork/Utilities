@@ -208,7 +208,7 @@ void __fastcall TMainForm::FormCreate(TObject* Sender)
 
   //--------------------------------------------------------------------------------------
 
-  xthreadreadUDP = CREATEXTHREAD(XTHREADGROUPID_DIOSTREAM, __L("TMainForm::ReadUDP"), ThreadReadUDPFunction, (void*)this);
+  xthreadreadUDP = CREATEXTHREAD(XTHREADGROUPID_DIOSTREAM, _L("TMainForm::ReadUDP"), ThreadReadUDPFunction, (void*)this);
   if(xthreadreadUDP)
     {
       //xthreadreadUDP->SetPriority(XTHREADPRIORITY_REALTIME);
@@ -216,7 +216,7 @@ void __fastcall TMainForm::FormCreate(TObject* Sender)
     }
 
 
-  xthreadreadUART = CREATEXTHREAD(XTHREADGROUPID_DIOSTREAM, __L("TMainForm::ReadUART"), ThreadReadUARTFunction, (void*)this);
+  xthreadreadUART = CREATEXTHREAD(XTHREADGROUPID_DIOSTREAM, _L("TMainForm::ReadUART"), ThreadReadUARTFunction, (void*)this);
   if(xthreadreadUART)
     {
       xthreadreadUART->Ini();
@@ -457,7 +457,7 @@ void __fastcall TMainForm::ButtonClearClick(TObject *Sender)
   XSTRING namenode;
   GetNameNode(origin, namenode);
 
-  PrintStatus(__L("Clear screen from %s."), namenode.Get());
+  PrintStatus(_L("Clear screen from %s."), namenode.Get());
 }
 
 
@@ -481,8 +481,8 @@ void __fastcall TMainForm::ButtonStopClick(TObject *Sender)
   XSTRING string;
 
   if(run)
-         string.Format(__L("Start trace lines."));
-   else  string.Format(__L("Stop trace lines."));
+         string.Format(_L("Start trace lines."));
+   else  string.Format(_L("Stop trace lines."));
 
   PrintStatus(string.Get());
 }
@@ -698,7 +698,7 @@ void __fastcall TMainForm::ButtonDNSUpdateClick(TObject *Sender)
 
   origin->ritchtext->SelAttributes ->Color = clBlack;
 
-  PrintStatus(__L("Resolving DNS change of %s ..."), diostreamudpcfg->GetRemoteURL()->Get());
+  PrintStatus(_L("Resolving DNS change of %s ..."), diostreamudpcfg->GetRemoteURL()->Get());
 
   origin->ritchtext->Update();
   origin->valuelisteditor->Update();
@@ -726,23 +726,23 @@ void __fastcall TMainForm::ButtonDNSUpdateClick(TObject *Sender)
     			statusupdate = dyndns.Update(url, (*newip), 5);
     			if(statusupdate == DIODYNDNS_STATUSCODE_GOOD)
             {
-              PrintStatus(__L("DNS changed to Public IP: %s."), newIPstring.Get());
+              PrintStatus(_L("DNS changed to Public IP: %s."), newIPstring.Get());
 
               ResolvedAllURLOrigins();
             }
            else
             {
-              PrintStatus(__L("Failed to change the DNS."));
+              PrintStatus(_L("Failed to change the DNS."));
             }
         }
        else
         {
-          PrintStatus(__L("DNS was already changed."));
+          PrintStatus(_L("DNS was already changed."));
         }
 		}
    else
     {
-      PrintStatus(__L("Error to obtain the local IP."));
+      PrintStatus(_L("Error to obtain the local IP."));
     }
 
 
@@ -1088,7 +1088,7 @@ void __fastcall TMainForm::ButtonSaveClick(TObject *Sender)
               XSTRING  extfile;
               bool     status = false;
 
-              extfile = __L(".rtf");
+              extfile = _L(".rtf");
 
               GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_ROOT, xpath);
 
@@ -1125,7 +1125,7 @@ void __fastcall TMainForm::ButtonSaveClick(TObject *Sender)
                   GEN_XFACTORY.Delete_File(xfile);
                 }
 
-              PrintStatus(__L("Save node \"%s\" in [%s] file : %s"), namenode.Get(), extfile.Get(), status?__L("Ok."):__L("Error!!!"));
+              PrintStatus(_L("Save node \"%s\" in [%s] file : %s"), namenode.Get(), extfile.Get(), status?_L("Ok."):_L("Error!!!"));
 
               GEN_XFACTORY.Delete_Dir(xdir);
            }
@@ -1317,7 +1317,7 @@ void __fastcall TMainForm::ServerUARTComboBoxChange(TObject *Sender)
   Sleep(1000);
 
   XSTRING servercfg;
-  servercfg  = __L("COM");
+  servercfg  = _L("COM");
   servercfg += cfg->GetServer(ServerUARTComboBox->ItemIndex, XTRACEMONITOR_CFG_TYPESERVER_UART)->config;
 
   ServerUARTLabel->Caption = servercfg.Get();
@@ -1332,7 +1332,7 @@ void __fastcall TMainForm::ServerUARTComboBoxChange(TObject *Sender)
 
   nameUART = cfg->GetServer(ServerUARTComboBox->ItemIndex, XTRACEMONITOR_CFG_TYPESERVER_UART)->name;
 
-  PrintStatus(__L("%s %s: %s"), nameUART.Get(), servercfg.Get(), openuart?__L("Open"):__L("Close"));
+  PrintStatus(_L("%s %s: %s"), nameUART.Get(), servercfg.Get(), openuart?_L("Open"):_L("Close"));
 
   UARTBufferStatusLabel->Enabled       = openuart;
   UARTBufferStatusProgressBar->Enabled = openuart;
@@ -1423,7 +1423,7 @@ void __fastcall TMainForm::ButtonClearStatusClick(TObject *Sender)
   XSTRING namenode;
   GetNameNode(origin, namenode);
 
-  PrintStatus(__L("Clear status from %s."), namenode.Get());
+  PrintStatus(_L("Clear status from %s."), namenode.Get());
 }
 
 
@@ -1547,7 +1547,7 @@ void TMainForm::AddDBGmessageManager()
       if(sizebuffer >= XTRACEMONITOR_MAXSIZEINKUDPBUFFER)
         {
           diostreamudp->GetInXBuffer()->Delete();
-          PrintStatus(__L("Buffer UDP messages overlapped: Buffers deleted! "));
+          PrintStatus(_L("Buffer UDP messages overlapped: Buffers deleted! "));
 
           DBGmessages.DeleteContents();
           DBGmessages.DeleteAll();
@@ -1563,7 +1563,7 @@ void TMainForm::AddDBGmessageManager()
       if(sizebuffer >= XTRACEMONITOR_MAXSIZEINKUARTBUFFER)
         {
           diostreamuart->GetInXBuffer()->Delete();
-          PrintStatus(__L("Buffer UART messages overlapped: Buffers deleted! "));
+          PrintStatus(_L("Buffer UART messages overlapped: Buffers deleted! "));
 
           DBGmessages.DeleteContents();
           DBGmessages.DeleteAll();
@@ -1655,7 +1655,7 @@ void TMainForm::AddDBGmessageManager()
                 {
                   XSTRING string;
 
-                  string.Format(__L("Origin of the message Unknown!"));
+                  string.Format(_L("Origin of the message Unknown!"));
                   PrintStatus(string.Get());
                }
             }
@@ -1742,7 +1742,7 @@ void __fastcall TMainForm::CheckCopyData(Messages::TMessage &Message)
              case 1  : break;
              default : { XSTRING string;
 
-                         string.Format(__L("Message lost by packet error [code %d]."), error);
+                         string.Format(_L("Message lost by packet error [code %d]."), error);
                          PrintStatus(string.Get());
                        }
                        break;
@@ -1782,7 +1782,7 @@ bool TMainForm::UpdateInternetStatus()
 
   if(haveinternet) InternetLabel->Caption = "ON";  else InternetLabel->Caption = "OFF";
 
-  //PrintStatus(__L("Check Internet status: %s "), (haveinternet)?__L("Connected"):__L("Disconnected"));
+  //PrintStatus(_L("Check Internet status: %s "), (haveinternet)?_L("Connected"):_L("Disconnected"));
 
   return haveinternet;
 }
@@ -1831,8 +1831,8 @@ bool TMainForm::RefreshStatusTextFilter()
   XSTRING filter = FilterEdit->Text.c_str();
 
   if(FilterCheckBox->Checked)
-        string.Format(__L("Activated filter with \"%s\"."), filter.Get());
-   else string.Format(__L("Deactivated filter.") );
+        string.Format(_L("Activated filter with \"%s\"."), filter.Get());
+   else string.Format(_L("Deactivated filter.") );
 
   PrintStatus(string.Get());
 
@@ -1868,7 +1868,7 @@ TRichEdit* TMainForm::CreateRitchText()
   ritchtext->ReadOnly       = true;
   ritchtext->WordWrap       = false;
 
-  ritchtext->Font->Name     = __L("Courier New");
+  ritchtext->Font->Name     = _L("Courier New");
   ritchtext->Font->Height   = -11;
 
   ritchtext->HideSelection  = true;
@@ -1912,12 +1912,12 @@ TValueListEditor* TMainForm::CreateValueListEditor()
   valuelisteditor->Ctl3D          = false;
 
   valuelisteditor->TitleCaptions->Clear();
-  valuelisteditor->TitleCaptions->Add(__L("Name"));
-  valuelisteditor->TitleCaptions->Add(__L("Value"));
+  valuelisteditor->TitleCaptions->Add(_L("Name"));
+  valuelisteditor->TitleCaptions->Add(_L("Value"));
 
   valuelisteditor->ScrollBars     = ssBoth;
 
-  valuelisteditor->Font->Name     = __L("Courier New");
+  valuelisteditor->Font->Name     = _L("Courier New");
   valuelisteditor->Font->Height   = -11;
 
   return valuelisteditor;
@@ -1969,7 +1969,7 @@ ORIGIN* TMainForm::CreateOrigin(ORIGIN* father, XTRACEMONITOR_ORIGINCFG* originc
 
   if(origin->showip)
     {
-      string2.Format(__L(" [%s]"), origincfg->IP.Get());
+      string2.Format(_L(" [%s]"), origincfg->IP.Get());
       if(origincfg->IP.GetSize()) string += string2.Get();
     }
 
@@ -2022,18 +2022,18 @@ bool TMainForm::CreateOriginsFromConfig(bool addUART)
   rootorigincfg.isactive = true;
   rootorigincfg.showip   = false;
   rootorigincfg.name     = cfg->GetRootOriginName()->Get();
-  rootorigincfg.URL      = __L("");
-  rootorigincfg.IP       = __L("");
+  rootorigincfg.URL      = _L("");
+  rootorigincfg.IP       = _L("");
 
 
   XTRACEMONITOR_ORIGINCFG localnointernetorigincfg;
 
   localnointernetorigincfg.isactive = true;
   localnointernetorigincfg.showip   = false;
-  localnointernetorigincfg.name     = __L("# ");
+  localnointernetorigincfg.name     = _L("# ");
   localnointernetorigincfg.name    += cfg->GetLocalNoInternetOriginName()->Get();
-  localnointernetorigincfg.URL      = __L("");
-  localnointernetorigincfg.IP       = __L("");
+  localnointernetorigincfg.URL      = _L("");
+  localnointernetorigincfg.IP       = _L("");
 
   int c=0;
   while(c<(int)origins.GetSize())
@@ -2146,7 +2146,7 @@ ORIGIN* TMainForm::CreateOriginsFromIP(XDWORD publicIP, bool publicIPnopacket, X
             nodeorigincfg.name     = XTRACEMONITOR_NODEORIGINDEFAULTNAMENOTPACKET;
        else nodeorigincfg.name     = XTRACEMONITOR_NODEORIGINDEFAULTNAME;
 
-      nodeorigincfg.URL      = __L("");
+      nodeorigincfg.URL      = _L("");
       nodeorigincfg.IP       = publicIPstring.Get();
 
       origin = CreateOrigin(fatherorigin, &nodeorigincfg);
@@ -2171,17 +2171,17 @@ ORIGIN* TMainForm::CreateOriginsFromIP(XDWORD publicIP, bool publicIPnopacket, X
       nodeorigincfg.isactive = true;
       nodeorigincfg.showip   = true;
 
-      if(localIPstring.Compare(__L("1.1.1.1"), true))
+      if(localIPstring.Compare(_L("1.1.1.1"), true))
         {
-          nodeorigincfg.name     = __L("");
-          nodeorigincfg.URL      = __L("");
+          nodeorigincfg.name     = _L("");
+          nodeorigincfg.URL      = _L("");
           nodeorigincfg.IP       = localIPstring.Get();
         }
        else
         {
           nodeorigincfg.name     = cfg->GetWindowsMessageOriginName()->Get();
-          nodeorigincfg.URL      = __L("");
-          nodeorigincfg.IP       = __L("");
+          nodeorigincfg.URL      = _L("");
+          nodeorigincfg.IP       = _L("");
         }
 
       origin = CreateOrigin(fatherorigin, &nodeorigincfg);
@@ -2225,13 +2225,13 @@ bool TMainForm::CreateOriginFromUART()
   UARTorigincfg.showip   = false;
   UARTorigincfg.name     = servername.Get();
   UARTorigincfg.URL      = servername.Get();
-  UARTorigincfg.IP       = __L("255.255.255.255");
+  UARTorigincfg.IP       = _L("255.255.255.255");
 
   UARTorigin = CreateOrigin(NULL, &UARTorigincfg);
   if(UARTorigin)
     {
-      UARTorigin->publicIP = __L("255.255.255.255");
-      UARTorigin->localIP  = __L("255.255.255.255");
+      UARTorigin->publicIP = _L("255.255.255.255");
+      UARTorigin->localIP  = _L("255.255.255.255");
       UARTorigin->isuart   = true;
 
       origins.Add(UARTorigin);
@@ -2373,7 +2373,7 @@ void TMainForm::ResolvedAllURLOrigins()
   if(xmutexaddorigin)     xmutexaddorigin->Lock();
   if(xmutexaddDBGmessage) xmutexaddDBGmessage->Lock();
 
-  //PrintStatus(__L("Resolve URL from nodes ...   "));
+  //PrintStatus(_L("Resolve URL from nodes ...   "));
 
   for(int c=0; c<XTRACEMONITOR_CFG_MAXORIGINS; c++)
     {
@@ -2387,7 +2387,7 @@ void TMainForm::ResolvedAllURLOrigins()
             {
               if(origin->URL.GetSize())
                 {
-                  if(origin->URL.Compare(__L("UART")))
+                  if(origin->URL.Compare(_L("UART")))
                     {
                       DIOURL URL;
 
@@ -2398,7 +2398,7 @@ void TMainForm::ResolvedAllURLOrigins()
 
                       if(origin->showip)
                         {
-                          string2.Format(__L(" [%s]"), origin->publicIP.Get());
+                          string2.Format(_L(" [%s]"), origin->publicIP.Get());
                           string += string2.Get();
                         }
 
@@ -2457,7 +2457,7 @@ bool TMainForm::AddLineTrace(ORIGIN* origin, DBGMESSAGE* DBGmessage)
 
       if(!DBGmessage->level)
         {
-          if(namenode.Find(__L("_"), true) != XSTRING_NOTFOUND)
+          if(namenode.Find(_L("_"), true) != XSTRING_NOTFOUND)
             {
               eraseorigin   = true;
             }
@@ -2485,10 +2485,10 @@ bool TMainForm::AddLineTrace(ORIGIN* origin, DBGMESSAGE* DBGmessage)
       XSTRING namenode;
       GetNameNode(origin, namenode);
 
-      line.Format(__L("Clear screen from %s"), namenode.Get());
+      line.Format(_L("Clear screen from %s"), namenode.Get());
 
-      if(sizetext >= maxsize)                     line.AddFormat(__L(" for overlapped size %dk > %dk"), (sizetext/1024), (maxsize/1024));
-      if(indexcmdscreenclear != XSTRING_NOTFOUND) line.AddFormat(__L(" for command clear screen"));
+      if(sizetext >= maxsize)                     line.AddFormat(_L(" for overlapped size %dk > %dk"), (sizetext/1024), (maxsize/1024));
+      if(indexcmdscreenclear != XSTRING_NOTFOUND) line.AddFormat(_L(" for command clear screen"));
 
       PrintStatus(line.Get());
     }
@@ -2500,7 +2500,7 @@ bool TMainForm::AddLineTrace(ORIGIN* origin, DBGMESSAGE* DBGmessage)
 
       if(!DBGmessage->level)
         {
-          if(namenode.Find(__L("_"), true) != XSTRING_NOTFOUND)
+          if(namenode.Find(_L("_"), true) != XSTRING_NOTFOUND)
             {
               erasemsgstatus   = true;
             }
@@ -2518,7 +2518,7 @@ bool TMainForm::AddLineTrace(ORIGIN* origin, DBGMESSAGE* DBGmessage)
 
       GetNameNode(origin, namenode);
 
-      line.Format(__L("Clear Msg status from %s for command"), namenode.Get());
+      line.Format(_L("Clear Msg status from %s for command"), namenode.Get());
 
       origin->valuelisteditor->Strings->Clear();
       origin->status_msgs.StatusMsg_DeleteAll();
@@ -2530,12 +2530,12 @@ bool TMainForm::AddLineTrace(ORIGIN* origin, DBGMESSAGE* DBGmessage)
       XSTRING publicIP;
       XSTRING localIP;
 
-      publicIP.Format(__L("[%03d.%03d.%03d.%03d]"), (DBGmessage->publicIP&0xFF000000)>>24
+      publicIP.Format(_L("[%03d.%03d.%03d.%03d]"), (DBGmessage->publicIP&0xFF000000)>>24
                                                   , (DBGmessage->publicIP&0x00FF0000)>>16
                                                   , (DBGmessage->publicIP&0x0000FF00)>>8
                                                   , (DBGmessage->publicIP&0x000000FF));
 
-      localIP.Format(__L("[%03d.%03d.%03d.%03d]") , (DBGmessage->localIP&0xFF000000)>>24
+      localIP.Format(_L("[%03d.%03d.%03d.%03d]") , (DBGmessage->localIP&0xFF000000)>>24
                                                   , (DBGmessage->localIP&0x00FF0000)>>16
                                                   , (DBGmessage->localIP&0x0000FF00)>>8
                                                   , (DBGmessage->localIP&0x000000FF));
@@ -2561,9 +2561,9 @@ bool TMainForm::AddLineTrace(ORIGIN* origin, DBGMESSAGE* DBGmessage)
 
       xdatetime->GetDateTimeToString((XDATETIME_FORMAT_STANDARD | XDATETIME_FORMAT_TIMEWITHMILLISECONDS), datetimestring);
 
-      line += __L("[");
+      line += _L("[");
       line +=  datetimestring.Get();
-      line += __L("] ");
+      line += _L("] ");
     }
 
   line += DBGmessage->string.Get();
@@ -2704,7 +2704,7 @@ bool TMainForm::AddDBGMessage(XDWORD publicIP, bool publicIPnopacket, XDWORD loc
 *---------------------------------------------------------------------------------------------------------------------*/
 void TMainForm::GenerateIPString(XDWORD IP, XSTRING& IPstring)
 {
-  IPstring.Format(__L("%d.%d.%d.%d"), (IP&0xFF000000)>>24, (IP&0x00FF0000)>>16, (IP&0x0000FF00)>>8, (IP&0x000000FF));
+  IPstring.Format(_L("%d.%d.%d.%d"), (IP&0xFF000000)>>24, (IP&0x00FF0000)>>16, (IP&0x0000FF00)>>8, (IP&0x000000FF));
 }
 
 
@@ -2884,20 +2884,20 @@ bool TMainForm::GetNameNode(ORIGIN* origin, XSTRING& namenode)
 
           if(originfather) namenode = originfather->name.Get();
 
-          namenode += __L("_");
+          namenode += _L("_");
           namenode += origin->publicIP.Get();
 
-          if(origin->localIP.Compare(__L("255.255.255.255")))
+          if(origin->localIP.Compare(_L("255.255.255.255")))
             {
-              namenode += __L("_#_");
+              namenode += _L("_#_");
               namenode += origin->localIP.Get();
             }
        }
       else
        {
-         if(origin->localIP.Compare(__L("255.255.255.255")) && origin->localIP.Compare(__L("0.0.0.0")))
+         if(origin->localIP.Compare(_L("255.255.255.255")) && origin->localIP.Compare(_L("0.0.0.0")))
            {
-             namenode += __L("_");
+             namenode += _L("_");
              namenode += origin->publicIP.Get();
            }
        }
@@ -3122,27 +3122,27 @@ bool TMainForm::RedrawStatusMsgList(ORIGIN* origin)
             {
               case XTRACE_TYPE_STATUS_MSG_UNKNOWN     : break;
 
-              case XTRACE_TYPE_STATUS_MSG_BOOLEAN     : valuestr.Format(__L("%s"),statusmsg->Value_GetBoolean()?__L("true"):__L("false"));
+              case XTRACE_TYPE_STATUS_MSG_BOOLEAN     : valuestr.Format(_L("%s"),statusmsg->Value_GetBoolean()?_L("true"):_L("false"));
                                                         break;
 
-              case XTRACE_TYPE_STATUS_MSG_INTEGER     : valuestr.Format(__L("%d"), statusmsg->Value_GetInteger());
+              case XTRACE_TYPE_STATUS_MSG_INTEGER     : valuestr.Format(_L("%d"), statusmsg->Value_GetInteger());
                                                         break;
 
               case XTRACE_TYPE_STATUS_MSG_STRING      : valuestr = statusmsg->Value_GetString()->Get();
                                                         break;
 
-              case XTRACE_TYPE_STATUS_MSG_XDWORD      : valuestr.Format(__L("%d"), statusmsg->Value_GetDword());
+              case XTRACE_TYPE_STATUS_MSG_XDWORD      : valuestr.Format(_L("%d"), statusmsg->Value_GetDword());
                                                         break;
 
-              case XTRACE_TYPE_STATUS_MSG_FLOAT       : valuestr.Format(__L("%f"), statusmsg->Value_GetFloat());
+              case XTRACE_TYPE_STATUS_MSG_FLOAT       : valuestr.Format(_L("%f"), statusmsg->Value_GetFloat());
                                                         break;
 
-              case XTRACE_TYPE_STATUS_MSG_RGBCOLOR    : valuestr.Format(__L("#%02X%02X%02X"), statusmsg->Value_GetColor()[0],statusmsg->Value_GetColor()[1],statusmsg->Value_GetColor()[2]);
+              case XTRACE_TYPE_STATUS_MSG_RGBCOLOR    : valuestr.Format(_L("#%02X%02X%02X"), statusmsg->Value_GetColor()[0],statusmsg->Value_GetColor()[1],statusmsg->Value_GetColor()[2]);
                                                         break;
 
             }
 
-          string += __L("=");
+          string += _L("=");
           string += valuestr.Get();
 
           origin->valuelisteditor->Strings->Add(string);
@@ -3291,7 +3291,7 @@ void TMainForm::ThreadReadUDPFunction(void* param)
                     default : {
                                 XSTRING string;
 
-                                string.Format(__L("Message lost by packet error [code %d]."), error);
+                                string.Format(_L("Message lost by packet error [code %d]."), error);
                                 mainform->PrintStatus(string.Get());
                               }
                               break;
@@ -3376,7 +3376,7 @@ void TMainForm::ThreadReadUARTFunction(void* param)
                   default : {
                               XSTRING string;
 
-                              string.Format(__L("Message lost by packet error [code %d]."), error);
+                              string.Format(_L("Message lost by packet error [code %d]."), error);
                               mainform->PrintStatus(string.Get());
                             }
                             break;

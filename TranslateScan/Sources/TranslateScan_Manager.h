@@ -41,6 +41,13 @@
 typedef bool (*TRANSLANTESCAN_FOUNDINFILE_PTRFUNC)(XPATH* pathfile, XFILETXT* filetxt, int line, int index, XSTRING& result);
 typedef bool (*TRANSLANTESCAN_CHANGEINFILE_PTRFUNC)(XPATH* pathfile, XFILETXT* filetxt, XSTRING& searchstring,int line, int index, XSTRING& result);
 
+enum TRANSLATESCAN_LITERALMACRO
+{
+  TRANSLATESCAN_LITERALMACRO_NONE = 0 ,
+  TRANSLATESCAN_LITERALMACRO_L        ,   // _L("...")  → candidate to translate
+  TRANSLATESCAN_LITERALMACRO_NL       ,   // NL("...")  → explicitly not translatable
+};
+
 
 
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
@@ -80,6 +87,15 @@ class TRANSLATESCAN_MANAGER
     bool                     Operation_Remark_InGroup                   (XPATH& operationdir);
     static bool              Operation_Remark_InGroup_SearchLine        (XPATH* pathfile, XFILETXT* filetxt, int nline, int index, XSTRING& result);
     static bool              Operation_Remark_InGroup_ChangeLine        (XPATH* pathfile, XFILETXT* filetxt, XSTRING& searchstring, int nline, int index, XSTRING& result);
+
+    bool                     Operation_LiteralStrings                   (XPATH& operationdir);
+    static bool              Operation_LiteralStrings_SearchLine        (XPATH* pathfile, XFILETXT* filetxt, int nline, int index, XSTRING& result);
+    static TRANSLATESCAN_LITERALMACRO Operation_LiteralStrings_GetMacroAt(XSTRING* line, int index);
+    static bool              Operation_LiteralStrings_IsApplicationName (XSTRING* line, int index);
+    static bool              Operation_LiteralStrings_HasTranslatableText(XSTRING& literal);
+    static bool              Operation_LiteralStrings_IsGENInternal      (XSTRING& literal, XDWORD& out_ID);
+    static int               Operation_LiteralStrings_SkipPrintfMask   (XCHAR* text, int size, int pos);
+    static int               Operation_LiteralStrings_SkipEscape        (XCHAR* text, int size, int pos);
 
   private:
 

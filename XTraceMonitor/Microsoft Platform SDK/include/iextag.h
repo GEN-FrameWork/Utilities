@@ -6071,10 +6071,10 @@ EXTERN_C const IID IID_IHTMLOptionElement2;
         virtual /* [id][propget] */ HRESULT STDMETHODCALLTYPE get_index( 
             /* [out][retval] */ long *plIndex) = 0;
         
-        virtual /* [id][propput] */ HRESULT STDMETHODCALLTYPE put__L( 
+        virtual /* [id][propput] */ HRESULT STDMETHODCALLTYPE put_L( 
             /* [in] */ BSTR bstrText) = 0;
         
-        virtual /* [id][propget] */ HRESULT STDMETHODCALLTYPE get__L( 
+        virtual /* [id][propget] */ HRESULT STDMETHODCALLTYPE get_L( 
             /* [out][retval] */ BSTR *pbstrText) = 0;
         
     };
@@ -6225,11 +6225,11 @@ EXTERN_C const IID IID_IHTMLOptionElement2;
 #define IHTMLOptionElement2_get_index(This,plIndex)	\
     (This)->lpVtbl -> get_index(This,plIndex)
 
-#define IHTMLOptionElement2_put__L(This,bstrText)	\
-    (This)->lpVtbl -> put__L(This,bstrText)
+#define IHTMLOptionElement2_put_L(This,bstrText)	\
+    (This)->lpVtbl -> put_L(This,bstrText)
 
-#define IHTMLOptionElement2_get__L(This,pbstrText)	\
-    (This)->lpVtbl -> get__L(This,pbstrText)
+#define IHTMLOptionElement2_get_L(This,pbstrText)	\
+    (This)->lpVtbl -> get_L(This,pbstrText)
 
 #endif /* COBJMACROS */
 

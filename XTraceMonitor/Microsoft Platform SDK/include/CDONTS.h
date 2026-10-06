@@ -2005,10 +2005,10 @@ EXTERN_C const IID IID_Message;
         virtual /* [helpstring][propput][id] */ HRESULT STDMETHODCALLTYPE put_TimeReceived( 
             /* [in] */ VARIANT varTimeReceived) = 0;
         
-        virtual /* [helpstring][propget][id] */ HRESULT STDMETHODCALLTYPE get__L( 
+        virtual /* [helpstring][propget][id] */ HRESULT STDMETHODCALLTYPE get_L( 
             /* [retval][out] */ VARIANT __RPC_FAR *varText) = 0;
         
-        virtual /* [helpstring][propput][id] */ HRESULT STDMETHODCALLTYPE put__L( 
+        virtual /* [helpstring][propput][id] */ HRESULT STDMETHODCALLTYPE put_L( 
             /* [in] */ VARIANT varText) = 0;
         
         virtual /* [helpstring][propget][id] */ HRESULT STDMETHODCALLTYPE get_HTMLText( 
@@ -2295,11 +2295,11 @@ EXTERN_C const IID IID_Message;
 #define Message_put_TimeReceived(This,varTimeReceived)	\
     (This)->lpVtbl -> put_TimeReceived(This,varTimeReceived)
 
-#define Message_get__L(This,varText)	\
-    (This)->lpVtbl -> get__L(This,varText)
+#define Message_get_L(This,varText)	\
+    (This)->lpVtbl -> get_L(This,varText)
 
-#define Message_put__L(This,varText)	\
-    (This)->lpVtbl -> put__L(This,varText)
+#define Message_put_L(This,varText)	\
+    (This)->lpVtbl -> put_L(This,varText)
 
 #define Message_get_HTMLText(This,varHTMLText)	\
     (This)->lpVtbl -> get_HTMLText(This,varHTMLText)

@@ -623,7 +623,7 @@ EXTERN_C const IID IID_ILITParserHost;
 #define ILITParserHost_Tag(This,pTag,fChildren)	\
     (This)->lpVtbl -> Tag(This,pTag,fChildren)
 
-#define ILITParserHost__L(This,pwchText,cwchText)	\
+#define ILITParserHost_L(This,pwchText,cwchText)	\
     (This)->lpVtbl -> Text(This,pwchText,cwchText)
 
 #define ILITParserHost_EndChildren(This)	\

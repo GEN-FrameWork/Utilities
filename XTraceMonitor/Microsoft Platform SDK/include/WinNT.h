@@ -316,7 +316,7 @@ typedef LPCWSTR PCTSTR, LPCTSTR;
 typedef LPUWSTR PUTSTR, LPUTSTR;
 typedef LPCUWSTR PCUTSTR, LPCUTSTR;
 typedef LPWSTR LP;
-#define ___L(quote) L##quote      // r_winnt
+#define __L(quote) L##quote      // r_winnt
 
 #else   /* UNICODE */               // r_winnt
 
@@ -329,10 +329,10 @@ typedef unsigned char TBYTE , *PTBYTE ;
 typedef LPSTR LPTCH, PTCH;
 typedef LPSTR PTSTR, LPTSTR, PUTSTR, LPUTSTR;
 typedef LPCSTR PCTSTR, LPCTSTR, PCUTSTR, LPCUTSTR;
-#define ___L(quote) quote         // r_winnt
+#define __L(quote) quote         // r_winnt
 
 #endif /* UNICODE */                // r_winnt
-#define TEXT(quote) ___L(quote)   // r_winnt
+#define TEXT(quote) __L(quote)   // r_winnt
 
 
 typedef SHORT *PSHORT;  

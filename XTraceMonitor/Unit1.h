@@ -55,9 +55,9 @@
 
 /*---- DEFINES & ENUMS  ----------------------------------------------------------------------------------------------*/
 
-#define XTRACEMONITOR_CFGNAMEFILE	 	 			                __L("XTraceMonitor")
-#define XTRACEMONITOR_VERSIONLABEL                        __L("Version 7.6.2")
-#define XTRACEMONITOR_ROOTDIR                             __L("assets")
+#define XTRACEMONITOR_CFGNAMEFILE	 	 			                _L("XTraceMonitor")
+#define XTRACEMONITOR_VERSIONLABEL                        _L("Version 7.6.2")
+#define XTRACEMONITOR_ROOTDIR                             _L("assets")
 
 #define XTRACEMONITOR_MASKLEVELBLACK                      0x00000001
 #define XTRACEMONITOR_MASKLEVELPURPLE                     0x00000002
@@ -77,10 +77,10 @@
 #define XTRACEMONITOR_MINPUBLICSTATUSMSGWIDTH             200
 #define XTRACEMONITOR_MAXPUBLICSTATUSMSGWIDTH             350
 
-#define XTRACEMONITOR_NODEORIGINDEFAULTNAME              __L("IP")
-#define XTRACEMONITOR_NODEORIGINDEFAULTNAMENOTPACKET     __L("IP*")
+#define XTRACEMONITOR_NODEORIGINDEFAULTNAME              _L("IP")
+#define XTRACEMONITOR_NODEORIGINDEFAULTNAMENOTPACKET     _L("IP*")
 
-#define XTRACEMONITOR_GRPVIEWPORT_ID_MAIN                __L("mainviewport")
+#define XTRACEMONITOR_GRPVIEWPORT_ID_MAIN                _L("mainviewport")
 
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
 

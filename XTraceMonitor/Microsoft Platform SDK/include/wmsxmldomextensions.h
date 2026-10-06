@@ -1246,11 +1246,11 @@ EXTERN_C const IID IID_IWMSPlaylist;
 #define IWMSPlaylist_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IWMSPlaylist_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IWMSPlaylist_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IWMSPlaylist_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IWMSPlaylist_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IWMSPlaylist_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)

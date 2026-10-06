@@ -415,10 +415,10 @@ EXTERN_C const IID IID_IInkEdit;
         virtual /* [helpcontext][helpstring][bindable][propputref][id] */ HRESULT STDMETHODCALLTYPE putref_Font( 
             /* [in] */ IFontDisp *ppFont) = 0;
         
-        virtual /* [helpcontext][helpstring][propget][id] */ HRESULT STDMETHODCALLTYPE get__L( 
+        virtual /* [helpcontext][helpstring][propget][id] */ HRESULT STDMETHODCALLTYPE get_L( 
             /* [retval][out] */ BSTR *pbstrText) = 0;
         
-        virtual /* [helpcontext][helpstring][propput][id] */ HRESULT STDMETHODCALLTYPE put__L( 
+        virtual /* [helpcontext][helpstring][propput][id] */ HRESULT STDMETHODCALLTYPE put_L( 
             /* [in] */ BSTR pbstrText) = 0;
         
         virtual /* [helpcontext][helpstring][propget][id] */ HRESULT STDMETHODCALLTYPE get_MouseIcon( 
@@ -1037,11 +1037,11 @@ EXTERN_C const IID IID_IInkEdit;
 #define IInkEdit_putref_Font(This,ppFont)	\
     (This)->lpVtbl -> putref_Font(This,ppFont)
 
-#define IInkEdit_get__L(This,pbstrText)	\
-    (This)->lpVtbl -> get__L(This,pbstrText)
+#define IInkEdit_get_L(This,pbstrText)	\
+    (This)->lpVtbl -> get_L(This,pbstrText)
 
-#define IInkEdit_put__L(This,pbstrText)	\
-    (This)->lpVtbl -> put__L(This,pbstrText)
+#define IInkEdit_put_L(This,pbstrText)	\
+    (This)->lpVtbl -> put_L(This,pbstrText)
 
 #define IInkEdit_get_MouseIcon(This,MouseIcon)	\
     (This)->lpVtbl -> get_MouseIcon(This,MouseIcon)

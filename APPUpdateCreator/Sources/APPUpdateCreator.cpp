@@ -286,25 +286,25 @@ bool APPUPDATECREATOR::AppProc_Update()
 
                                                         if(GetApplicationParam(xpath, applicationversiondata))
                                                           {
-                                                            console->Printf(__L("   Version        : %d.\n"), applicationversiondata.GetVersion());
-                                                            console->Printf(__L("   Subversion     : %d.\n"), applicationversiondata.GetSubVersion());
-                                                            console->Printf(__L("   Error Control  : %d.\n"), applicationversiondata.GetSubVersionError());
-                                                            console->Printf(__L("   Ini Sistema    : %s.\n"), applicationversiondata.SystemMustBeInit()?__L("Si"):__L("No"));
-                                                            console->Printf(__L("\n"));
-                                                            console->Printf(__L("   Creando %s en [%s] ...\n"), DIOAPPLICATIONUPDATE_INIFILE, xpath.Get());
+                                                            console->Printf(_L("   Version        : %d.\n"), applicationversiondata.GetVersion());
+                                                            console->Printf(_L("   Subversion     : %d.\n"), applicationversiondata.GetSubVersion());
+                                                            console->Printf(_L("   Error Control  : %d.\n"), applicationversiondata.GetSubVersionError());
+                                                            console->Printf(_L("   Ini Sistema    : %s.\n"), applicationversiondata.SystemMustBeInit()?_L("Si"):_L("No"));
+                                                            console->Printf(_L("\n"));
+                                                            console->Printf(_L("   Creando %s en [%s] ...\n"), DIOAPPLICATIONUPDATE_INIFILE, xpath.Get());
 
                                                             status = GenerateUpdateFile(xpath, applicationversiondata, nfiles, sizetotal);
 
-                                                            console->Printf(__L("   Fichero de actualizacion: %s\n"), status?__L("Ok."):__L("Error!"));
-                                                            console->Printf(__L("   Numero de ficheros      : %d\n"), nfiles);
-                                                            console->Printf(__L("   Tamano de actualizacion : %dk\n"), sizetotal /1024);
+                                                            console->Printf(_L("   Fichero de actualizacion: %s\n"), status?_L("Ok."):_L("Error!"));
+                                                            console->Printf(_L("   Numero de ficheros      : %d\n"), nfiles);
+                                                            console->Printf(_L("   Tamano de actualizacion : %dk\n"), sizetotal /1024);
                                                           }
                                                          else
                                                           {
-                                                            console->Printf(__L("   Error! Argumentos erroneos o invalidos.\n"));
+                                                            console->Printf(_L("   Error! Argumentos erroneos o invalidos.\n"));
                                                           }
 
-                                                        console->Printf(__L("\n"));
+                                                        console->Printf(_L("\n"));
 
                                                         SetExitType(APPFLOWBASE_EXITTYPE_BY_APPLICATION);
                                                         SetEvent(APPUPDATECREATOR_XFSMEVENT_END);
@@ -344,8 +344,8 @@ bool APPUPDATECREATOR::AppProc_End()
 
   if(waitkeyatend)
     {
-      console->PrintMessage(__L(" "),0,false,true);
-      console->WaitKey(__L("  Pulsa una tecla para continuar... (%d)"), 1, false, 5);
+      console->PrintMessage(_L(" "),0,false,true);
+      console->WaitKey(_L("  Pulsa una tecla para continuar... (%d)"), 1, false, 5);
     }
 
   //--------------------------------------------------------------------------------------
@@ -382,12 +382,12 @@ bool APPUPDATECREATOR::GetApplicationParam(XPATH& xpath, DIOAPPLICATIONUPDATE_VE
   } COMANDINLINE;
 
   XSTRING       actualcmd;
-  COMANDINLINE  commandinline[] = { { __L("path")     , 1 },
-                                    { __L("version")  , 2 },
-                                    { __L("subver")   , 3 },
-                                    { __L("vererr")   , 4 },
-                                    { __L("boot")     , 5 },
-                                    { __L("nokey")    , 6 }
+  COMANDINLINE  commandinline[] = { { _L("path")     , 1 },
+                                    { _L("version")  , 2 },
+                                    { _L("subver")   , 3 },
+                                    { _L("vererr")   , 4 },
+                                    { _L("boot")     , 5 },
+                                    { _L("nokey")    , 6 }
                                   };
   int           codecmd;
   XDWORD        c = 0;
@@ -404,9 +404,9 @@ bool APPUPDATECREATOR::GetApplicationParam(XPATH& xpath, DIOAPPLICATIONUPDATE_VE
 
       actualcmd = GetExecParams()->Get(c)->Get();
       actualcmd.ToLowerCase();
-      actualcmd.DeleteCharacter(__C(' '));
+      actualcmd.DeleteCharacter(_C(' '));
 
-      if(actualcmd.Get()[0]==__C('-'))
+      if(actualcmd.Get()[0]==_C('-'))
         {
           actualcmd.DeleteCharacters(0, 1);
 
@@ -467,7 +467,7 @@ bool APPUPDATECREATOR::CreateListOfFiles(XPATH& xpath, XVECTOR<XPATH*>* updatefi
 
   XDIRELEMENT xdirelement;
 
-  if(xdir->FirstSearch(xpath, __L("*") ,&xdirelement))
+  if(xdir->FirstSearch(xpath, _L("*") ,&xdirelement))
     {
       do{ if(xdirelement.GetNameFile()->Compare(DIOAPPLICATIONUPDATE_INIFILE, true))
             {
@@ -567,11 +567,11 @@ bool APPUPDATECREATOR::GenerateUpdateFile(XPATH& xpath, DIOAPPLICATIONUPDATE_VER
               if(namefile)
                 {
                   namefile->DeleteCharacters(0, xpath.GetSize());
-                  if((namefile->Get()[0] == __C('/')) || (namefile->Get()[0] == __C('\\'))) namefile->DeleteCharacters(0, 1);
+                  if((namefile->Get()[0] == _C('/')) || (namefile->Get()[0] == _C('\\'))) namefile->DeleteCharacters(0, 1);
                 }
 
-              key.Format(__L("%s%d"), DIOAPPLICATIONUPDATE_FILESSECTION_FILES, c);
-              value.Format(__L("%s,%d,%08X"), namefile->Get(), (XDWORD)size, hashcrc32.GetResultCRC32());
+              key.Format(_L("%s%d"), DIOAPPLICATIONUPDATE_FILESSECTION_FILES, c);
+              value.Format(_L("%s,%d,%08X"), namefile->Get(), (XDWORD)size, hashcrc32.GetResultCRC32());
 
               xfileini.WriteValue(DIOAPPLICATIONUPDATE_FILESSECTION, key, value);
             }

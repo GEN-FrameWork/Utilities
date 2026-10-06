@@ -1699,8 +1699,8 @@ SecLookupWellKnownSid(
 
 #define SECURITY_ENTRYPOINT_ANSIW "InitSecurityInterfaceW"
 #define SECURITY_ENTRYPOINT_ANSIA "InitSecurityInterfaceA"
-#define SECURITY_ENTRYPOINTW SEC__L("InitSecurityInterfaceW")     // ntifs
-#define SECURITY_ENTRYPOINTA SEC__L("InitSecurityInterfaceA")
+#define SECURITY_ENTRYPOINTW SEC_L("InitSecurityInterfaceW")     // ntifs
+#define SECURITY_ENTRYPOINTA SEC_L("InitSecurityInterfaceA")
 #define SECURITY_ENTRYPOINT16 "INITSECURITYINTERFACEA"
 
 #ifdef SECURITY_WIN32

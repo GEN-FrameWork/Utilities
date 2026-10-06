@@ -60,7 +60,6 @@
 #include "XTranslation_GEN.h"
 #include "XScheduler.h"
 #include "XScheduler_XEvent.h"
-#include "XConsole.h"
 #include "XThread.h"
 #include "XTrace.h"
 #include "XObserver.h"
@@ -255,17 +254,16 @@ bool TRANSLATESCAN::AppProc_Ini()
 
   //--------------------------------------------------------------------------------------------------
 
-  /*
+  
   GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_ROOT, xpathsection);
-  xpath.Create(3 , xpathsection.Get(), TRANSLATESCAN_LNG_NAMEFILE, XTRANSLATION_NAMEFILEEXT);
+  xpath.Create(3 , xpathsection.Get(), APPLICATION_NAMEFILE, XTRANSLATION_NAMEFILEEXT);
 
   if(!GEN_XTRANSLATION.Ini(xpath))
     {
-      return false;
+      //return false;
     }
-  */
-
-  GEN_XTRANSLATION.SetActual(XLANGUAGE_ISO_639_3_CODE_ENG);
+  
+  //GEN_XTRANSLATION.SetActual(XLANGUAGE_ISO_639_3_CODE_ENG);
 
   //--------------------------------------------------------------------------------------------------
 
@@ -309,8 +307,8 @@ bool TRANSLATESCAN::AppProc_FirstUpdate()
 
   //--------------------------------------------------------------------------------------------------
   
-  //console->PrintMessage(__L(" "), 0, false, true);
-  //console->WaitKey(__L("  Pulsa una tecla para continuar... (%d)"), 1, false, 5);
+  //console->PrintMessage(_L(" "), 0, false, true);
+  //console->WaitKey(_L("  Pulsa una tecla para continuar... (%d)"), 1, false, 5);
 
   //--------------------------------------------------------------------------------------------------
 
@@ -454,10 +452,10 @@ bool TRANSLATESCAN::KeyValidSecuences(int key)
 {
   XCHAR character = (XCHAR)key;
 
-  if((character<32) || (character>127)) character = __C('?');
-  APPFLOW_LOG_ENTRY(XLOGLEVEL_WARNING, APPFLOW_CFG_LOG_SECTIONID_STATUSAPP, false, __L("Key pressed: 0x%02X [%c]"), key, character);
+  if((character<32) || (character>127)) character = _C('?');
+  APPFLOW_LOG_ENTRY(XLOGLEVEL_WARNING, APPFLOW_CFG_LOG_SECTIONID_STATUSAPP, false, _L("Key pressed: 0x%02X [%c]"), key, character);
 
-  console->Printf(__L("\r    \r"));
+  console->Printf(_L("\r    \r"));
 
   switch(key)
     {
@@ -486,12 +484,19 @@ bool TRANSLATESCAN::KeyValidSecuences(int key)
                         XSTRING brief_origin;
                         XSTRING brief_target;
 
-                        brief_origin = __L("Sender_SMTPConfig");
+                        brief_origin = _L("Sender_SMTPConfig");
 
                         manager->Operation_Remark_Brief_Construct(brief_origin, brief_target);
                       }
                   }
-                  break;                 
+                  break;
+
+      case 'L'  : { if(manager)
+                      {
+                        manager->Operation_LiteralStrings(operationdir);
+                      }
+                  }
+                  break;
     }
 
   return true;

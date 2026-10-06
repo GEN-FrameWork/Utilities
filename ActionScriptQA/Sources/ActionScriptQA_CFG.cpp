@@ -121,15 +121,15 @@ bool ACTIONSCRIPTQA_CFG::DoVariableMapping()
       return false;
     }
 
-  AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, __L("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
-  AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, __L(" Script recorder (F1)"), 0, 2);
+  AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, _L("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
+  AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, _L(" Script recorder (F1)"), 0, 2);
 
-  AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_OUTPUT   , &scriptrecord_outputscript , __L("Output .js under Tests/<base>/"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
-  AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX, &scriptrecord_bitmapprefix , __L("Bitmap file name prefix")  , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
-  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREW , &scriptrecord_capturewidth  , __L("Capture width (pixels)")  , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
-  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREH , &scriptrecord_captureheight , __L("Capture height (pixels)") , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
-  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITTO   , &scriptrecord_waittimeoutms, __L("WaitBitmap timeout (ms)") , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
-  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITIV   , &scriptrecord_waitintervalms,__L("WaitBitmap interval (ms)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_OUTPUT   , &scriptrecord_outputscript , _L("Output .js under Tests/<base>/"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX, &scriptrecord_bitmapprefix , _L("Bitmap file name prefix")  , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREW , &scriptrecord_capturewidth  , _L("Capture width (pixels)")  , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREH , &scriptrecord_captureheight , _L("Capture height (pixels)") , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITTO   , &scriptrecord_waittimeoutms, _L("WaitBitmap timeout (ms)") , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITIV   , &scriptrecord_waitintervalms,_L("WaitBitmap interval (ms)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
 
   return true;
 }
@@ -161,19 +161,19 @@ bool ACTIONSCRIPTQA_CFG::DoDefault()
   log_activesectionsID.Empty();
 
   log_activesectionsID                 += APPFLOW_CFG_LOG_SECTIONID_INITIATION;
-  log_activesectionsID                 += __L(",");
+  log_activesectionsID                 += _L(",");
   log_activesectionsID                 += APPFLOW_CFG_LOG_SECTIONID_GENERIC;
-  log_activesectionsID                 += __L(",");
+  log_activesectionsID                 += _L(",");
   log_activesectionsID                 += APPFLOW_CFG_LOG_SECTIONID_STATUSAPP;
-  log_activesectionsID                 += __L(",");
+  log_activesectionsID                 += _L(",");
   log_activesectionsID                 += APPFLOW_CFG_LOG_SECTIONID_ENDING;
 
   log_levelmask                         = XLOGLEVEL_ALL;
   log_maxsize                           = 3000;
   log_reductionpercent                  = 10;
 
-  scriptrecord_outputscript             = __L("Tests_Recorded.js");
-  scriptrecord_bitmapprefix             = __L("rec_");
+  scriptrecord_outputscript             = _L("Tests_Recorded.js");
+  scriptrecord_bitmapprefix             = _L("rec_");
   scriptrecord_capturewidth             = 96;
   scriptrecord_captureheight            = 32;
   scriptrecord_waittimeoutms            = 10000;

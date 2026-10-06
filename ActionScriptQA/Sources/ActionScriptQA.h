@@ -74,10 +74,10 @@ enum ACTIONSCRIPTQATASKID
 #define APPLICATION_SUBVERSION                    5
 #define APPLICATION_SUBVERSIONERR                 0
 
-#define APPLICATION_NAMEAPP                       __L("ActionScriptQA")
-#define APPLICATION_NAMEFILE                      __L("actionscriptqa")
+#define APPLICATION_NAMEAPP                       _L("ActionScriptQA")
+#define APPLICATION_NAMEFILE                      _L("actionscriptqa")
 
-#define APPLICATION_OWNER                         __L("EndoraSoft")
+#define APPLICATION_OWNER                         _L("EndoraSoft")
 
 #define APPLICATION_YEAROFCREATION                2023
 

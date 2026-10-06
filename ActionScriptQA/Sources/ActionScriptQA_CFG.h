@@ -27,15 +27,15 @@
 /*---- DEFINES & ENUMS  ----------------------------------------------------------------------------------------------*/
 #pragma region DEFINES_ENUMS
 
-#define ACTIONSCRIPTQACFG_SECTIONGENERAL          __L("general")
+#define ACTIONSCRIPTQACFG_SECTIONGENERAL          _L("general")
 
-#define ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD    __L("scriptrecord")
-#define ACTIONSCRIPTQACFG_SCRIPTRECORD_OUTPUT     __L("outputscript")
-#define ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX  __L("bitmapprefix")
-#define ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREW   __L("capturewidth")
-#define ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREH   __L("captureheight")
-#define ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITTO     __L("waittimeoutms")
-#define ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITIV     __L("waitintervalms")
+#define ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD    _L("scriptrecord")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_OUTPUT     _L("outputscript")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX  _L("bitmapprefix")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREW   _L("capturewidth")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREH   _L("captureheight")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITTO     _L("waittimeoutms")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITIV     _L("waitintervalms")
 
 #pragma endregion
 

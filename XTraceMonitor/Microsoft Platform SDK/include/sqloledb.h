@@ -237,7 +237,7 @@ extern const DBID DBCOLUMN_SS_TDSCOLLATION;
 
 //For next release.
 #define V_SS_IMAGE(X)	V_SS_UNION(X, ImageVal)
-#define V_SS__L(X)	V_SS_UNION(X, TextVal)
+#define V_SS_L(X)	V_SS_UNION(X, TextVal)
 #define V_SS_NTEXT(X)	V_SS_UNION(X, NTextVal)
 
 //-------------------------------------------------------------------

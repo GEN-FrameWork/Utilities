@@ -1547,10 +1547,10 @@ EXTERN_C const IID IID_IXMLDOMNode;
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_nodeTypeString( 
             /* [out][retval] */ BSTR *nodeType) = 0;
         
-        virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get__L( 
+        virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_L( 
             /* [out][retval] */ BSTR *text) = 0;
         
-        virtual /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE put__L( 
+        virtual /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE put_L( 
             /* [in] */ BSTR text) = 0;
         
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_specified( 
@@ -1898,11 +1898,11 @@ EXTERN_C const IID IID_IXMLDOMNode;
 #define IXMLDOMNode_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMNode_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMNode_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMNode_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMNode_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMNode_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -2714,11 +2714,11 @@ EXTERN_C const IID IID_IXMLDOMDocumentFragment;
 #define IXMLDOMDocumentFragment_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMDocumentFragment_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMDocumentFragment_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMDocumentFragment_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMDocumentFragment_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMDocumentFragment_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -3347,11 +3347,11 @@ EXTERN_C const IID IID_IXMLDOMDocument;
 #define IXMLDOMDocument_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMDocument_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMDocument_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMDocument_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMDocument_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMDocument_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -4422,11 +4422,11 @@ EXTERN_C const IID IID_IXMLDOMDocument2;
 #define IXMLDOMDocument2_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMDocument2_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMDocument2_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMDocument2_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMDocument2_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMDocument2_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -5627,11 +5627,11 @@ EXTERN_C const IID IID_IXMLDOMCharacterData;
 #define IXMLDOMCharacterData_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMCharacterData_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMCharacterData_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMCharacterData_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMCharacterData_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMCharacterData_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -6148,11 +6148,11 @@ EXTERN_C const IID IID_IXMLDOMAttribute;
 #define IXMLDOMAttribute_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMAttribute_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMAttribute_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMAttribute_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMAttribute_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMAttribute_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -6640,11 +6640,11 @@ EXTERN_C const IID IID_IXMLDOMElement;
 #define IXMLDOMElement_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMElement_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMElement_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMElement_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMElement_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMElement_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -7201,11 +7201,11 @@ EXTERN_C const IID IID_IXMLDOMText;
 #define IXMLDOMText_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMText_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMText_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMText_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMText_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMText_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -7654,11 +7654,11 @@ EXTERN_C const IID IID_IXMLDOMComment;
 #define IXMLDOMComment_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMComment_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMComment_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMComment_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMComment_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMComment_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -8074,11 +8074,11 @@ EXTERN_C const IID IID_IXMLDOMProcessingInstruction;
 #define IXMLDOMProcessingInstruction_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMProcessingInstruction_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMProcessingInstruction_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMProcessingInstruction_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMProcessingInstruction_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMProcessingInstruction_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -8536,11 +8536,11 @@ EXTERN_C const IID IID_IXMLDOMCDATASection;
 #define IXMLDOMCDATASection_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMCDATASection_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMCDATASection_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMCDATASection_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMCDATASection_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMCDATASection_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -8960,11 +8960,11 @@ EXTERN_C const IID IID_IXMLDOMDocumentType;
 #define IXMLDOMDocumentType_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMDocumentType_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMDocumentType_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMDocumentType_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMDocumentType_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMDocumentType_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -9393,11 +9393,11 @@ EXTERN_C const IID IID_IXMLDOMNotation;
 #define IXMLDOMNotation_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMNotation_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMNotation_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMNotation_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMNotation_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMNotation_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -9818,11 +9818,11 @@ EXTERN_C const IID IID_IXMLDOMEntity;
 #define IXMLDOMEntity_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMEntity_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMEntity_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMEntity_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMEntity_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMEntity_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -10237,11 +10237,11 @@ EXTERN_C const IID IID_IXMLDOMEntityReference;
 #define IXMLDOMEntityReference_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXMLDOMEntityReference_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXMLDOMEntityReference_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXMLDOMEntityReference_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXMLDOMEntityReference_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXMLDOMEntityReference_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -11243,11 +11243,11 @@ EXTERN_C const IID IID_IXTLRuntime;
 #define IXTLRuntime_get_nodeTypeString(This,nodeType)	\
     (This)->lpVtbl -> get_nodeTypeString(This,nodeType)
 
-#define IXTLRuntime_get__L(This,text)	\
-    (This)->lpVtbl -> get__L(This,text)
+#define IXTLRuntime_get_L(This,text)	\
+    (This)->lpVtbl -> get_L(This,text)
 
-#define IXTLRuntime_put__L(This,text)	\
-    (This)->lpVtbl -> put__L(This,text)
+#define IXTLRuntime_put_L(This,text)	\
+    (This)->lpVtbl -> put_L(This,text)
 
 #define IXTLRuntime_get_specified(This,isSpecified)	\
     (This)->lpVtbl -> get_specified(This,isSpecified)
@@ -23803,10 +23803,10 @@ EXTERN_C const IID IID_IXMLElement;
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_type( 
             /* [out][retval] */ long *plType) = 0;
         
-        virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get__L( 
+        virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_L( 
             /* [out][retval] */ BSTR *p) = 0;
         
-        virtual /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE put__L( 
+        virtual /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE put_L( 
             /* [in] */ BSTR p) = 0;
         
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE addChild( 
@@ -23977,11 +23977,11 @@ EXTERN_C const IID IID_IXMLElement;
 #define IXMLElement_get_type(This,plType)	\
     (This)->lpVtbl -> get_type(This,plType)
 
-#define IXMLElement_get__L(This,p)	\
-    (This)->lpVtbl -> get__L(This,p)
+#define IXMLElement_get_L(This,p)	\
+    (This)->lpVtbl -> get_L(This,p)
 
-#define IXMLElement_put__L(This,p)	\
-    (This)->lpVtbl -> put__L(This,p)
+#define IXMLElement_put_L(This,p)	\
+    (This)->lpVtbl -> put_L(This,p)
 
 #define IXMLElement_addChild(This,pChildElem,lIndex,lReserved)	\
     (This)->lpVtbl -> addChild(This,pChildElem,lIndex,lReserved)
@@ -24189,10 +24189,10 @@ EXTERN_C const IID IID_IXMLElement2;
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_type( 
             /* [out][retval] */ long *plType) = 0;
         
-        virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get__L( 
+        virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_L( 
             /* [out][retval] */ BSTR *p) = 0;
         
-        virtual /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE put__L( 
+        virtual /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE put_L( 
             /* [in] */ BSTR p) = 0;
         
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE addChild( 
@@ -24370,11 +24370,11 @@ EXTERN_C const IID IID_IXMLElement2;
 #define IXMLElement2_get_type(This,plType)	\
     (This)->lpVtbl -> get_type(This,plType)
 
-#define IXMLElement2_get__L(This,p)	\
-    (This)->lpVtbl -> get__L(This,p)
+#define IXMLElement2_get_L(This,p)	\
+    (This)->lpVtbl -> get_L(This,p)
 
-#define IXMLElement2_put__L(This,p)	\
-    (This)->lpVtbl -> put__L(This,p)
+#define IXMLElement2_put_L(This,p)	\
+    (This)->lpVtbl -> put_L(This,p)
 
 #define IXMLElement2_addChild(This,pChildElem,lIndex,lReserved)	\
     (This)->lpVtbl -> addChild(This,pChildElem,lIndex,lReserved)

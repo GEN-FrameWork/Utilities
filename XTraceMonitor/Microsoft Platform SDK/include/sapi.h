@@ -19748,7 +19748,7 @@ EXTERN_C const IID IID_ISpeechGrammarRuleStateTransition;
         virtual /* [id][helpstring][propget] */ HRESULT STDMETHODCALLTYPE get_Type( 
             /* [retval][out] */ SpeechGrammarRuleStateTransitionType *Type) = 0;
         
-        virtual /* [id][helpstring][propget] */ HRESULT STDMETHODCALLTYPE get__L( 
+        virtual /* [id][helpstring][propget] */ HRESULT STDMETHODCALLTYPE get_L( 
             /* [retval][out] */ BSTR *Text) = 0;
         
         virtual /* [id][helpstring][propget] */ HRESULT STDMETHODCALLTYPE get_Rule( 
@@ -19888,8 +19888,8 @@ EXTERN_C const IID IID_ISpeechGrammarRuleStateTransition;
 #define ISpeechGrammarRuleStateTransition_get_Type(This,Type)	\
     (This)->lpVtbl -> get_Type(This,Type)
 
-#define ISpeechGrammarRuleStateTransition_get__L(This,Text)	\
-    (This)->lpVtbl -> get__L(This,Text)
+#define ISpeechGrammarRuleStateTransition_get_L(This,Text)	\
+    (This)->lpVtbl -> get_L(This,Text)
 
 #define ISpeechGrammarRuleStateTransition_get_Rule(This,Rule)	\
     (This)->lpVtbl -> get_Rule(This,Rule)
@@ -22502,7 +22502,7 @@ EXTERN_C const IID IID_ISpeechPhraseReplacement;
         virtual /* [id][helpstring][propget] */ HRESULT STDMETHODCALLTYPE get_DisplayAttributes( 
             /* [retval][out] */ SpeechDisplayAttributes *DisplayAttributes) = 0;
         
-        virtual /* [id][helpstring][propget] */ HRESULT STDMETHODCALLTYPE get__L( 
+        virtual /* [id][helpstring][propget] */ HRESULT STDMETHODCALLTYPE get_L( 
             /* [retval][out] */ BSTR *Text) = 0;
         
         virtual /* [id][helpstring][propget] */ HRESULT STDMETHODCALLTYPE get_FirstElement( 
@@ -22614,8 +22614,8 @@ EXTERN_C const IID IID_ISpeechPhraseReplacement;
 #define ISpeechPhraseReplacement_get_DisplayAttributes(This,DisplayAttributes)	\
     (This)->lpVtbl -> get_DisplayAttributes(This,DisplayAttributes)
 
-#define ISpeechPhraseReplacement_get__L(This,Text)	\
-    (This)->lpVtbl -> get__L(This,Text)
+#define ISpeechPhraseReplacement_get_L(This,Text)	\
+    (This)->lpVtbl -> get_L(This,Text)
 
 #define ISpeechPhraseReplacement_get_FirstElement(This,FirstElement)	\
     (This)->lpVtbl -> get_FirstElement(This,FirstElement)
