@@ -79,12 +79,16 @@ enum TRANSLATESCANTASKID
 #define APPLICATION_SUBVERSION                    1
 #define APPLICATION_SUBVERSIONERR                 0
 
-#define APPLICATION_NAMEAPP                       _L("Translate Scan")
-#define APPLICATION_NAMEFILE                      _L("translatescan")
+#define APPLICATION_NAMEAPP                       NL("Translate Scan")
+#define APPLICATION_NAMEFILE                      NL("translatescan")
 
-#define APPLICATION_OWNER                         _L("EndoraSoft")
+#define APPLICATION_OWNER                         NL("EndoraSoft")
 
 #define APPLICATION_YEAROFCREATION                2025
+
+#define TRANSLATESCAN_EXECMODIFIER_GEN            NL("GEN")
+#define TRANSLATESCAN_EXECMODIFIER_APP            NL("APP")
+#define TRANSLATESCAN_EXECMODIFIER_VIEW           NL("VIEW")
 
 
 
@@ -128,7 +132,14 @@ class TRANSLATESCAN : public APPFLOWCONSOLE, public XOBSERVER, public XFSMACHINE
 
     bool                                        Show_AllStatus                      ();
 
+    bool                                        ModifierGEN_IsActive                ();
+    bool                                        ModifierAPP_IsActive                ();
+    bool                                        ModifierVIEW_IsActive               ();
+
   private:
+
+    bool                                        IsExecParamModifier                 (XSTRING* param);
+    bool                                        RunExecModifier                     ();
     
     void                                        HandleEvent                         (XEVENT* xevent);
 
@@ -140,6 +151,10 @@ class TRANSLATESCAN : public APPFLOWCONSOLE, public XOBSERVER, public XFSMACHINE
     TRANSLATESCAN_MANAGER*                      manager;
 
     XPATH                                       operationdir;
+    bool                                        hasexecmodifier;
+    bool                                        modifiergen;
+    bool                                        modifierapp;
+    bool                                        modifierview;
 
 };
 

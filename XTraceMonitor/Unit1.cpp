@@ -152,7 +152,7 @@ void __fastcall TMainForm::FormCreate(TObject* Sender)
   if(!DIOFACTORY::GetIsInstanced()) return;
 
 
-  XTRANSLATION_GEN::GetInstance().Sentences_AddToTranslation(XLANGUAGE_ISO_639_3_CODE_ENG);
+  XTRANSLATION_GEN::GetInstance().SetActual(XLANGUAGE_ISO_639_3_CODE_ENG);
 
   //---------------------------------------------------------------
 

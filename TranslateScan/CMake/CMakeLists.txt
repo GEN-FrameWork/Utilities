@@ -21,7 +21,11 @@ option(XTRACE_NOINTERNET_FEATURE                                "No need for tra
 
 option(USE_CLANG_COMPILER_FEATURE                               "Use Clang Compiler"                                      ON )
                     
-option(DIO_FEATURE                                              "Data Input/Output"                                       ON ) 
+option(DIO_FEATURE                                              "Data Input/Output"                                       ON )
+option(SCRIPT_FEATURE                                           "Activate Scripts"                                        ON )
+option(SCRIPT_G_FEATURE                                         "Activate Script G Language"                              ON )
+option(SCRIPT_LIB_WEBCLIENT_FEATURE                             "Script Lib WebClient"                                    ON )
+option(DIO_SCRAPERWEB_TRANSLATION_FEATURE                       "Scraper Web Translation"                                 ON ) 
 option(DIO_CHECKCONNECTIONS_FEATURE                             "Check Connections"                                       ON )
 option(DIO_NETWORKTIMEPROTOCOL_FEATURE                          "Network Time Protocol"                                   ON )
 option(DIO_DYNDNS_FEATURE                                       "DynDNS"                                                  ON )
@@ -30,9 +34,9 @@ option(APPFLOW_FEATURE                                          "Application Flo
 option(APPFLOW_CONSOLE_FEATURE                                  "Application Flow Console"                                ON )
 option(APPFLOW_EXTENDED_FEATURE                                 "Application Flow Extended"                               ON )  
 option(APPFLOW_EXTENDED_APPLICATIONHEADER_FEATURE               "Application Flow Extended Aplication Header"             ON )  
-option(APPFLOW_EXTENDED_APPLICATIONSTATUS_FEATURE               "Application Flow Extended Aplication Status"             ON )  
-option(APPFLOW_EXTENDED_INTERNETSTATUS_FEATURE                  "Application Flow Extended Internet Status"               ON )  
-option(APPFLOW_CHECKRESOURCESHARDWARE_FEATURE                   "Application Flow Check Resources Hardwar"                ON )
+#option(APPFLOW_EXTENDED_APPLICATIONSTATUS_FEATURE               "Application Flow Extended Aplication Status"             ON )  
+#option(APPFLOW_EXTENDED_INTERNETSTATUS_FEATURE                  "Application Flow Extended Internet Status"               ON )  
+#option(APPFLOW_CHECKRESOURCESHARDWARE_FEATURE                   "Application Flow Check Resources Hardwar"                ON )
 option(APPFLOW_INTERNETSERVICES_FEATURE                         "Application Flow Internet Services"                      ON )
 option(APPFLOW_LOG_FEATURE                                      "Application Flow Log"                                    ON )
                                                                               

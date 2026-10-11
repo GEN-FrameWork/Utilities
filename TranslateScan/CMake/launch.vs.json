@@ -8,9 +8,10 @@
       "projectTarget": "translatescan.exe",
       "name": "translatescan [GEN]",
       "args": [
+        "GEN",
         "E:/Projects/GEN_FrameWork/GEN/"
       ]
-    } ,
+    },
     {
       "type": "translatescan",
       "project": "CMakeLists.txt",
@@ -18,6 +19,15 @@
       "name": "translatescan [MiniWebServer]",
       "args": [
         "E:/Projects/GEN_FrameWork/Examples/Console/MiniWebServer/Sources"
+      ]
+    },
+    {
+      "type": "translatescan",
+      "project": "CMakeLists.txt",
+      "projectTarget": "translatescan.exe",
+      "name": "translatescan [Scrits Example]",
+      "args": [
+        "E:/Projects/GEN_FrameWork/Examples/Console/ScriptsExample/Sources"
       ]
     }
   ]

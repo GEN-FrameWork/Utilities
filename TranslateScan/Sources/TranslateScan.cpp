@@ -200,21 +200,45 @@ bool TRANSLATESCAN::AppProc_Ini()
 
   if(GetExecParams())
     {
-      XSTRING* param = (XSTRING*)GetExecParams()->Get(0);
-      if(param)
-        { 
-          operationdir = param->Get();
+      for(XDWORD c=0; c<GetExecParams()->GetSize(); c++)
+        {
+          XSTRING* param = (XSTRING*)GetExecParams()->Get(c);
+          if(!param) continue;
 
-          if(operationdir.IsEmpty())  
+          if(IsExecParamModifier(param))
             {
-              XDIR* xdir = GEN_XFACTORY.Create_Dir();
-              if(xdir)
-                {   
-                  xdir->GetActual(operationdir);   
+              hasexecmodifier = true;
 
-                  GEN_XFACTORY.Delete_Dir(xdir);
+              if(!param->Compare(TRANSLATESCAN_EXECMODIFIER_GEN, false))
+                {
+                  modifiergen = true;
+                }
+
+              if(!param->Compare(TRANSLATESCAN_EXECMODIFIER_APP, false))
+                {
+                  modifierapp = true;
+                }
+
+              if(!param->Compare(TRANSLATESCAN_EXECMODIFIER_VIEW, false))
+                {
+                  modifierview = true;
                 }
             }
+          else if(operationdir.IsEmpty())
+            {
+              operationdir = param->Get();
+            }
+        }
+    }
+
+  if(operationdir.IsEmpty() && (hasexecmodifier || (GetExecParams() && GetExecParams()->GetSize())))
+    {
+      XDIR* xdir = GEN_XFACTORY.Create_Dir();
+      if(xdir)
+        {
+          xdir->GetActual(operationdir);
+
+          GEN_XFACTORY.Delete_Dir(xdir);
         }
     }
 
@@ -236,6 +260,8 @@ bool TRANSLATESCAN::AppProc_Ini()
   //--------------------------------------------------------------------------------------------------
 
   GEN_XPATHSMANAGER.AdjustRootPathDefault(APPFLOW_DEFAULT_DIRECTORY_ROOT);
+
+  GEN_XPATHSMANAGER.AddPathSection(XPATHSMANAGERSECTIONTYPE_SCRAPERS, APPFLOW_DEFAULT_DIRECTORY_SCRAPERS);
 
   GEN_XPATHSMANAGER.CreateAllPathSectionOnDisk();
 
@@ -298,11 +324,28 @@ bool TRANSLATESCAN::AppProc_FirstUpdate()
   if(!xtimerupdateconsole) return false;
   
   //--------------------------------------------------------------------------------------------------
+
+  Show_AllStatus();
+
+  //--------------------------------------------------------------------------------------------------
   
   manager = GEN_NEW TRANSLATESCAN_MANAGER();
   if(!manager)
     {
       return false;
+    }
+
+  if(hasexecmodifier)
+    {
+      bool done = RunExecModifier();
+
+      SetExitType(done ? APPFLOWBASE_EXITTYPE_BY_APPLICATION : APPFLOWBASE_EXITTYPE_BY_SERIOUSERROR);
+
+      // Do not redraw the status screen: it would clear the modifier progress lines.
+    }
+  else
+    {
+      Show_AllStatus();
     }
 
   //--------------------------------------------------------------------------------------------------
@@ -335,7 +378,8 @@ bool TRANSLATESCAN::AppProc_Update()
 
           case TRANSLATESCAN_XFSMSTATE_INI        : break;
 
-          case TRANSLATESCAN_XFSMSTATE_UPDATE     : if(GetExitType() == APPFLOWBASE_EXITTYPE_UNKNOWN)
+          case TRANSLATESCAN_XFSMSTATE_UPDATE     : /*
+                                                    if(GetExitType() == APPFLOWBASE_EXITTYPE_UNKNOWN)
                                                       {
                                                         if(xtimerupdateconsole)
                                                           {
@@ -352,9 +396,11 @@ bool TRANSLATESCAN::AppProc_Update()
                                                               }
                                                           }
                                                       }
+                                                   */              
                                                    break;
 
-          case TRANSLATESCAN_XFSMSTATE_END       : break;
+          case TRANSLATESCAN_XFSMSTATE_END       : SetExitType(APPFLOWBASE_EXITTYPE_BY_APPLICATION);
+                                                   break;
 
         }
     }
@@ -369,9 +415,10 @@ bool TRANSLATESCAN::AppProc_Update()
               case TRANSLATESCAN_XFSMSTATE_NONE   : break;
 
               case TRANSLATESCAN_XFSMSTATE_INI    : SetEvent(TRANSLATESCAN_XFSMEVENT_UPDATE);
-                                              break;
+                                                    break;
 
-              case TRANSLATESCAN_XFSMSTATE_UPDATE : break;
+              case TRANSLATESCAN_XFSMSTATE_UPDATE : SetEvent(TRANSLATESCAN_XFSMEVENT_END);
+                                                    break;
 
               case TRANSLATESCAN_XFSMSTATE_END    : break;
             }
@@ -463,6 +510,7 @@ bool TRANSLATESCAN::KeyValidSecuences(int key)
                   SetExitType(APPFLOWBASE_EXITTYPE_BY_USER);
                   break;
 
+      /*
       case 'T'  : { if(manager)
                       {
                         manager->Operation_Remark_Brief(operationdir);
@@ -490,10 +538,13 @@ bool TRANSLATESCAN::KeyValidSecuences(int key)
                       }
                   }
                   break;
+      */
 
       case 'L'  : { if(manager)
                       {
-                        manager->Operation_LiteralStrings(operationdir);
+                        manager->ModifierVIEW_Active(true);
+                        manager->Operation_ViewLiteralStrings(operationdir);
+                        manager->ModifierVIEW_Active(false);
                       }
                   }
                   break;
@@ -572,6 +623,119 @@ void TRANSLATESCAN::HandleEvent(XEVENT* xevent)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool TRANSLATESCAN::ModifierGEN_IsActive()
+* @brief      True when the GEN execution modifier was present.
+* @ingroup    APPLICATION
+*
+* @return     bool : true if it is successful.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool TRANSLATESCAN::ModifierGEN_IsActive()
+{
+  return modifiergen;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool TRANSLATESCAN::ModifierAPP_IsActive()
+* @brief      True when the directory is an application and strings go to its catalogue.
+* @ingroup    APPLICATION
+*
+* @return     bool : true if it is successful.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool TRANSLATESCAN::ModifierAPP_IsActive()
+{
+  return modifierapp;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool TRANSLATESCAN::ModifierVIEW_IsActive()
+* @brief      True when VIEW lists translation candidates without changing files.
+* @ingroup    APPLICATION
+*
+* @return     bool : true if it is successful.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool TRANSLATESCAN::ModifierVIEW_IsActive()
+{
+  return modifierview;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool TRANSLATESCAN::IsExecParamModifier(XSTRING* param)
+* @brief      True when every character of the parameter is an uppercase letter.
+* @note       INTERNAL
+* @ingroup    APPLICATION
+*
+* @param[in]  param : parameter to test.
+*
+* @return     bool : true if it is successful.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool TRANSLATESCAN::IsExecParamModifier(XSTRING* param)
+{
+  if(!param)           return false;
+  if(param->IsEmpty()) return false;
+
+  XCHAR* text = param->Get();
+  if(!text) return false;
+
+  for(XDWORD c=0; c<param->GetSize(); c++)
+    {
+      if(!param->Character_IsUpperCase(text[c])) return false;
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool TRANSLATESCAN::RunExecModifier()
+* @brief      Run the function of the active execution modifier.
+* @note       INTERNAL
+* @ingroup    APPLICATION
+*
+* @return     bool : true if it is successful.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool TRANSLATESCAN::RunExecModifier()
+{
+  if(!manager) return false;
+
+  if(modifierapp)
+    {
+      manager->ModifierAPP_Active(true);
+
+      return manager->Operation_TranslateAPP(operationdir);
+    }
+
+  if(modifiergen)
+    {
+      manager->ModifierGEN_Active(true);
+
+      return manager->Operation_TranslateGENInternal(operationdir);
+    }
+
+  if(modifierview)
+    {
+      manager->ModifierVIEW_Active(true);
+
+      return manager->Operation_ViewLiteralStrings(operationdir);
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         void TRANSLATESCAN::Clean()
 * @brief      Clean the attributes of the class: Default initialize.
 * @note       INTERNAL
@@ -586,6 +750,11 @@ void TRANSLATESCAN::Clean()
   xmutexshowallstatus         = NULL;
 
   manager                     = NULL;
+
+  hasexecmodifier             = false;
+  modifiergen                 = false;
+  modifierapp                 = false;
+  modifierview                = false;
 }
 
 

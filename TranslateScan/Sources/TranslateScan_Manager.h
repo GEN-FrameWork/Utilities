@@ -46,6 +46,7 @@ enum TRANSLATESCAN_LITERALMACRO
   TRANSLATESCAN_LITERALMACRO_NONE = 0 ,
   TRANSLATESCAN_LITERALMACRO_L        ,   // _L("...")  → candidate to translate
   TRANSLATESCAN_LITERALMACRO_NL       ,   // NL("...")  → explicitly not translatable
+  TRANSLATESCAN_LITERALMACRO_FL       ,   // FL("...")  → translate with fixed length
 };
 
 
@@ -88,18 +89,38 @@ class TRANSLATESCAN_MANAGER
     static bool              Operation_Remark_InGroup_SearchLine        (XPATH* pathfile, XFILETXT* filetxt, int nline, int index, XSTRING& result);
     static bool              Operation_Remark_InGroup_ChangeLine        (XPATH* pathfile, XFILETXT* filetxt, XSTRING& searchstring, int nline, int index, XSTRING& result);
 
+    bool                     ModifierGEN_Active                     (bool isactive);
+    bool                     ModifierGEN_IsActive                   ();
+
+    bool                     Operation_TranslateGENInternal         (XPATH& operationdir);
+
+    bool                     ModifierAPP_Active                     (bool isactive);
+    bool                     ModifierAPP_IsActive                   ();
+
+    bool                     Operation_TranslateAPP                 (XPATH& operationdir);
+
+    bool                     ModifierVIEW_Active                    (bool isactive);
+    bool                     ModifierVIEW_IsActive                  ();
+
+    bool                     Operation_ViewLiteralStrings           (XPATH& operationdir);
+
     bool                     Operation_LiteralStrings                   (XPATH& operationdir);
     static bool              Operation_LiteralStrings_SearchLine        (XPATH* pathfile, XFILETXT* filetxt, int nline, int index, XSTRING& result);
     static TRANSLATESCAN_LITERALMACRO Operation_LiteralStrings_GetMacroAt(XSTRING* line, int index);
     static bool              Operation_LiteralStrings_IsApplicationName (XSTRING* line, int index);
     static bool              Operation_LiteralStrings_HasTranslatableText(XSTRING& literal);
     static bool              Operation_LiteralStrings_IsGENInternal      (XSTRING& literal, XDWORD& out_ID);
+    static int               Operation_LiteralStrings_FindStringEnd     (XCHAR* text, int size, int start);
     static int               Operation_LiteralStrings_SkipPrintfMask   (XCHAR* text, int size, int pos);
     static int               Operation_LiteralStrings_SkipEscape        (XCHAR* text, int size, int pos);
 
   private:
 
     void                     Clean                                      ();
+
+    bool                     modifiergen;
+    bool                     modifierapp;
+    bool                     modifierview;
 };
 
 
