@@ -1348,6 +1348,7 @@ static int TRANSLATESCAN_CatalogueLanguageIndex(XCHAR* detected)
 class TRANSLATESCAN_GENTEXT
 {
   public:
+    XPATH   pathfile;
     XSTRING literal;
     XSTRING idname;
     XSTRING sentence[5];
@@ -1652,9 +1653,11 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateGENInternal(XPATH& operationdir)
                                               TRANSLATESCAN_GENTEXT* entry = GEN_NEW TRANSLATESCAN_GENTEXT();
                                               if(entry)
                                                 {
-                                                  entry->literal = literal;
-                                                  entry->fixed   = (macro == TRANSLATESCAN_LITERALMACRO_FL) ? (int)literal.GetSize() : 0;
-                                                  entry->ready   = false;
+                                                  entry->pathfile = *pathfile;
+                                                  entry->literal  = literal;
+                                                  entry->fixed    = (macro == TRANSLATESCAN_LITERALMACRO_FL) ? (int)literal.GetSize() : 0;
+                                                  entry->ready    = false;
+                                                  // Provisional name from the source literal; rebuilt from English after translation.
                                                   TRANSLATESCAN_BuildIDName(*pathfile, literal, entry->idname);
                                                   textindex = (int)texts.GetSize();
                                                   texts.Add(entry);
@@ -1768,6 +1771,7 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateGENInternal(XPATH& operationdir)
         XSTRING                human;
         XSTRING                autolang;
         XSTRING                english;
+        XSTRING                english_for_id;
 
         if(!entry) continue;
 
@@ -1804,6 +1808,7 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateGENInternal(XPATH& operationdir)
           }
 
         origin = TRANSLATESCAN_CatalogueLanguageIndex(detected.GetSourceLanguage());
+        if(origin == 0) english_for_id = human;
 
         for(int lang=0; lang<5; lang++)
           {
@@ -1828,6 +1833,7 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateGENInternal(XPATH& operationdir)
                     break;
                   }
 
+                english_for_id = decoded;
                 TRANSLATESCAN_EscapeForC(decoded, entry->sentence[lang]);
                 continue;
               }
@@ -1851,6 +1857,7 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateGENInternal(XPATH& operationdir)
                 break;
               }
 
+            if(lang == 0) english_for_id = translation;
             TRANSLATESCAN_EscapeForC(translation, entry->sentence[lang]);
           }
 
@@ -1863,6 +1870,9 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateGENInternal(XPATH& operationdir)
             TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   incomplete  \"%s\""), entry->literal.Get());
             continue;
           }
+
+        if(english_for_id.IsEmpty()) english_for_id = human;
+        TRANSLATESCAN_BuildIDName(entry->pathfile, english_for_id, entry->idname);
 
         entry->ready = true;
         TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   ready  %s  \"%s\""), entry->idname.Get(), entry->literal.Get());
@@ -2182,6 +2192,7 @@ class TRANSLATESCAN_APPTEXT
       idnumber   = 0;
     }
 
+    XPATH   pathfile;
     XSTRING literal;
     XSTRING human;
     XSTRING idname;
@@ -3682,14 +3693,15 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
                                       TRANSLATESCAN_APPTEXT* entry = GEN_NEW TRANSLATESCAN_APPTEXT();
                                       if(entry)
                                         {
+                                          entry->pathfile  = *pathfile;
                                           entry->literal   = literal;
                                           entry->human     = human;
                                           entry->fixed     = (macro == TRANSLATESCAN_LITERALMACRO_FL) ? (int)literal.GetSize() : 0;
                                           entry->ready     = false;
                                           entry->addtolng  = false;
                                           entry->addtoenum = false;
+                                          // Provisional name from the source literal; rebuilt from English after translation.
                                           TRANSLATESCAN_BuildAppIDName(idprefix, *pathfile, literal, entry->idname);
-                                          TRANSLATESCAN_MakeUniqueAppID(entry->idname, headertext);
                                           textindex = (int)scope.texts.GetSize();
                                           scope.texts.Add(entry);
                                         }
@@ -3860,6 +3872,10 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
             TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   incomplete  \"%s\""), entry->literal.Get());
             continue;
           }
+
+        // Enum IDs always come from the English sentence, even when the source literal is not English.
+        TRANSLATESCAN_BuildAppIDName(idprefix, entry->pathfile, entry->sentence[0], entry->idname);
+        TRANSLATESCAN_MakeUniqueAppID(entry->idname, headertext);
 
         entry->ready     = true;
         entry->addtolng  = true;
