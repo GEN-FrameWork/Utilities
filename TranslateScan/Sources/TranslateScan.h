@@ -89,6 +89,7 @@ enum TRANSLATESCANTASKID
 #define TRANSLATESCAN_EXECMODIFIER_GEN            NL("GEN")
 #define TRANSLATESCAN_EXECMODIFIER_APP            NL("APP")
 #define TRANSLATESCAN_EXECMODIFIER_VIEW           NL("VIEW")
+#define TRANSLATESCAN_EXECMODIFIER_ADDLNG         NL("ADDLNG")
 
 
 
@@ -135,10 +136,13 @@ class TRANSLATESCAN : public APPFLOWCONSOLE, public XOBSERVER, public XFSMACHINE
     bool                                        ModifierGEN_IsActive                ();
     bool                                        ModifierAPP_IsActive                ();
     bool                                        ModifierVIEW_IsActive               ();
+    bool                                        ModifierADDLNG_IsActive             ();
+    XSTRING*                                    ModifierADDLNG_GetCodeAlpha2        ();
 
   private:
 
     bool                                        IsExecParamModifier                 (XSTRING* param);
+    bool                                        ParseAddLanguageParam               (XSTRING* param);
     bool                                        RunExecModifier                     ();
     
     void                                        HandleEvent                         (XEVENT* xevent);
@@ -155,6 +159,8 @@ class TRANSLATESCAN : public APPFLOWCONSOLE, public XOBSERVER, public XFSMACHINE
     bool                                        modifiergen;
     bool                                        modifierapp;
     bool                                        modifierview;
+    bool                                        modifieraddlng;
+    XSTRING                                     addlngcodealpha2;
 
 };
 

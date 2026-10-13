@@ -42,6 +42,7 @@
 #include "XFactory.h"
 #include "XDir.h"
 #include "XFile.h"
+#include "XPath.h"
 #include "XBuffer.h"
 #include "XMap.h"
 #include "XTrace.h"
@@ -50,6 +51,10 @@
 #include "XLanguage_ISO_639_3.h"
 #include "APPFlowConsole.h"
 #include "APPFlowExtended.h"
+
+#ifdef XFILE_ZIP_ACTIVE
+#include "XFileZIP.h"
+#endif
 
 #ifdef DIO_SCRAPERWEB_TRANSLATION_ACTIVE
 #include "DIOScraperWebTranslation.h"
@@ -1238,12 +1243,24 @@ static void TRANSLATESCAN_ShieldPrintfMasks(XSTRING& text, XSTRING& shielded, XV
 
           if(next > (c + 1))
             {
+              XSTRING rawmask;
+
+              text.Copy(c, next, rawmask);
+
+              // Keep "%%" literal: translators often break {{n}} when it stands for a percent sign.
+              if(rawmask.Compare(NL("%%"), true) == 0)
+                {
+                  shielded.Add(NL("%%"));
+                  c = next;
+                  continue;
+                }
+
               XSTRING* mask = GEN_NEW XSTRING();
               XSTRING  token;
 
               if(mask)
                 {
-                  text.Copy(c, next, (*mask));
+                  (*mask) = rawmask;
                   token.Format(NL("{{%d}}"), (int)masks.GetSize());
                   masks.Add(mask);
                   shielded.Add(token);
@@ -2208,11 +2225,21 @@ class TRANSLATESCAN_APPTEXT
 class TRANSLATESCAN_APPPLACE
 {
   public:
+    TRANSLATESCAN_APPPLACE()
+    {
+      nline     = 0;
+      index     = 0;
+      endquote  = 0;
+      textindex = -1;
+      isxml     = false;
+    }
+
     XPATH pathfile;
     int   nline;
     int   index;
     int   endquote;
     int   textindex;
+    bool  isxml;          // true → rewrite to #[TRANSLATE_<id>] instead of TL(Enum)
 };
 
 
@@ -2234,14 +2261,53 @@ class TRANSLATESCAN_APPEXISTING
   public:
     TRANSLATESCAN_APPEXISTING()
     {
-      idnumber = 0;
-      ntext    = 0;
+      idnumber       = 0;
+      ntext          = 0;
+      original_ntext = 0;
+      endbracket     = -1;
     }
 
     int     idnumber;
     XSTRING idname;
     XSTRING text[16];
     int     ntext;
+    int     original_ntext;
+    int     endbracket;
+};
+
+
+class TRANSLATESCAN_ADDLNG_GENENTRY
+{
+  public:
+    TRANSLATESCAN_ADDLNG_GENENTRY()
+    {
+      fixed    = 0;
+      lastline = -1;
+      ready    = false;
+    }
+
+    XSTRING idname;
+    XSTRING eng_cescaped;
+    XSTRING any_cescaped;
+    int     fixed;
+    int     lastline;
+    XSTRING translated;
+    bool    ready;
+};
+
+
+class TRANSLATESCAN_APPXMLZIPMAP
+{
+  public:
+    TRANSLATESCAN_APPXMLZIPMAP()
+    {
+      dirty = false;
+    }
+
+    XPATH   zippath;      // e.g. assets/ui_layouts/message.zip
+    XSTRING entryname;    // member name inside the zip (e.g. message.xml)
+    XPATH   workpath;     // extracted working copy scanned/edited on disk
+    bool    dirty;
 };
 
 
@@ -2254,7 +2320,10 @@ class TRANSLATESCAN_APPSCOPE
     XVECTOR<TRANSLATESCAN_APPENUM*>    enums;
     XVECTOR<TRANSLATESCAN_APPEXISTING*> existing;
     XVECTOR<XPATH*>                    lngfiles;
+    XVECTOR<XPATH*>                    xmlfiles;
+    XVECTOR<TRANSLATESCAN_APPXMLZIPMAP*> xmlzipmaps;
     XVECTOR<TRANSLATESCAN_LTONLPLACE*>  ltonl;
+    XPATH                              xmltmpdir;
 
     ~TRANSLATESCAN_APPSCOPE()
     {
@@ -2265,6 +2334,34 @@ class TRANSLATESCAN_APPSCOPE
       enums.DeleteContents();
       existing.DeleteContents();
       lngfiles.DeleteContents();
+      xmlfiles.DeleteContents();
+
+      // Drop any leftover extracted layout XML and the work directory.
+      if(!xmltmpdir.IsEmpty() || (xmlzipmaps.GetSize() > 0))
+        {
+          XFILE* xfile = GEN_XFACTORY.Create_File();
+          if(xfile)
+            {
+              for(XDWORD m=0; m<xmlzipmaps.GetSize(); m++)
+                {
+                  TRANSLATESCAN_APPXMLZIPMAP* map = xmlzipmaps.Get(m);
+                  if(map && !map->workpath.IsEmpty()) xfile->Erase(map->workpath);
+                }
+              GEN_XFACTORY.Delete_File(xfile);
+            }
+
+          if(!xmltmpdir.IsEmpty())
+            {
+              XDIR* xdir = GEN_XFACTORY.Create_Dir();
+              if(xdir)
+                {
+                  if(xdir->Exist(xmltmpdir)) xdir->Delete(xmltmpdir, true);
+                  GEN_XFACTORY.Delete_Dir(xdir);
+                }
+            }
+        }
+
+      xmlzipmaps.DeleteContents();
     }
 };
 
@@ -2325,6 +2422,407 @@ static void TRANSLATESCAN_CollectLng(XCHAR* inipath, XVECTOR<XPATH*>* found)
     }
 
   GEN_XFACTORY.Delete_Dir(xdir);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static void TRANSLATESCAN_CollectLayoutFiles(XCHAR* inipath, XVECTOR<XPATH*>* xmlfound, XVECTOR<XPATH*>* zipfound)
+* @brief      Collect loose .xml layouts and .zip layout bundles under assets/ui_layouts (recursive).
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static void TRANSLATESCAN_CollectLayoutFiles(XCHAR* inipath, XVECTOR<XPATH*>* xmlfound, XVECTOR<XPATH*>* zipfound)
+{
+  XDIR*       xdir = NULL;
+  XDIRELEMENT element;
+
+  if(!inipath || !xmlfound) return;
+
+  xdir = GEN_XFACTORY.Create_Dir();
+  if(!xdir) return;
+
+  if(xdir->FirstSearch(inipath, _L("*"), &element))
+    {
+      do{
+          if(!element.GetNameFile()) continue;
+          if(!element.GetNameFile()->Compare(NL("."), true))  continue;
+          if(!element.GetNameFile()->Compare(NL(".."), true)) continue;
+          // Skip TranslateScan's own extract workspace if nested under ui_layouts.
+          if(!element.GetNameFile()->Compare(NL(".translatescan_ui_layouts"), true)) continue;
+
+          if(element.GetType() == XDIRELEMENTTYPE_DIR)
+            {
+              XPATH subpath;
+
+              subpath = inipath;
+              subpath.Slash_Add();
+              subpath.Add(element.GetNameFile()->Get());
+              TRANSLATESCAN_CollectLayoutFiles(subpath.Get(), xmlfound, zipfound);
+            }
+
+          if(element.GetType() == XDIRELEMENTTYPE_FILE)
+            {
+              XSTRING ext;
+
+              element.GetNameFile()->GetExt(ext);
+              if(!ext.Compare(NL(".xml"), true))
+                {
+                  XPATH* path = GEN_NEW XPATH();
+                  if(path)
+                    {
+                      path->Set(inipath);
+                      path->Slash_Add();
+                      path->Add(element.GetNameFile()->Get());
+                      xmlfound->Add(path);
+                    }
+                }
+              else if(zipfound && !ext.Compare(NL(".zip"), true))
+                {
+                  XPATH* path = GEN_NEW XPATH();
+                  if(path)
+                    {
+                      path->Set(inipath);
+                      path->Slash_Add();
+                      path->Add(element.GetNameFile()->Get());
+                      zipfound->Add(path);
+                    }
+                }
+            }
+
+        } while(xdir->NextSearch(&element));
+    }
+
+  GEN_XFACTORY.Delete_Dir(xdir);
+}
+
+
+#ifdef XFILE_ZIP_ACTIVE
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_ExtractLayoutXmlFromZips(XVECTOR<XPATH*>* zipfiles, XPATH& tmpdir, XVECTOR<XPATH*>* xmlfiles, XVECTOR<TRANSLATESCAN_APPXMLZIPMAP*>* maps)
+* @brief      Extract every .xml member from layout .zip bundles into tmpdir and register them for scanning.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_ExtractLayoutXmlFromZips(XVECTOR<XPATH*>* zipfiles, XPATH& tmpdir, XVECTOR<XPATH*>* xmlfiles, XVECTOR<TRANSLATESCAN_APPXMLZIPMAP*>* maps)
+{
+  XDIR*  xdir = NULL;
+  XFILE* xfile = NULL;
+  bool   status = true;
+
+  if(!zipfiles || !xmlfiles || !maps) return false;
+  if(zipfiles->GetSize() == 0) return true;
+
+  xdir = GEN_XFACTORY.Create_Dir();
+  if(!xdir) return false;
+
+  if(!xdir->Exist(tmpdir))
+    {
+      if(!xdir->Make(tmpdir))
+        {
+          TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP could not create layout zip work dir  %s"), tmpdir.Get());
+          GEN_XFACTORY.Delete_Dir(xdir);
+          return false;
+        }
+    }
+
+  GEN_XFACTORY.Delete_Dir(xdir);
+  xdir = NULL;
+
+  xfile = GEN_XFACTORY.Create_File();
+
+  for(XDWORD z=0; z<zipfiles->GetSize(); z++)
+    {
+      XPATH*     zippath = zipfiles->Get(z);
+      XFILEUNZIP unzip;
+      int        nfiles  = 0;
+
+      if(!zippath) continue;
+      if(!unzip.Open(*zippath))
+        {
+          TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP could not open layout zip  %s"), zippath->Get());
+          status = false;
+          continue;
+        }
+
+      nfiles = unzip.GetNFiles();
+      TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("APP layout zip  %s  (%d entr%s)"), zippath->Get(), nfiles, (nfiles == 1) ? NL("y") : NL("ies"));
+
+      for(int i=0; i<nfiles; i++)
+        {
+          XFILECMPZIP* filecmp = unzip.GotoFile(i);
+          XSTRING      entryname;
+          XSTRING      ext;
+          XSTRING      zipleaf;
+          XSTRING      workleaf;
+          XPATH        workpath;
+
+          if(!filecmp) break;
+          if(filecmp->IsDirectory())
+            {
+              GEN_DELETE filecmp;
+              continue;
+            }
+
+          entryname = filecmp->GetName();
+          GEN_DELETE filecmp;
+          filecmp = NULL;
+
+          {
+            XPATH entrypath;
+            entrypath = entryname;
+            entrypath.GetExt(ext);
+          }
+          if(ext.Compare(NL(".xml"), true) != 0) continue;
+
+          zippath->GetNamefile(zipleaf);
+          workleaf = zipleaf;
+          workleaf.Add(NL("__"));
+          for(XDWORD c=0; c<entryname.GetSize(); c++)
+            {
+              XCHAR ch = entryname.Get()[c];
+              if((ch == _C('/')) || (ch == _C('\\')) || (ch == _C(':'))) workleaf.Add(_C('_'));
+               else workleaf.Add(ch);
+            }
+
+          workpath = tmpdir;
+          workpath.Slash_Add();
+          workpath.Add(workleaf);
+
+          if(!unzip.DecompressFile(entryname, tmpdir, workleaf.Get()))
+            {
+              TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP could not extract  %s  from  %s"), entryname.Get(), zippath->Get());
+              status = false;
+              continue;
+            }
+
+          TRANSLATESCAN_APPXMLZIPMAP* map = GEN_NEW TRANSLATESCAN_APPXMLZIPMAP();
+          XPATH*                     path = GEN_NEW XPATH();
+          if(map && path)
+            {
+              map->zippath   = *zippath;
+              map->entryname = entryname;
+              map->workpath  = workpath;
+              maps->Add(map);
+
+              path->Set(workpath.Get());
+              xmlfiles->Add(path);
+
+              TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   extracted  %s  ->  %s"), entryname.Get(), workpath.Get());
+            }
+           else
+            {
+              GEN_DELETE map;
+              GEN_DELETE path;
+              if(xfile) xfile->Erase(workpath);
+              status = false;
+            }
+        }
+
+      unzip.Close();
+    }
+
+  if(xfile) GEN_XFACTORY.Delete_File(xfile);
+
+  return status;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_PackLayoutXmlIntoZip(TRANSLATESCAN_APPXMLZIPMAP* map)
+* @brief      Replace one .xml member inside a layout .zip with the edited working copy.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_PackLayoutXmlIntoZip(TRANSLATESCAN_APPXMLZIPMAP* map)
+{
+  XFILEUNZIP unzip;
+  XFILEZIP*  zip     = NULL;
+  XFILE*     xfile   = NULL;
+  int        nfiles  = 0;
+  int        index   = -1;
+  bool       status  = false;
+
+  if(!map) return false;
+
+  if(!unzip.Open(map->zippath))
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP could not reopen layout zip  %s"), map->zippath.Get());
+      return false;
+    }
+
+  nfiles = unzip.GetNFiles();
+  for(int i=0; i<nfiles; i++)
+    {
+      XFILECMPZIP* filecmp = unzip.GotoFile(i);
+      if(!filecmp) break;
+
+      if(map->entryname.Compare(filecmp->GetName(), false) == 0)
+        {
+          index = i;
+          GEN_DELETE filecmp;
+          break;
+        }
+
+      GEN_DELETE filecmp;
+    }
+
+  if(index < 0)
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP zip member not found  %s  in  %s"), map->entryname.Get(), map->zippath.Get());
+      unzip.Close();
+      return false;
+    }
+
+  // DelFile rebuilds the archive without that member; then AddFile appends the updated XML.
+  if(!unzip.DelFile(index))
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP could not remove zip member  %s"), map->entryname.Get());
+      unzip.Close();
+      return false;
+    }
+
+  unzip.Close();
+
+  zip = GEN_NEW XFILEZIP();
+  if(!zip) return false;
+
+  if(!zip->Open(map->zippath))
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP could not open layout zip for write  %s"), map->zippath.Get());
+      GEN_DELETE zip;
+      return false;
+    }
+
+  {
+    XPATH entrypath;
+    entrypath = map->entryname;
+    status = zip->AddFile(map->workpath, entrypath);
+  }
+
+  zip->Close();
+  GEN_DELETE zip;
+
+  if(status)
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("APP updated zip member  %s  in  %s"), map->entryname.Get(), map->zippath.Get());
+    }
+   else
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP could not add zip member  %s  to  %s"), map->entryname.Get(), map->zippath.Get());
+    }
+
+  xfile = GEN_XFACTORY.Create_File();
+  if(xfile)
+    {
+      xfile->Erase(map->workpath);
+      GEN_XFACTORY.Delete_File(xfile);
+    }
+
+  return status;
+}
+#endif // XFILE_ZIP_ACTIVE
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static void TRANSLATESCAN_TrimCopy(XSTRING& source, int start, int end, XSTRING& out)
+* @brief      Copy [start,end) from source and trim leading/trailing spaces and tabs.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static void TRANSLATESCAN_TrimCopy(XSTRING& source, int start, int end, XSTRING& out)
+{
+  out.Empty();
+  if(start < 0) start = 0;
+  if(end > (int)source.GetSize()) end = (int)source.GetSize();
+  if(end <= start) return;
+
+  while((start < end) && ((source.Get()[start] == _C(' ')) || (source.Get()[start] == _C('\t')))) start++;
+  while((end > start) && ((source.Get()[end - 1] == _C(' ')) || (source.Get()[end - 1] == _C('\t')))) end--;
+
+  if(end > start) source.Copy(start, end, out);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_ParseTranslateMaskID(XSTRING& text, int& out_ID)
+* @brief      True when text is exactly #[TRANSLATE_N] (optional surrounding spaces).
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_ParseTranslateMaskID(XSTRING& text, int& out_ID)
+{
+  XSTRING trim;
+  XSTRING maskID;
+  int     ID = 0;
+
+  TRANSLATESCAN_TrimCopy(text, 0, (int)text.GetSize(), trim);
+  if(trim.GetSize() < 14) return false;
+  if(trim.Get()[0] != _C('#') || trim.Get()[1] != _C('[')) return false;
+  if(trim.Character_GetLast() != _C(']')) return false;
+
+  XSTRING inner;
+  trim.Copy(2, (int)trim.GetSize() - 1, inner);
+
+  maskID = NL("TRANSLATE_%d");
+  if(!inner.UnFormat(maskID.Get(), &ID)) return false;
+  if(ID <= 0) return false;
+
+  out_ID = ID;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_LineIsLayoutTextCarrier(XSTRING* line, int& tagclose)
+* @brief      True for layout lines that carry a text node body (type="text" or <text>).
+*             tagclose receives the index of the '>' that opens the text content.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_LineIsLayoutTextCarrier(XSTRING* line, int& tagclose)
+{
+  int pos = XSTRING_NOTFOUND;
+
+  tagclose = XSTRING_NOTFOUND;
+  if(!line || line->IsEmpty()) return false;
+
+  // Skip pure comment lines.
+  {
+    XSTRING trim;
+    TRANSLATESCAN_TrimCopy(*line, 0, (int)line->GetSize(), trim);
+    if(trim.Find(NL("<!--"), false) == 0) return false;
+  }
+
+  pos = line->Find(NL("type=\"text\""), true);
+  if(pos == XSTRING_NOTFOUND) pos = line->Find(NL("type='text'"), true);
+
+  if(pos == XSTRING_NOTFOUND)
+    {
+      // <text>...</text> child nodes (e.g. UI_Options textbox lines)
+      int t = line->Find(NL("<text"), true);
+      if(t == XSTRING_NOTFOUND) return false;
+
+      // Avoid matching <textbox
+      if((t + 5) < (int)line->GetSize())
+        {
+          XCHAR next = line->Get()[t + 5];
+          if((next != _C('>')) && (next != _C(' ')) && (next != _C('\t')) && (next != _C('/'))) return false;
+        }
+
+      pos = t;
+    }
+
+  tagclose = line->Find(NL(">"), false, pos);
+  if(tagclose == XSTRING_NOTFOUND) return false;
+  if((tagclose > 0) && (line->Get()[tagclose - 1] == _C('/'))) return false;   // self-closing
+
+  return true;
 }
 
 
@@ -3159,7 +3657,8 @@ static bool TRANSLATESCAN_UpgradeAppLngLanguages(XPATH& lngpath)
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
-* @brief      Extract application literals, translate them and replace them with TL().
+* @brief      Extract application literals from Sources (_L/FL) and from assets/ui_layouts XML
+*             text nodes, translate them, and replace with TL() / #[TRANSLATE_N] respectively.
 * @ingroup    APPLICATION
 *
 * @param[in]  operationdir : application directory.
@@ -3748,6 +4247,218 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
       filetxt.Close();
     }
 
+  //------------------------------------------------------------------------------------
+  // Layout XML under assets/ui_layouts: literal text bodies → #[TRANSLATE_N]
+  // Loose .xml plus .xml members inside layout .zip bundles (same scan/rewrite path).
+  //------------------------------------------------------------------------------------
+  {
+    XPATH            layoutdir = assetsdir;
+    XVECTOR<XPATH*>  zipfiles;
+
+    layoutdir.Slash_Add();
+    layoutdir.Add(NL("ui_layouts"));
+
+    TRANSLATESCAN_CollectLayoutFiles(layoutdir.Get(), &scope.xmlfiles, &zipfiles);
+
+#ifdef XFILE_ZIP_ACTIVE
+    if(zipfiles.GetSize() > 0)
+      {
+        scope.xmltmpdir = layoutdir;
+        scope.xmltmpdir.Slash_Add();
+        scope.xmltmpdir.Add(NL(".translatescan_ui_layouts"));
+
+        if(!TRANSLATESCAN_ExtractLayoutXmlFromZips(&zipfiles, scope.xmltmpdir, &scope.xmlfiles, &scope.xmlzipmaps))
+          {
+            status = false;
+          }
+      }
+#else
+    if(zipfiles.GetSize() > 0)
+      {
+        TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP layout zip(s) found under %s but XFILE_ZIP_ACTIVE is not compiled in (%d ignored)"), layoutdir.Get(), (int)zipfiles.GetSize());
+      }
+#endif
+
+    zipfiles.DeleteContents();
+
+    if(scope.xmlfiles.GetSize() > 0)
+      {
+        TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("APP layout XML scan %s (%d file(s)%s)"), layoutdir.Get(), (int)scope.xmlfiles.GetSize(),
+                             (scope.xmlzipmaps.GetSize() > 0) ? NL(", incl. zip extracts") : NL(""));
+      }
+
+    for(XDWORD xf=0; xf<scope.xmlfiles.GetSize(); xf++)
+      {
+        XPATH*   pathfile = scope.xmlfiles.Get(xf);
+        XFILETXT filetxt;
+
+        if(!pathfile) continue;
+        if(!filetxt.Open(*pathfile, true)) continue;
+        if(!filetxt.ReadAllFile())
+          {
+            filetxt.Close();
+            continue;
+          }
+
+        TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL(" > %s"), pathfile->Get());
+
+        for(int nline=0; nline<(int)filetxt.GetNLines(); nline++)
+          {
+            XSTRING* line = filetxt.GetLine(nline);
+            int      tagclose = XSTRING_NOTFOUND;
+            int      endtag   = XSTRING_NOTFOUND;
+            XSTRING  content;
+            XSTRING  human;
+            int      translate_ID = 0;
+            int      textindex = -1;
+
+            if(!line) continue;
+            if(!TRANSLATESCAN_LineIsLayoutTextCarrier(line, tagclose)) continue;
+
+            endtag = line->Find(NL("</"), false, tagclose + 1);
+            if(endtag == XSTRING_NOTFOUND) continue;
+
+            TRANSLATESCAN_TrimCopy(*line, tagclose + 1, endtag, content);
+            if(content.IsEmpty()) continue;
+
+            // Already a layout translation mask: validate the ID against the catalogue / enum.
+            if(TRANSLATESCAN_ParseTranslateMaskID(content, translate_ID))
+              {
+                bool known = false;
+
+                for(XDWORD e=0; e<scope.existing.GetSize(); e++)
+                  {
+                    if(scope.existing.Get(e) && (scope.existing.Get(e)->idnumber == translate_ID))
+                      {
+                        known = true;
+                        break;
+                      }
+                  }
+
+                if(!known)
+                  {
+                    for(XDWORD e=0; e<scope.enums.GetSize(); e++)
+                      {
+                        if(scope.enums.Get(e) && (scope.enums.Get(e)->idnumber == translate_ID))
+                          {
+                            known = true;
+                            break;
+                          }
+                      }
+                  }
+
+                if(known)
+                  {
+                    TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   %d  [LAYOUT OK] #[TRANSLATE_%d]"), nline + 1, translate_ID);
+                  }
+                 else
+                  {
+                    TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   %d  [LAYOUT ORPHAN] #[TRANSLATE_%d] not in catalogue"), nline + 1, translate_ID);
+                  }
+
+                continue;
+              }
+
+            // Any other #[MASK] (live values, mixed prefixes) is not a static label.
+            if(content.Find(NL("#["), false) != XSTRING_NOTFOUND) continue;
+
+            if(!TRANSLATESCAN_MANAGER::Operation_LiteralStrings_HasTranslatableText(content)) continue;
+
+            TRANSLATESCAN_Unescape(content, human);
+            if(human.IsEmpty()) human = content;
+
+            for(XDWORD t=0; t<scope.texts.GetSize(); t++)
+              {
+                if(scope.texts.Get(t) && (scope.texts.Get(t)->literal.Compare(content, false) == 0))
+                  {
+                    textindex = (int)t;
+                    break;
+                  }
+              }
+
+            if(textindex < 0)
+              {
+                for(XDWORD e=0; e<scope.existing.GetSize(); e++)
+                  {
+                    TRANSLATESCAN_APPEXISTING* catalogue = scope.existing.Get(e);
+                    bool                        same = false;
+
+                    if(!catalogue || catalogue->idname.IsEmpty()) continue;
+
+                    for(int n=0; n<catalogue->ntext; n++)
+                      {
+                        if((catalogue->text[n].Compare(human, false) == 0) ||
+                           (catalogue->text[n].Compare(content, false) == 0))
+                          {
+                            same = true;
+                            break;
+                          }
+                      }
+
+                    if(!same) continue;
+
+                    TRANSLATESCAN_APPTEXT* entry = GEN_NEW TRANSLATESCAN_APPTEXT();
+                    if(entry)
+                      {
+                        entry->literal    = content;
+                        entry->human      = human;
+                        entry->idname     = catalogue->idname;
+                        entry->idnumber   = catalogue->idnumber;
+                        entry->fixed      = 0;
+                        entry->ready      = true;
+                        entry->addtolng   = false;
+                        entry->addtoenum  = false;
+                        textindex = (int)scope.texts.GetSize();
+                        scope.texts.Add(entry);
+                      }
+                    break;
+                  }
+              }
+
+            if(textindex < 0)
+              {
+                TRANSLATESCAN_APPTEXT* entry = GEN_NEW TRANSLATESCAN_APPTEXT();
+                if(entry)
+                  {
+                    entry->pathfile  = *pathfile;
+                    entry->literal   = content;
+                    entry->human     = human;
+                    entry->fixed     = 0;
+                    entry->ready     = false;
+                    entry->addtolng  = false;
+                    entry->addtoenum = false;
+                    TRANSLATESCAN_BuildAppIDName(idprefix, *pathfile, content, entry->idname);
+                    textindex = (int)scope.texts.GetSize();
+                    scope.texts.Add(entry);
+                  }
+              }
+
+            if(textindex >= 0)
+              {
+                TRANSLATESCAN_APPPLACE* place = GEN_NEW TRANSLATESCAN_APPPLACE();
+                if(place)
+                  {
+                    place->pathfile  = pathfile->Get();
+                    place->nline     = nline;
+                    place->index     = tagclose + 1;
+                    place->endquote  = endtag - 1;
+                    place->textindex = textindex;
+                    place->isxml     = true;
+                    scope.places.Add(place);
+
+                    TRANSLATESCAN_APPTEXT* shown = scope.texts.Get((XDWORD)textindex);
+                    if(shown)
+                      {
+                        TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   %d  [LAYOUT] %s  \"%s\""), nline + 1, shown->idname.Get(), content.Get());
+                      }
+                  }
+              }
+          }
+
+        filetxt.Close();
+      }
+  }
+
   {
     DIOSCRAPERWEBTRANSLATION scraper;
     int                      pending = 0;
@@ -4131,7 +4842,8 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
           XSTRING                 rebuilt;
           XSTRING                 tail;
 
-          if(!place || (place->textindex < 0) || (place->textindex >= (int)scope.texts.GetSize())) continue;
+          if(!place || place->isxml) continue;
+          if((place->textindex < 0) || (place->textindex >= (int)scope.texts.GetSize())) continue;
           entry = scope.texts.Get((XDWORD)place->textindex);
           if(!entry || !entry->ready) continue;
           if(place->pathfile.Compare(pathfile->Get(), true) != 0) continue;
@@ -4187,6 +4899,96 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
       filetxt.Close();
     }
 
+  for(XDWORD xf=0; xf<scope.xmlfiles.GetSize(); xf++)
+    {
+      XPATH*   pathfile = scope.xmlfiles.Get(xf);
+      XFILETXT filetxt;
+      bool     changed = false;
+
+      if(!pathfile) continue;
+      if(!filetxt.Open(*pathfile, false) || !filetxt.ReadAllFile()) continue;
+
+      for(int p=(int)scope.places.GetSize()-1; p>=0; p--)
+        {
+          TRANSLATESCAN_APPPLACE* place = scope.places.Get((XDWORD)p);
+          TRANSLATESCAN_APPTEXT*  entry = NULL;
+          XSTRING*                line  = NULL;
+          XSTRING                 rebuilt;
+          XSTRING                 tail;
+          XSTRING                 mask;
+
+          if(!place || !place->isxml) continue;
+          if((place->textindex < 0) || (place->textindex >= (int)scope.texts.GetSize())) continue;
+          entry = scope.texts.Get((XDWORD)place->textindex);
+          if(!entry || !entry->ready || (entry->idnumber <= 0)) continue;
+          if(place->pathfile.Compare(pathfile->Get(), true) != 0) continue;
+
+          line = filetxt.GetLine(place->nline);
+          if(!line) continue;
+
+          // Preserve original spacing around the text body when replacing with #[TRANSLATE_N].
+          {
+            int body_start = place->index;
+            int body_end   = place->endquote + 1;
+
+            while((body_start < body_end) && ((line->Get()[body_start] == _C(' ')) || (line->Get()[body_start] == _C('\t')))) body_start++;
+            while((body_end > body_start) && ((line->Get()[body_end - 1] == _C(' ')) || (line->Get()[body_end - 1] == _C('\t')))) body_end--;
+
+            line->Copy(0, body_start, rebuilt);
+            mask.Format(NL("#[TRANSLATE_%d]"), entry->idnumber);
+            rebuilt.Add(mask);
+            line->Copy(body_end, tail);
+            rebuilt.Add(tail);
+          }
+
+          filetxt.DeleteLine(place->nline);
+          filetxt.InsertLine(place->nline, rebuilt);
+          changed = true;
+
+          TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   replace %d  #[TRANSLATE_%d]  (%s)"), place->nline + 1, entry->idnumber, entry->idname.Get());
+        }
+
+      if(changed)
+        {
+          if(!filetxt.WriteAllFile())
+            {
+              status = false;
+              TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP write failed  %s"), pathfile->Get());
+            }
+           else
+            {
+              TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("APP updated  %s"), pathfile->Get());
+
+#ifdef XFILE_ZIP_ACTIVE
+              for(XDWORD m=0; m<scope.xmlzipmaps.GetSize(); m++)
+                {
+                  TRANSLATESCAN_APPXMLZIPMAP* map = scope.xmlzipmaps.Get(m);
+                  if(map && (map->workpath.Compare(pathfile->Get(), true) == 0))
+                    {
+                      map->dirty = true;
+                      break;
+                    }
+                }
+#endif
+            }
+        }
+
+      filetxt.Close();
+    }
+
+#ifdef XFILE_ZIP_ACTIVE
+  for(XDWORD m=0; m<scope.xmlzipmaps.GetSize(); m++)
+    {
+      TRANSLATESCAN_APPXMLZIPMAP* map = scope.xmlzipmaps.Get(m);
+      if(!map || !map->dirty) continue;
+
+      if(!TRANSLATESCAN_PackLayoutXmlIntoZip(map))
+        {
+          status = false;
+        }
+    }
+#endif
+
   TRANSLATESCAN_ApplyLToNLPlaces(scope.ltonl, status);
 
   TRANSLATESCAN_Report(status ? XTRACE_COLOR_GREEN : XTRACE_COLOR_RED, NL("APP done. status=%d failed=%d"), status ? 1 : 0, failed);
@@ -4201,6 +5003,7 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
 *
 * @fn         bool TRANSLATESCAN_MANAGER::Operation_ViewLiteralStrings(XPATH& operationdir)
 * @brief      List translation candidates under a directory without changing any file.
+*             Includes Sources (_L/FL/NL) and assets/ui_layouts XML (loose and inside .zip).
 * @ingroup    APPLICATION
 *
 * @param[in]  operationdir : directory where the operation is executed.
@@ -4217,13 +5020,15 @@ bool TRANSLATESCAN_MANAGER::Operation_ViewLiteralStrings(XPATH& operationdir)
   int                                nappname   = 0;
   int                                nnotext    = 0;
   int                                ngen       = 0;
+  int                                nlayout    = 0;
+  int                                nlayoutmask = 0;
   int                                nfiles     = 0;
 
   if(operationdir.IsEmpty()) return false;
 
   if(!SearchFilesTarget(operationdir, &files))
     {
-      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("VIEW no source files under %s"), operationdir.Get());
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("VIEW source scan failed under %s"), operationdir.Get());
       return false;
     }
 
@@ -4347,9 +5152,175 @@ bool TRANSLATESCAN_MANAGER::Operation_ViewLiteralStrings(XPATH& operationdir)
       filetxt.Close();
     }
 
+  //------------------------------------------------------------------------------------
+  // Layout XML under assets/ui_layouts (loose .xml and .xml inside .zip) — view only
+  //------------------------------------------------------------------------------------
+  {
+    XSTRING                           appname;
+    XPATH                             approot;
+    XPATH                             sourcesdir;
+    XPATH                             assetsdir;
+    XPATH                             root;
+    XPATH                             layoutdir;
+    XPATH                             xmltmpdir;
+    XVECTOR<XPATH*>                   xmlfiles;
+    XVECTOR<XPATH*>                   zipfiles;
+    XVECTOR<TRANSLATESCAN_APPXMLZIPMAP*> xmlzipmaps;
+
+    root = operationdir;
+    if(root.Slash_HaveAtLast()) root.Slash_Delete();
+    TRANSLATESCAN_AppResolveLayout(root, appname, approot, sourcesdir, assetsdir);
+
+    layoutdir = assetsdir;
+    layoutdir.Slash_Add();
+    layoutdir.Add(NL("ui_layouts"));
+
+    TRANSLATESCAN_CollectLayoutFiles(layoutdir.Get(), &xmlfiles, &zipfiles);
+
+#ifdef XFILE_ZIP_ACTIVE
+    if(zipfiles.GetSize() > 0)
+      {
+        xmltmpdir = layoutdir;
+        xmltmpdir.Slash_Add();
+        xmltmpdir.Add(NL(".translatescan_ui_layouts"));
+
+        if(!TRANSLATESCAN_ExtractLayoutXmlFromZips(&zipfiles, xmltmpdir, &xmlfiles, &xmlzipmaps))
+          {
+            TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("VIEW layout zip extract had errors under %s"), layoutdir.Get());
+          }
+      }
+#else
+    if(zipfiles.GetSize() > 0)
+      {
+        TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("VIEW layout zip(s) found under %s but XFILE_ZIP_ACTIVE is not compiled in (%d ignored)"), layoutdir.Get(), (int)zipfiles.GetSize());
+      }
+#endif
+
+    zipfiles.DeleteContents();
+
+    if(xmlfiles.GetSize() > 0)
+      {
+        TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("VIEW layout XML scan %s (%d file(s)%s)"), layoutdir.Get(), (int)xmlfiles.GetSize(),
+                             (xmlzipmaps.GetSize() > 0) ? NL(", incl. zip extracts") : NL(""));
+      }
+
+    for(XDWORD xf=0; xf<xmlfiles.GetSize(); xf++)
+      {
+        XPATH*   pathfile = xmlfiles.Get(xf);
+        XFILETXT filetxt;
+        bool     reported = false;
+        TRANSLATESCAN_APPXMLZIPMAP* zipmap = NULL;
+
+        if(!pathfile) continue;
+
+        for(XDWORD m=0; m<xmlzipmaps.GetSize(); m++)
+          {
+            TRANSLATESCAN_APPXMLZIPMAP* map = xmlzipmaps.Get(m);
+            if(map && (map->workpath.Compare(pathfile->Get(), true) == 0))
+              {
+                zipmap = map;
+                break;
+              }
+          }
+
+        if(!filetxt.Open(*pathfile, true)) continue;
+        if(!filetxt.ReadAllFile())
+          {
+            filetxt.Close();
+            continue;
+          }
+
+        nfiles++;
+
+        for(int nline=0; nline<(int)filetxt.GetNLines(); nline++)
+          {
+            XSTRING* line = filetxt.GetLine(nline);
+            int      tagclose = XSTRING_NOTFOUND;
+            int      endtag   = XSTRING_NOTFOUND;
+            XSTRING  content;
+            int      translate_ID = 0;
+
+            if(!line) continue;
+            if(!TRANSLATESCAN_LineIsLayoutTextCarrier(line, tagclose)) continue;
+
+            endtag = line->Find(NL("</"), false, tagclose + 1);
+            if(endtag == XSTRING_NOTFOUND) continue;
+
+            TRANSLATESCAN_TrimCopy(*line, tagclose + 1, endtag, content);
+            if(content.IsEmpty()) continue;
+
+            if(!reported)
+              {
+                if(zipmap)
+                  {
+                    TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL(" > %s  [%s]"), zipmap->zippath.Get(), zipmap->entryname.Get());
+                  }
+                 else
+                  {
+                    TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL(" > %s"), pathfile->Get());
+                  }
+                reported = true;
+              }
+
+            if(TRANSLATESCAN_ParseTranslateMaskID(content, translate_ID))
+              {
+                nlayoutmask++;
+                TRANSLATESCAN_Report(XTRACE_COLOR_GRAY, NL("   %d  [LAYOUT TRANSLATE_%d]"), nline + 1, translate_ID);
+                continue;
+              }
+
+            // Live / mixed masks are not static labels.
+            if(content.Find(NL("#["), false) != XSTRING_NOTFOUND)
+              {
+                TRANSLATESCAN_Report(XTRACE_COLOR_GRAY, NL("   %d  [LAYOUT MASK] \"%s\""), nline + 1, content.Get());
+                continue;
+              }
+
+            if(!Operation_LiteralStrings_HasTranslatableText(content))
+              {
+                nnotext++;
+                TRANSLATESCAN_Report(XTRACE_COLOR_GRAY, NL("   %d  [LAYOUT NOTEXT] \"%s\""), nline + 1, content.Get());
+                continue;
+              }
+
+            ncandidate++;
+            nlayout++;
+            TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   %d  [LAYOUT] \"%s\""), nline + 1, content.Get());
+          }
+
+        filetxt.Close();
+      }
+
+    {
+      XFILE* xfile = GEN_XFACTORY.Create_File();
+      if(xfile)
+        {
+          for(XDWORD m=0; m<xmlzipmaps.GetSize(); m++)
+            {
+              TRANSLATESCAN_APPXMLZIPMAP* map = xmlzipmaps.Get(m);
+              if(map && !map->workpath.IsEmpty()) xfile->Erase(map->workpath);
+            }
+          GEN_XFACTORY.Delete_File(xfile);
+        }
+
+      if(!xmltmpdir.IsEmpty())
+        {
+          XDIR* xdir = GEN_XFACTORY.Create_Dir();
+          if(xdir)
+            {
+              if(xdir->Exist(xmltmpdir)) xdir->Delete(xmltmpdir, true);
+              GEN_XFACTORY.Delete_Dir(xdir);
+            }
+        }
+    }
+
+    xmlfiles.DeleteContents();
+    xmlzipmaps.DeleteContents();
+  }
+
   TRANSLATESCAN_Report(XTRACE_COLOR_GREEN,
-                       NL("VIEW done. files=%d candidates=%d (FL=%d) gen=%d nl=%d appname=%d notext=%d"),
-                       nfiles, ncandidate, nfl, ngen, nnl, nappname, nnotext);
+                       NL("VIEW done. files=%d candidates=%d (FL=%d layout=%d) gen=%d nl=%d appname=%d notext=%d layoutmask=%d"),
+                       nfiles, ncandidate, nfl, nlayout, ngen, nnl, nappname, nnotext, nlayoutmask);
 
   files.DeleteContents();
   files.DeleteAll();
@@ -4897,6 +5868,778 @@ bool TRANSLATESCAN_MANAGER::Operation_LiteralStrings_SearchLine(XPATH* pathfile,
   return true;
 }
 
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_ParseGENSentenceAdd(XSTRING& line, XSTRING& idname, XSTRING& codesuffix, XSTRING& cescaped, int& fixed)
+* @brief      Parse one Sentence_Add(...) catalogue line from XTranslation_GEN.cpp.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_ParseGENSentenceAdd(XSTRING& line, XSTRING& idname, XSTRING& codesuffix, XSTRING& cescaped, int& fixed)
+{
+  XSTRING fullcode;
+  XSTRING prefix;
+  int     at;
+  int     pos;
+  int     next;
+  int     nlat;
+  int     end;
+  XCHAR*  text;
+  int     size;
+
+  idname.Empty();
+  codesuffix.Empty();
+  cescaped.Empty();
+  fixed = 0;
+
+  at = line.Find(NL("Sentence_Add("), false);
+  if(at == XSTRING_NOTFOUND) return false;
+
+  pos = at + 13; // Sentence_Add(
+  if(!TRANSLATESCAN_ReadCIdentifier(line, pos, idname, next)) return false;
+  pos = next;
+
+  at = line.Find(NL("XLANGUAGE_ISO_639_3_CODE_"), false, pos);
+  if(at == XSTRING_NOTFOUND) return false;
+
+  pos = at;
+  if(!TRANSLATESCAN_ReadCIdentifier(line, pos, fullcode, next)) return false;
+
+  prefix = NL("XLANGUAGE_ISO_639_3_CODE_");
+  if(fullcode.GetSize() <= prefix.GetSize()) return false;
+  fullcode.Copy((int)prefix.GetSize(), codesuffix);
+
+  nlat = line.Find(NL("NL(\""), false, next);
+  if(nlat == XSTRING_NOTFOUND) return false;
+
+  text = line.Get();
+  size = (int)line.GetSize();
+  if(!text) return false;
+
+  end = TRANSLATESCAN_MANAGER::Operation_LiteralStrings_FindStringEnd(text, size, nlat + 4);
+  if(end == XSTRING_NOTFOUND) return false;
+
+  line.Copy(nlat + 4, end, cescaped);
+
+  TRANSLATESCAN_ReadIntAfter(line, end + 1, fixed);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool TRANSLATESCAN_MANAGER::Operation_AddLanguageGEN(XPATH& operationdir, XSTRING& codealpha2)
+* @brief      Append one ISO language to XTranslation_GEN.cpp (languageavailables + every Sentence_Add group).
+* @ingroup    APPLICATION
+*
+* @param[in]  operationdir : GEN root directory.
+* @param[in]  codealpha2   : ISO 639 alpha-2 code (example: eu).
+*
+* @return     bool : true if it is successful.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool TRANSLATESCAN_MANAGER::Operation_AddLanguageGEN(XPATH& operationdir, XSTRING& codealpha2)
+{
+  if(!modifiergen)           return false;
+  if(operationdir.IsEmpty()) return false;
+  if(codealpha2.IsEmpty())   return false;
+
+  #ifndef DIO_SCRAPERWEB_TRANSLATION_ACTIVE
+  TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("GEN ADDLNG scraper is not compiled in."));
+  return false;
+  #else
+
+  XLANGUAGE_ISO_639_3                     iso;
+  XDWORD                                  langcode;
+  XSTRING                                 alpha3;
+  XSTRING                                 codesuffix;
+  XSTRING                                 englishname;
+  XSTRING                                 marker;
+  XPATH                                   idcpp;
+  XFILETXT                                source;
+  XVECTOR<TRANSLATESCAN_ADDLNG_GENENTRY*> entries;
+  int                                     lastavail     = -1;
+  int                                     failed        = 0;
+  int                                     pending       = 0;
+  int                                     readycount    = 0;
+  bool                                    hasavailable  = false;
+  bool                                    status        = true;
+
+  langcode = iso.Code_GetByCodeAlpha2(codealpha2.Get());
+  if(langcode == XLANGUAGE_ISO_639_3_CODE_INVALID)
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("ADDLNG unknown codealpha2 \"%s\"."), codealpha2.Get());
+      return false;
+    }
+
+  if(!iso.CodeAlpha3_GetByCode(langcode, alpha3) || alpha3.IsEmpty())
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("ADDLNG could not resolve alpha-3 for \"%s\"."), codealpha2.Get());
+      return false;
+    }
+
+  alpha3.ToUpperCase();
+  codesuffix = alpha3;
+  iso.EnglishName_GetByCode(langcode, englishname);
+
+  idcpp = operationdir;
+  idcpp.Slash_Add();
+  idcpp.Add(NL("XUtils"));
+  idcpp.Slash_Add();
+  idcpp.Add(NL("XTranslation_GEN.cpp"));
+
+  TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("GEN ADDLNG=%s (%s / %s)"), codealpha2.Get(), codesuffix.Get(), englishname.Get());
+  TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("GEN  %s"), idcpp.Get());
+
+  if(!source.Open(idcpp, false) || !source.ReadAllFile())
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("GEN could not open %s"), idcpp.Get());
+      return false;
+    }
+
+  marker = NL("XLANGUAGE_ISO_639_3_CODE_");
+  marker.Add(codesuffix);
+
+  for(int c=0; c<(int)source.GetNLines(); c++)
+    {
+      XSTRING* line = source.GetLine(c);
+      XSTRING  idname;
+      XSTRING  suffix;
+      XSTRING  cescaped;
+      int      fixed = 0;
+
+      if(!line) continue;
+
+      if(line->Find(NL("languageavailables.Add("), false) != XSTRING_NOTFOUND)
+        {
+          lastavail = c;
+          if(line->Find(marker.Get(), false) != XSTRING_NOTFOUND) hasavailable = true;
+        }
+
+      if(!TRANSLATESCAN_ParseGENSentenceAdd(*line, idname, suffix, cescaped, fixed)) continue;
+
+      {
+        TRANSLATESCAN_ADDLNG_GENENTRY* entry = NULL;
+
+        for(XDWORD e=0; e<entries.GetSize(); e++)
+          {
+            if(entries.Get(e) && (entries.Get(e)->idname.Compare(idname, true) == 0))
+              {
+                entry = entries.Get(e);
+                break;
+              }
+          }
+
+        if(!entry)
+          {
+            entry = GEN_NEW TRANSLATESCAN_ADDLNG_GENENTRY();
+            if(!entry) continue;
+            entry->idname = idname;
+            entries.Add(entry);
+          }
+
+        // lastline tracks the last Sentence_Add of this ID (any language), unless the
+        // target language is already present (then ready stays false and we skip).
+        if(suffix.Compare(codesuffix, false) == 0)
+          {
+            entry->ready = false;
+            entry->translated.Empty();
+            entry->lastline = -2; // already has target language
+          }
+        else if(entry->lastline != -2)
+          {
+            entry->lastline = c;
+            entry->fixed    = fixed;
+            if(entry->any_cescaped.IsEmpty()) entry->any_cescaped = cescaped;
+            if(suffix.Compare(NL("ENG"), false) == 0) entry->eng_cescaped = cescaped;
+          }
+      }
+    }
+
+  if(lastavail < 0)
+    {
+      source.Close();
+      entries.DeleteContents();
+      entries.DeleteAll();
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("GEN languageavailables not found in %s"), idcpp.Get());
+      return false;
+    }
+
+  if(entries.GetSize() == 0)
+    {
+      source.Close();
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("GEN no Sentence_Add entries in %s"), idcpp.Get());
+      return false;
+    }
+
+  for(XDWORD e=0; e<entries.GetSize(); e++)
+    {
+      TRANSLATESCAN_ADDLNG_GENENTRY* entry = entries.Get(e);
+      if(entry && (entry->lastline >= 0)) pending++;
+    }
+
+  if(pending == 0)
+    {
+      source.Close();
+      entries.DeleteContents();
+      entries.DeleteAll();
+      TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("GEN ADDLNG language already present (%s). Nothing to do."), codesuffix.Get());
+      return true;
+    }
+
+  {
+    DIOSCRAPERWEBTRANSLATION scraper;
+    XSTRING                  sourcecode;
+    XSTRING                  targetcode;
+    int                      current = 0;
+
+    sourcecode = NL("en");
+    targetcode = codealpha2;
+
+    TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("GEN ADDLNG translating %d sentence(s) to %s."), pending, targetcode.Get());
+
+    for(XDWORD e=0; e<entries.GetSize(); e++)
+      {
+        TRANSLATESCAN_ADDLNG_GENENTRY* entry = entries.Get(e);
+        XSTRING                        raw;
+        XSTRING                        human;
+        XSTRING                        shielded;
+        XSTRING                        translation;
+        XVECTOR<XSTRING*>              masks;
+
+        if(!entry || (entry->lastline < 0)) continue;
+
+        current++;
+        raw = entry->eng_cescaped.IsEmpty() ? entry->any_cescaped : entry->eng_cescaped;
+        TRANSLATESCAN_Unescape(raw, human);
+        if(human.IsEmpty()) human = raw;
+
+        TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   translate %d/%d  %s"), current, pending, entry->idname.Get());
+
+        TRANSLATESCAN_ShieldPrintfMasks(human, shielded, masks);
+
+        if(!scraper.Get(shielded, sourcecode, targetcode, translation) ||
+           !TRANSLATESCAN_RestorePrintfMasks(translation, masks) ||
+           translation.IsEmpty())
+          {
+            // Keep a non-empty placeholder so the catalogue stays complete for this language.
+            failed++;
+            entry->translated = NL("--");
+            entry->ready      = true;
+            readycount++;
+            masks.DeleteContents();
+            masks.DeleteAll();
+            TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   failed  %s  -> \"--\""), entry->idname.Get());
+            continue;
+          }
+
+        masks.DeleteContents();
+        masks.DeleteAll();
+
+        TRANSLATESCAN_EscapeForC(translation, entry->translated);
+        if(entry->translated.IsEmpty()) entry->translated = NL("--");
+        entry->ready = true;
+        readycount++;
+      }
+  }
+
+  if(!hasavailable)
+    {
+      XSTRING avail;
+
+      avail.Format(NL("  languageavailables.Add(XLANGUAGE_ISO_639_3_CODE_%s);"), codesuffix.Get());
+      source.InsertLine(lastavail + 1, avail);
+      TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("GEN added languageavailables %s"), codesuffix.Get());
+
+      for(XDWORD e=0; e<entries.GetSize(); e++)
+        {
+          TRANSLATESCAN_ADDLNG_GENENTRY* entry = entries.Get(e);
+          if(entry && (entry->lastline > lastavail)) entry->lastline++;
+        }
+    }
+
+  for(int e=(int)entries.GetSize()-1; e>=0; e--)
+    {
+      TRANSLATESCAN_ADDLNG_GENENTRY* entry = entries.Get((XDWORD)e);
+      XSTRING                        line;
+
+      if(!entry || !entry->ready || (entry->lastline < 0)) continue;
+
+      line.Format(NL("  Sentence_Add(%s, XLANGUAGE_ISO_639_3_CODE_%s, NL(\"%s\"), %d);"),
+                  entry->idname.Get(), codesuffix.Get(), entry->translated.Get(), entry->fixed);
+      source.InsertLine(entry->lastline + 1, line);
+    }
+
+  if(readycount > 0)
+    {
+      if(!source.WriteAllFile())
+        {
+          status = false;
+          TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("GEN write failed  %s"), idcpp.Get());
+        }
+       else
+        {
+          TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("GEN updated  %s"), idcpp.Get());
+        }
+    }
+
+  source.Close();
+  entries.DeleteContents();
+  entries.DeleteAll();
+
+  TRANSLATESCAN_Report(status ? XTRACE_COLOR_GREEN : XTRACE_COLOR_RED,
+                       NL("GEN ADDLNG done. status=%d ready=%d failed=%d"), status ? 1 : 0, readycount, failed);
+
+  // Placeholders ("--") still complete the catalogue: do not abort the run as a hard error.
+  return status;
+
+  #endif
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRING& codealpha2)
+* @brief      Append one ISO language to the application .lng catalogue and translate every sentence.
+* @ingroup    APPLICATION
+*
+* @param[in]  operationdir : application directory.
+* @param[in]  codealpha2   : ISO 639 alpha-2 code (example: eu).
+*
+* @return     bool : true if it is successful.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRING& codealpha2)
+{
+  if(!modifierapp)           return false;
+  if(operationdir.IsEmpty()) return false;
+  if(codealpha2.IsEmpty())   return false;
+
+  #ifndef DIO_SCRAPERWEB_TRANSLATION_ACTIVE
+  TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP ADDLNG scraper is not compiled in."));
+  return false;
+  #else
+
+  XLANGUAGE_ISO_639_3        iso;
+  XDWORD                     langcode;
+  XSTRING                    englishname;
+  XSTRING                    appname;
+  XSTRING                    lngname;
+  XPATH                      approot;
+  XPATH                      sourcesdir;
+  XPATH                      assetsdir;
+  XPATH                      root;
+  XPATH                      lngpath;
+  TRANSLATESCAN_APPSCOPE     scope;
+  XFILETXT                   lng;
+  int                        translationsline = -1;
+  int                        firstlangline    = -1;
+  int                        lastlangline     = -1;
+  int                        nlang            = 0;
+  int                        langorder[16];
+  int                        engslot          = -1;
+  int                        keyindent        = -1;
+  int                        sentenceindent   = -1;
+  int                        failed           = 0;
+  bool                       already          = false;
+  bool                       status           = true;
+  bool                       inlanguages      = false;
+  bool                       languagesnamed   = false;
+
+  for(int c=0; c<16; c++) langorder[c] = -1;
+
+  langcode = iso.Code_GetByCodeAlpha2(codealpha2.Get());
+  if(langcode == XLANGUAGE_ISO_639_3_CODE_INVALID)
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("ADDLNG unknown codealpha2 \"%s\"."), codealpha2.Get());
+      return false;
+    }
+
+  if(!iso.EnglishName_GetByCode(langcode, englishname) || englishname.IsEmpty())
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("ADDLNG could not resolve English name for \"%s\"."), codealpha2.Get());
+      return false;
+    }
+
+  root = operationdir;
+  if(root.Slash_HaveAtLast()) root.Slash_Delete();
+  TRANSLATESCAN_AppResolveLayout(root, appname, approot, sourcesdir, assetsdir);
+
+  TRANSLATESCAN_CollectLng(approot.Get(), &scope.lngfiles);
+
+  lngname = appname;
+  lngname.ToLowerCase();
+
+  for(XDWORD c=0; c<scope.lngfiles.GetSize(); c++)
+    {
+      XPATH*  path = scope.lngfiles.Get(c);
+      XSTRING name;
+
+      if(!path) continue;
+      path->GetNamefile(name);
+      name.ToLowerCase();
+      if(name.Compare(lngname, true) == 0)
+        {
+          lngpath = path->Get();
+          break;
+        }
+    }
+
+  if(lngpath.IsEmpty() && (scope.lngfiles.GetSize() == 1) && scope.lngfiles.Get(0))
+    {
+      lngpath = scope.lngfiles.Get(0)->Get();
+    }
+
+  if(lngpath.IsEmpty())
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP ADDLNG language file was not found under %s"), operationdir.Get());
+      return false;
+    }
+
+  TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("APP ADDLNG=%s (%s)"), codealpha2.Get(), englishname.Get());
+  TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("APP  %s"), lngpath.Get());
+
+  if(!lng.Open(lngpath, false) || !lng.ReadAllFile())
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP could not open %s"), lngpath.Get());
+      return false;
+    }
+
+  for(int c=0; c<(int)lng.GetNLines(); c++)
+    {
+      XSTRING* line = lng.GetLine(c);
+      if(line && (line->Find(NL("\"translations\""), false) != XSTRING_NOTFOUND))
+        {
+          translationsline = c;
+          break;
+        }
+    }
+
+  if(translationsline < 0)
+    {
+      lng.Close();
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP language file has no translations in %s"), lngpath.Get());
+      return false;
+    }
+
+  for(int c=0; c<translationsline; c++)
+    {
+      XSTRING* line   = lng.GetLine(c);
+      int      cursor = 0;
+
+      if(!line) continue;
+      if(!inlanguages && (line->Find(NL("\"languages\""), false) != XSTRING_NOTFOUND))
+        {
+          inlanguages   = true;
+          firstlangline = c;
+        }
+      if(!inlanguages) continue;
+
+      do{ XSTRING raw;
+          int     next = TRANSLATESCAN_ReadJSONString(*line, cursor, raw);
+
+          if(next == XSTRING_NOTFOUND) break;
+
+          if(!languagesnamed && (raw.Compare(NL("languages"), true) == 0))
+            {
+              languagesnamed = true;
+            }
+          else if(languagesnamed && (nlang < 16))
+            {
+              int slot = TRANSLATESCAN_AppLanguageSlot(raw);
+
+              langorder[nlang] = slot;
+              if(slot == 0) engslot = nlang;
+              if(raw.Compare(englishname, false) == 0) already = true;
+              nlang++;
+            }
+
+          cursor = next;
+        } while(cursor != XSTRING_NOTFOUND);
+
+      if(TRANSLATESCAN_FirstChar(line) == _C(']'))
+        {
+          lastlangline = c;
+          break;
+        }
+    }
+
+  if(already)
+    {
+      lng.Close();
+      TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("APP ADDLNG language already present (%s). Nothing to do."), englishname.Get());
+      return true;
+    }
+
+  if((firstlangline < 0) || (lastlangline < 0) || (nlang <= 0))
+    {
+      lng.Close();
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP languages list was not found in %s"), lngpath.Get());
+      return false;
+    }
+
+  {
+    TRANSLATESCAN_APPEXISTING* current = NULL;
+
+    for(int c=translationsline; c<(int)lng.GetNLines(); c++)
+      {
+        XSTRING* line   = lng.GetLine(c);
+        int      cursor = 0;
+        bool     gotkey = false;
+        XCHAR    first;
+
+        if(!line) continue;
+
+        first = TRANSLATESCAN_FirstChar(line);
+        if(first == _C('}')) break;
+
+        do{ XSTRING raw;
+            int     next = TRANSLATESCAN_ReadJSONString(*line, cursor, raw);
+            bool    iskey;
+
+            if(next == XSTRING_NOTFOUND) break;
+
+            iskey = TRANSLATESCAN_AllDigits(raw) && TRANSLATESCAN_NextIs(*line, next, _C(':'));
+            if(iskey)
+              {
+                current = GEN_NEW TRANSLATESCAN_APPEXISTING();
+                gotkey  = true;
+                if(current)
+                  {
+                    current->idnumber = (int)raw.ConvertToDWord();
+                    scope.existing.Add(current);
+                  }
+              }
+            else if(current && (current->ntext < 16))
+              {
+                TRANSLATESCAN_Unescape(raw, current->text[current->ntext]);
+                current->ntext++;
+              }
+
+            cursor = next;
+          } while(cursor != XSTRING_NOTFOUND);
+
+        if(gotkey && (c != translationsline) && (keyindent < 0)) keyindent = TRANSLATESCAN_Indent(line);
+        if(current && (current->ntext > 0) && (sentenceindent < 0) && !gotkey) sentenceindent = TRANSLATESCAN_Indent(line);
+
+        if(first == _C(']'))
+          {
+            if(current) current->endbracket = c;
+            current = NULL;
+          }
+      }
+  }
+
+  if(keyindent < 0)      keyindent = 24;
+  if(sentenceindent < 0) sentenceindent = keyindent + 12;
+  if(engslot < 0)
+    {
+      for(int c=0; c<nlang; c++)
+        {
+          if(langorder[c] == 0) { engslot = c; break; }
+        }
+    }
+
+  for(XDWORD e=0; e<scope.existing.GetSize(); e++)
+    {
+      TRANSLATESCAN_APPEXISTING* entry = scope.existing.Get(e);
+      if(entry) entry->original_ntext = entry->ntext;
+    }
+
+  {
+    DIOSCRAPERWEBTRANSLATION scraper;
+    XSTRING                  sourcecode;
+    XSTRING                  targetcode;
+    static const XCHAR*      slotalpha2[5] = { NL("en"), NL("es"), NL("fr"), NL("de"), NL("zh") };
+    int                      pending = (int)scope.existing.GetSize();
+    int                      current = 0;
+
+    sourcecode = NL("en");
+    targetcode = codealpha2;
+
+    TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("APP ADDLNG translating %d sentence(s) to %s."), pending, targetcode.Get());
+
+    for(XDWORD e=0; e<scope.existing.GetSize(); e++)
+      {
+        TRANSLATESCAN_APPEXISTING* entry = scope.existing.Get(e);
+        XSTRING                    human;
+        XSTRING                    shielded;
+        XSTRING                    translation;
+        XVECTOR<XSTRING*>          masks;
+        int                        srcindex;
+
+        if(!entry) continue;
+
+        current++;
+        srcindex = (engslot >= 0) ? engslot : 0;
+        if((srcindex < 0) || (srcindex >= entry->ntext)) srcindex = 0;
+        if(entry->ntext <= 0)
+          {
+            failed++;
+            TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   empty  id=%d"), entry->idnumber);
+            continue;
+          }
+
+        human = entry->text[srcindex];
+
+        // Incomplete rows (legacy) must be padded to the current languages list before appending.
+        while(entry->ntext < nlang)
+          {
+            int     missingslot = langorder[entry->ntext];
+            XSTRING missingcode;
+            XSTRING padded;
+            XVECTOR<XSTRING*> padmasks;
+            XSTRING padshielded;
+
+            if((missingslot >= 0) && (missingslot < 5)) missingcode = slotalpha2[missingslot];
+             else missingcode = NL("en");
+
+            TRANSLATESCAN_ShieldPrintfMasks(human, padshielded, padmasks);
+            if(!scraper.Get(padshielded, sourcecode, missingcode, padded) ||
+               !TRANSLATESCAN_RestorePrintfMasks(padded, padmasks))
+              {
+                padded = human;
+              }
+            padmasks.DeleteContents();
+            padmasks.DeleteAll();
+
+            if(entry->ntext >= 16) break;
+            entry->text[entry->ntext] = padded;
+            entry->ntext++;
+          }
+
+        TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   translate %d/%d  id=%05d"), current, pending, entry->idnumber);
+
+        TRANSLATESCAN_ShieldPrintfMasks(human, shielded, masks);
+
+        if(!scraper.Get(shielded, sourcecode, targetcode, translation) ||
+           !TRANSLATESCAN_RestorePrintfMasks(translation, masks) ||
+           translation.IsEmpty())
+          {
+            // Keep a non-empty placeholder so every language column stays aligned.
+            failed++;
+            translation = NL("--");
+            TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   failed  id=%05d  -> \"--\""), entry->idnumber);
+          }
+
+        masks.DeleteContents();
+        masks.DeleteAll();
+
+        if(entry->ntext < 16)
+          {
+            entry->text[entry->ntext] = translation;
+            entry->ntext++;
+          }
+      }
+  }
+
+  // Add language name after the last listed language.
+  {
+    XSTRING* lastlang = lng.GetLine(lastlangline - 1);
+    XSTRING  updated;
+    XSTRING  newline;
+
+    // lastlangline is the closing "]" line; previous content line holds the last language name.
+    if(lastlang && (TRANSLATESCAN_FirstChar(lastlang) != _C(']')))
+      {
+        updated = lastlang->Get();
+        if(updated.Find(NL(","), false) == XSTRING_NOTFOUND) updated.Add(NL(" ,"));
+        lng.DeleteLine(lastlangline - 1);
+        lng.InsertLine(lastlangline - 1, updated);
+      }
+
+    TRANSLATESCAN_Pad(newline, 24);
+    {
+      XSTRING rest;
+      rest.Format(NL("\"%s\""), englishname.Get());
+      newline.Add(rest);
+    }
+    lng.InsertLine(lastlangline, newline);
+
+    for(XDWORD e=0; e<scope.existing.GetSize(); e++)
+      {
+        TRANSLATESCAN_APPEXISTING* entry = scope.existing.Get(e);
+        if(entry && (entry->endbracket >= lastlangline)) entry->endbracket++;
+      }
+  }
+
+  // Append padded + new translations after the last on-disk sentence (before "]").
+  for(int i=(int)scope.existing.GetSize()-1; i>=0; i--)
+    {
+      TRANSLATESCAN_APPEXISTING* entry = scope.existing.Get((XDWORD)i);
+      int                        endline;
+      XSTRING*                   prev;
+      XSTRING                    updated;
+      int                        firstnew;
+
+      if(!entry || (entry->ntext <= 0) || (entry->endbracket < 0)) continue;
+      if(entry->ntext <= entry->original_ntext) continue;
+
+      endline  = entry->endbracket;
+      firstnew = entry->original_ntext;
+      prev     = lng.GetLine(endline - 1);
+      if(prev)
+        {
+          updated = prev->Get();
+          if(updated.Find(NL(","), false) == XSTRING_NOTFOUND)
+            {
+              int    lastq = -1;
+              XCHAR* text  = updated.Get();
+
+              for(int p=(int)updated.GetSize()-1; p>=0; p--)
+                {
+                  if(text[p] == _C('"')) { lastq = p; break; }
+                }
+
+              if(lastq >= 0)
+                {
+                  XSTRING left;
+                  XSTRING right;
+
+                  updated.Copy(0, lastq + 1, left);
+                  updated.Copy(lastq + 1, right);
+                  updated = left;
+                  updated.Add(NL(" ,"));
+                  updated.Add(right);
+                  lng.DeleteLine(endline - 1);
+                  lng.InsertLine(endline - 1, updated);
+                }
+            }
+        }
+
+      for(int t=firstnew; t<entry->ntext; t++)
+        {
+          XSTRING newline;
+          XSTRING escaped;
+
+          TRANSLATESCAN_EscapeForJSON(entry->text[t], escaped);
+          TRANSLATESCAN_Pad(newline, sentenceindent);
+          newline.Add(_C('"'));
+          newline.Add(escaped);
+          if((t + 1) < entry->ntext) newline.Add(NL("\" ,"));
+           else                      newline.Add(_C('"'));
+          lng.InsertLine(endline + (t - firstnew), newline);
+        }
+    }
+
+  lng.Close();
+
+  if(!TRANSLATESCAN_WriteLinesUTF8(lngpath, lng))
+    {
+      TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP write failed  %s"), lngpath.Get());
+      return false;
+    }
+
+  TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("APP updated  %s"), lngpath.Get());
+  TRANSLATESCAN_Report(status ? XTRACE_COLOR_GREEN : XTRACE_COLOR_RED,
+                       NL("APP ADDLNG done. status=%d failed=%d"), status ? 1 : 0, failed);
+
+  return status;
+
+  #endif
+}
 
 
 /**-------------------------------------------------------------------------------------------------------------------

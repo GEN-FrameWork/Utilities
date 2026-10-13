@@ -93,11 +93,13 @@ class TRANSLATESCAN_MANAGER
     bool                     ModifierGEN_IsActive                   ();
 
     bool                     Operation_TranslateGENInternal         (XPATH& operationdir);
+    bool                     Operation_AddLanguageGEN               (XPATH& operationdir, XSTRING& codealpha2);
 
     bool                     ModifierAPP_Active                     (bool isactive);
     bool                     ModifierAPP_IsActive                   ();
 
     bool                     Operation_TranslateAPP                 (XPATH& operationdir);
+    bool                     Operation_AddLanguageAPP               (XPATH& operationdir, XSTRING& codealpha2);
 
     bool                     ModifierVIEW_Active                    (bool isactive);
     bool                     ModifierVIEW_IsActive                  ();

@@ -205,7 +205,12 @@ bool TRANSLATESCAN::AppProc_Ini()
           XSTRING* param = (XSTRING*)GetExecParams()->Get(c);
           if(!param) continue;
 
-          if(IsExecParamModifier(param))
+          if(ParseAddLanguageParam(param))
+            {
+              hasexecmodifier = true;
+              modifieraddlng  = true;
+            }
+          else if(IsExecParamModifier(param))
             {
               hasexecmodifier = true;
 
@@ -668,6 +673,36 @@ bool TRANSLATESCAN::ModifierVIEW_IsActive()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool TRANSLATESCAN::ModifierADDLNG_IsActive()
+* @brief      True when ADDLNG=<codealpha2> was present.
+* @ingroup    APPLICATION
+*
+* @return     bool : true if it is successful.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool TRANSLATESCAN::ModifierADDLNG_IsActive()
+{
+  return modifieraddlng;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XSTRING* TRANSLATESCAN::ModifierADDLNG_GetCodeAlpha2()
+* @brief      ISO 639-1 / alpha-2 code requested by ADDLNG.
+* @ingroup    APPLICATION
+*
+* @return     XSTRING* : pointer to the code string.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XSTRING* TRANSLATESCAN::ModifierADDLNG_GetCodeAlpha2()
+{
+  return &addlngcodealpha2;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool TRANSLATESCAN::IsExecParamModifier(XSTRING* param)
 * @brief      True when every character of the parameter is an uppercase letter.
 * @note       INTERNAL
@@ -697,6 +732,42 @@ bool TRANSLATESCAN::IsExecParamModifier(XSTRING* param)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool TRANSLATESCAN::ParseAddLanguageParam(XSTRING* param)
+* @brief      True when param is ADDLNG=<codealpha2> and the alpha-2 code is stored.
+* @note       INTERNAL
+* @ingroup    APPLICATION
+*
+* @param[in]  param : parameter to test.
+*
+* @return     bool : true if it is successful.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool TRANSLATESCAN::ParseAddLanguageParam(XSTRING* param)
+{
+  XSTRING prefix;
+  XSTRING value;
+  int     cut;
+
+  if(!param)           return false;
+  if(param->IsEmpty()) return false;
+
+  cut = param->Find(NL("="), true);
+  if(cut == XSTRING_NOTFOUND) return false;
+
+  param->Copy(0, cut, prefix);
+  param->Copy(cut + 1, value);
+
+  if(prefix.Compare(TRANSLATESCAN_EXECMODIFIER_ADDLNG, false) != 0) return false;
+  if(value.IsEmpty()) return false;
+
+  value.ToLowerCase();
+  addlngcodealpha2 = value;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool TRANSLATESCAN::RunExecModifier()
 * @brief      Run the function of the active execution modifier.
 * @note       INTERNAL
@@ -708,6 +779,30 @@ bool TRANSLATESCAN::IsExecParamModifier(XSTRING* param)
 bool TRANSLATESCAN::RunExecModifier()
 {
   if(!manager) return false;
+
+  if(modifieraddlng)
+    {
+      if(addlngcodealpha2.IsEmpty())
+        {
+          XTRACE_PRINTCOLOR(XTRACE_COLOR_RED, NL("ADDLNG requires ADDLNG=<codealpha2> (example: ADDLNG=eu)."));
+          return false;
+        }
+
+      if(modifierapp)
+        {
+          manager->ModifierAPP_Active(true);
+          return manager->Operation_AddLanguageAPP(operationdir, addlngcodealpha2);
+        }
+
+      if(modifiergen)
+        {
+          manager->ModifierGEN_Active(true);
+          return manager->Operation_AddLanguageGEN(operationdir, addlngcodealpha2);
+        }
+
+      XTRACE_PRINTCOLOR(XTRACE_COLOR_RED, NL("ADDLNG requires GEN or APP together with the working directory."));
+      return false;
+    }
 
   if(modifierapp)
     {
@@ -755,6 +850,8 @@ void TRANSLATESCAN::Clean()
   modifiergen                 = false;
   modifierapp                 = false;
   modifierview                = false;
+  modifieraddlng              = false;
+  addlngcodealpha2.Empty();
 }
 
 
