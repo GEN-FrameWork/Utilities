@@ -2828,6 +2828,143 @@ static bool TRANSLATESCAN_LineIsLayoutTextCarrier(XSTRING* line, int& tagclose)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         static void TRANSLATESCAN_CollectAttrQuotedValues(XSTRING* line, XCHAR* attr, XVECTOR<XSTRING*>& names)
+* @brief      Collect every attr="value" / attr='value' on the line into names (no duplicates).
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static void TRANSLATESCAN_CollectAttrQuotedValues(XSTRING* line, XCHAR* attr, XVECTOR<XSTRING*>& names)
+{
+  XSTRING keydq;
+  XSTRING keysq;
+  int     from = 0;
+
+  if(!line || !attr || line->IsEmpty()) return;
+
+  keydq  = attr;
+  keydq.Add(NL("=\""));
+  keysq  = attr;
+  keysq.Add(NL("='"));
+
+  while(from < (int)line->GetSize())
+    {
+      int atdq = line->Find(keydq.Get(), true, from);
+      int atsq = line->Find(keysq.Get(), true, from);
+      int at   = XSTRING_NOTFOUND;
+      XCHAR q  = 0;
+      int   keylen = 0;
+
+      if((atdq == XSTRING_NOTFOUND) && (atsq == XSTRING_NOTFOUND)) break;
+
+      if((atdq != XSTRING_NOTFOUND) && ((atsq == XSTRING_NOTFOUND) || (atdq <= atsq)))
+        {
+          at = atdq;
+          q = _C('\"');
+          keylen = (int)keydq.GetSize();
+        }
+       else
+        {
+          at = atsq;
+          q = _C('\'');
+          keylen = (int)keysq.GetSize();
+        }
+
+      // Require a real attribute boundary (avoid matching inside filename=, assertname=, …).
+      if(at > 0)
+        {
+          XCHAR prev = line->Get()[at - 1];
+          if((prev != _C(' ')) && (prev != _C('\t')) && (prev != _C('\r')) && (prev != _C('\n')) &&
+             (prev != _C('<')) && (prev != _C('/')))
+            {
+              from = at + 1;
+              continue;
+            }
+        }
+
+      int vstart = at + keylen;
+      int vend   = line->FindCharacter(q, vstart, false);
+      if(vend == XSTRING_NOTFOUND) break;
+
+      XSTRING raw;
+      XSTRING value;
+      line->Copy(vstart, vend, raw);
+      TRANSLATESCAN_TrimCopy(raw, 0, (int)raw.GetSize(), value);
+
+      if(!value.IsEmpty())
+        {
+          bool known = false;
+          for(XDWORD i=0; i<names.GetSize(); i++)
+            {
+              if(names.Get(i) && (names.Get(i)->Compare(value, true) == 0))
+                {
+                  known = true;
+                  break;
+                }
+            }
+
+          if(!known)
+            {
+              XSTRING* entry = GEN_NEW XSTRING();
+              if(entry)
+                {
+                  (*entry) = value;
+                  names.Add(entry);
+                }
+            }
+        }
+
+      from = vend + 1;
+    }
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static void TRANSLATESCAN_CollectXmlIdentityNames(XFILETXT& filetxt, XVECTOR<XSTRING*>& names)
+* @brief      Collect XML identity attribute values (name / id) from a layout file.
+* @note       Bodies like "button_text" that only reference &lt;text name="button_text"&gt; must not become
+*             translation candidates — those strings are element/resource identifiers, not UI copy.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static void TRANSLATESCAN_CollectXmlIdentityNames(XFILETXT& filetxt, XVECTOR<XSTRING*>& names)
+{
+  for(int nline=0; nline<(int)filetxt.GetNLines(); nline++)
+    {
+      XSTRING* line = filetxt.GetLine(nline);
+      if(!line) continue;
+
+      TRANSLATESCAN_CollectAttrQuotedValues(line, NL("name"), names);
+      TRANSLATESCAN_CollectAttrQuotedValues(line, NL("id"), names);
+    }
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_IsXmlIdentityName(XSTRING& content, XVECTOR<XSTRING*>& names)
+* @brief      True when content equals a collected XML name/id identity (case-insensitive).
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_IsXmlIdentityName(XSTRING& content, XVECTOR<XSTRING*>& names)
+{
+  XSTRING trim;
+
+  TRANSLATESCAN_TrimCopy(content, 0, (int)content.GetSize(), trim);
+  if(trim.IsEmpty()) return false;
+
+  for(XDWORD i=0; i<names.GetSize(); i++)
+    {
+      if(names.Get(i) && (names.Get(i)->Compare(trim, true) == 0)) return true;
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         static bool TRANSLATESCAN_EndsWith(XSTRING& text, XCHAR* suffix)
 * @brief      True when text ends with suffix.
 * @ingroup    APPLICATION
@@ -4302,6 +4439,10 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
 
         TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL(" > %s"), pathfile->Get());
 
+        {
+          XVECTOR<XSTRING*> identitynames;
+          TRANSLATESCAN_CollectXmlIdentityNames(filetxt, identitynames);
+
         for(int nline=0; nline<(int)filetxt.GetNLines(); nline++)
           {
             XSTRING* line = filetxt.GetLine(nline);
@@ -4361,6 +4502,13 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
 
             // Any other #[MASK] (live values, mixed prefixes) is not a static label.
             if(content.Find(NL("#["), false) != XSTRING_NOTFOUND) continue;
+
+            // Body equals an XML name=/id= identity in this file (resource/element name), not UI copy.
+            if(TRANSLATESCAN_IsXmlIdentityName(content, identitynames))
+              {
+                TRANSLATESCAN_Report(XTRACE_COLOR_GRAY, NL("   %d  [LAYOUT NAME] \"%s\""), nline + 1, content.Get());
+                continue;
+              }
 
             if(!TRANSLATESCAN_MANAGER::Operation_LiteralStrings_HasTranslatableText(content)) continue;
 
@@ -4454,6 +4602,9 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
                   }
               }
           }
+
+          identitynames.DeleteContents();
+        }
 
         filetxt.Close();
       }
@@ -5232,6 +5383,10 @@ bool TRANSLATESCAN_MANAGER::Operation_ViewLiteralStrings(XPATH& operationdir)
 
         nfiles++;
 
+        {
+          XVECTOR<XSTRING*> identitynames;
+          TRANSLATESCAN_CollectXmlIdentityNames(filetxt, identitynames);
+
         for(int nline=0; nline<(int)filetxt.GetNLines(); nline++)
           {
             XSTRING* line = filetxt.GetLine(nline);
@@ -5276,6 +5431,14 @@ bool TRANSLATESCAN_MANAGER::Operation_ViewLiteralStrings(XPATH& operationdir)
                 continue;
               }
 
+            // Body equals an XML name=/id= identity in this file (resource/element name), not UI copy.
+            if(TRANSLATESCAN_IsXmlIdentityName(content, identitynames))
+              {
+                nnotext++;
+                TRANSLATESCAN_Report(XTRACE_COLOR_GRAY, NL("   %d  [LAYOUT NAME] \"%s\""), nline + 1, content.Get());
+                continue;
+              }
+
             if(!Operation_LiteralStrings_HasTranslatableText(content))
               {
                 nnotext++;
@@ -5287,6 +5450,9 @@ bool TRANSLATESCAN_MANAGER::Operation_ViewLiteralStrings(XPATH& operationdir)
             nlayout++;
             TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   %d  [LAYOUT] \"%s\""), nline + 1, content.Get());
           }
+
+          identitynames.DeleteContents();
+        }
 
         filetxt.Close();
       }

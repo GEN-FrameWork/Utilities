@@ -284,18 +284,15 @@ bool TRANSLATESCAN::AppProc_Ini()
   APPFLOW_CFG_SETAUTOMATICTRACETARGETS
 
   //--------------------------------------------------------------------------------------------------
-
   
   GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_ROOT, xpathsection);
   xpath.Create(3 , xpathsection.Get(), APPLICATION_NAMEFILE, XTRANSLATION_NAMEFILEEXT);
 
   if(!GEN_XTRANSLATION.Ini(xpath))
     {
-      //return false;
+      return false;
     }
   
-  //GEN_XTRANSLATION.SetActual(XLANGUAGE_ISO_639_3_CODE_ENG);
-
   //--------------------------------------------------------------------------------------------------
 
   APPFLOW_EXTENDED.APPStart(&APPFLOW_CFG, this);
