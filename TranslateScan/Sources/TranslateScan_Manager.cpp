@@ -2828,6 +2828,70 @@ static bool TRANSLATESCAN_LineIsLayoutTextCarrier(XSTRING* line, int& tagclose)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         static bool TRANSLATESCAN_OpenTagHasTranslateFalse(XSTRING* line, int tagclose)
+* @brief      True when the open tag (chars before tagclose) sets translate="false" / 'false' / 0 / no.
+*             Absent attribute means translatable (backward compatible).
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_OpenTagHasTranslateFalse(XSTRING* line, int tagclose)
+{
+  XSTRING opentag;
+  XSTRING val;
+  int     keypos;
+  int     eq;
+  int     i;
+
+  if(!line || (tagclose <= 0) || (tagclose > (int)line->GetSize())) return false;
+
+  line->Copy(0, tagclose, opentag);
+
+  keypos = opentag.Find(NL("translate"), true);
+  if(keypos == XSTRING_NOTFOUND) return false;
+
+  // Require word boundary before "translate" (avoid *un*translate*).
+  if(keypos > 0)
+    {
+      XCHAR prev = opentag.Get()[keypos - 1];
+      if((prev != _C(' ')) && (prev != _C('\t')) && (prev != _C('\r')) && (prev != _C('\n'))) return false;
+    }
+
+  eq = opentag.Find(NL("="), false, keypos + 9);
+  if(eq == XSTRING_NOTFOUND) return false;
+
+  i = eq + 1;
+  while((i < (int)opentag.GetSize()) && ((opentag.Get()[i] == _C(' ')) || (opentag.Get()[i] == _C('\t')))) i++;
+  if(i >= (int)opentag.GetSize()) return false;
+
+  {
+    XCHAR q = opentag.Get()[i];
+    if((q == _C('\"')) || (q == _C('\'')))
+      {
+        int endq = i + 1;
+        while((endq < (int)opentag.GetSize()) && (opentag.Get()[endq] != q)) endq++;
+        if(endq >= (int)opentag.GetSize()) return false;
+        opentag.Copy(i + 1, endq, val);
+      }
+     else
+      {
+        int end = i;
+        while((end < (int)opentag.GetSize()) &&
+              (opentag.Get()[end] != _C(' ')) && (opentag.Get()[end] != _C('\t')) &&
+              (opentag.Get()[end] != _C('/')) && (opentag.Get()[end] != _C('>'))) end++;
+        opentag.Copy(i, end, val);
+      }
+  }
+
+  if(val.IsEmpty()) return false;
+  if(!val.Compare(NL("false"), true)) return true;
+  if(!val.Compare(NL("no"), true))    return true;
+  if(!val.Compare(NL("0"), true))     return true;
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         static void TRANSLATESCAN_CollectAttrQuotedValues(XSTRING* line, XCHAR* attr, XVECTOR<XSTRING*>& names)
 * @brief      Collect every attr="value" / attr='value' on the line into names (no duplicates).
 * @ingroup    APPLICATION
@@ -4462,6 +4526,13 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
             TRANSLATESCAN_TrimCopy(*line, tagclose + 1, endtag, content);
             if(content.IsEmpty()) continue;
 
+            // translate="false" → keep body literal; do not catalogue / rewrite.
+            if(TRANSLATESCAN_OpenTagHasTranslateFalse(line, tagclose))
+              {
+                TRANSLATESCAN_Report(XTRACE_COLOR_GRAY, NL("   %d  [LAYOUT NO_TRANSLATE] \"%s\""), nline + 1, content.Get());
+                continue;
+              }
+
             // Already a layout translation mask: validate the ID against the catalogue / enum.
             if(TRANSLATESCAN_ParseTranslateMaskID(content, translate_ID))
               {
@@ -5415,6 +5486,14 @@ bool TRANSLATESCAN_MANAGER::Operation_ViewLiteralStrings(XPATH& operationdir)
                     TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL(" > %s"), pathfile->Get());
                   }
                 reported = true;
+              }
+
+            // translate="false" → literal (not a catalogue candidate).
+            if(TRANSLATESCAN_OpenTagHasTranslateFalse(line, tagclose))
+              {
+                nnotext++;
+                TRANSLATESCAN_Report(XTRACE_COLOR_GRAY, NL("   %d  [LAYOUT NO_TRANSLATE] \"%s\""), nline + 1, content.Get());
+                continue;
               }
 
             if(TRANSLATESCAN_ParseTranslateMaskID(content, translate_ID))

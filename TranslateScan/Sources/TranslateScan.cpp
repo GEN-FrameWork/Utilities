@@ -290,7 +290,7 @@ bool TRANSLATESCAN::AppProc_Ini()
 
   if(!GEN_XTRANSLATION.Ini(xpath))
     {
-      return false;
+      //return false;
     }
   
   //--------------------------------------------------------------------------------------------------
