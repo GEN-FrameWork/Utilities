@@ -17,6 +17,8 @@ option(DEBUG_FEATURE                                            "Debug mode"    
 option(XTRACE_FEATURE                                           "XTrace"                                                  ON )
 option(XTRACE_NOINTERNET_FEATURE                                "No need for trace dependencies with Internet"            ON )                  
 option(XMEMORY_CONTROL_FEATURE                                  "XMemory Control"                                         ON )
+
+option(LINUX_X11_FEATURE                                        "Linux X11 (screen capture / window enum / InpSim warp)"  ON )
                 
 option(APPFLOW_FEATURE                                          "Application Flow modules"                                ON )
 option(APPFLOW_CONSOLE_FEATURE                                  "Application Flow Console"                                ON )

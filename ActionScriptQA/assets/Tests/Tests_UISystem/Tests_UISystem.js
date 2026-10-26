@@ -1,6 +1,7 @@
 // ----------------------------------------------------------------------------
 // Tests_UISystem.js — launch UI_System, click sidebar via image find (layout
 // fallback), assert #[TESTS_RESULT]# feedback through TraceServer (UDP 10001).
+// UI_System is always Spanish ("Monitor del Sistema"); no ForceLang helper.
 // Catalog / evidence names follow GetNameScript() at runtime:
 //   <base>_ListTest.json  (same folder as the script)
 //   evidences/<base>_<YYYYMMDD_HHMMSS>.csv
@@ -35,12 +36,40 @@ function ListTestFileName(scriptname)
 }
 
 
+function PathJoin(a, b)
+{
+  var left  = ReplaceAllString("" + a, "\\", "/");
+  var right = ReplaceAllString("" + b, "\\", "/");
+  if(left.length > 0 && left.charAt(left.length - 1) == "/") left = left.substring(0, left.length - 1);
+  if(right.length > 0 && right.charAt(0) == "/") right = right.substring(1);
+  return left + "/" + right;
+}
+
+
 function ResolveUISystemPath()
 {
+  // ExecApplication resolves relative to ActionScriptQA CWD (assets/), not the script folder.
+  // Prefer absolute paths built from GetPathScript() (…/Tests/Tests_UISystem/).
+  var root = PathJoin(GetPathScript(), "../../../../../Examples/Graphics/UI_System/CMake/Build");
+  if(System_IsWindows())
+    {
+      return [
+        PathJoin(root, "Windows/intel32/ui_system.exe"),
+        PathJoin(root, "Windows/intel64/ui_system.exe")
+      ];
+    }
+
   return [
-    "..\\..\\..\\..\\..\\..\\Examples\\Graphics\\UI_System\\CMake\\Build\\Windows\\intel64\\ui_system.exe",
-    "..\\..\\..\\..\\..\\..\\Examples\\Graphics\\UI_System\\CMake\\Build\\Windows\\intel32\\ui_system.exe"
+    PathJoin(root, "Linux/intel64/ui_system"),
+    PathJoin(root, "Linux/intel32/ui_system")
   ];
+}
+
+
+function ResolveUISystemAppName()
+{
+  // /proc Name / exe basename on Linux has no .exe; Windows process list uses ui_system.exe.
+  return System_IsWindows() ? "ui_system.exe" : "ui_system";
 }
 
 
@@ -242,7 +271,7 @@ function ClickNav(appname, windowtitle, bmpname, layoutx, layouty, outx, outy, s
 function main()
 {
   var scriptname  = GetNameScript();
-  var appname     = "ui_system.exe";
+  var appname     = ResolveUISystemAppName();
   var windowtitle = "Monitor del Sistema";
   var okcount     = 0;
   var failcount   = 0;
@@ -261,6 +290,7 @@ function main()
 
   // layoutx/layouty = center of hit target (root ypos is BOTTOM edge).
   // testid matches <scriptname>_ListTest.json in this same scripts folder.
+  // BMP names / window title assume Spanish UI (always).
   var navitems = [
     { bmp: "uisys_nav_resumen.png"      , eid: "nav-resumen-btn"      , x: 105, y: 94  , testid: 1001 },
     { bmp: "uisys_nav_cpu.png"          , eid: "nav-cpu-btn"          , x: 105, y: 150 , testid: 1002 },
@@ -288,14 +318,16 @@ function main()
   Log_AddEntry(1, "Script", "[script %s] Evidence CSV %s", scriptname, FileCSV_GetPath());
   Console_Printf("[%s] Evidence CSV %s\n", scriptname, FileCSV_GetPath());
 
-  if(!System_IsWindows())
+  if(!System_IsWindows() && !System_IsLinux())
     {
-      Log_AddEntry(1, "Script", "[script %s] SKIP on non-Windows (%s)", scriptname, System_GetType());
+      Log_AddEntry(1, "Script", "[script %s] SKIP unsupported platform (%s)", scriptname, System_GetType());
       Console_Printf("[%s] SKIP on %s\n", scriptname, System_GetType());
       EvidenceAdd("", "Platform check", "SKIP");
       EvidenceEnd();
       return;
     }
+
+  Log_AddEntry(1, "Script", "[script %s] Platform=%s appname=%s", scriptname, System_GetType(), appname);
 
   catalogpath = GetPathScript() + ListTestFileName(scriptname);
   if(!TraceTests_Load(catalogpath))
@@ -345,6 +377,10 @@ function main()
   Log_AddEntry(1, "Script", "[script %s] PASS TraceServer_Ini", scriptname);
   TraceServer_Clear();
 
+  // Ensure no previous UI_System instance is holding the window title.
+  TerminateAplication(appname);
+  Sleep(400);
+
   for(i = 0; i < paths.length; i++)
     {
       apppath = paths[i];
@@ -373,7 +409,10 @@ function main()
   Log_AddEntry(1, "Script", "[script %s] PASS ExecApplication %s", scriptname, apppath);
   Console_Printf("[%s] Launched %s\n", scriptname, apppath);
 
-  if(!WaitWindow(appname, windowtitle, 30000))
+  // Allow chrome title / first paint before GetRunningList can see a non-empty window title.
+  Sleep(2000);
+
+  if(!WaitWindow(appname, windowtitle, 60000))
     {
       failcount = failcount + 1;
       Log_AddEntry(4, "Script", "[script %s] FAIL window '%s' not found", scriptname, windowtitle);
@@ -392,7 +431,7 @@ function main()
   winy = outy.value;
   okcount = okcount + 1;
   EvidenceAdd("", "WaitWindow", "PASS");
-  Log_AddEntry(1, "Script", "[script %s] PASS window pos=%d,%d", scriptname, winx, winy);
+  Log_AddEntry(1, "Script", "[script %s] PASS window title='%s' pos=%d,%d", scriptname, windowtitle, winx, winy);
   Console_Printf("[%s] Window '%s' pos=%d,%d\n", scriptname, windowtitle, winx, winy);
 
   Screen_SetPosition(appname, windowtitle, 40, 40);
@@ -431,7 +470,7 @@ function main()
 
       Console_Printf("[%s] Clicked %s at %d,%d (id=%d %s)\n", scriptname, navitems[i].bmp, outx.value, outy.value, navitems[i].testid, description);
 
-      error = WaitTestResult(navitems[i].testid, 5000, scriptname);
+      error = WaitTestResult(navitems[i].testid, 8000, scriptname);
       if(error == 0)
         {
           okcount = okcount + 1;
@@ -488,6 +527,8 @@ function main()
 
   Sleep(1000);
   TraceServer_End();
+
+  TerminateAplication(appname);
 
   Log_AddEntry(1, "Script", "[script %s] Result ok=%d fail=%d", scriptname, okcount, failcount);
   Console_Printf("[%s] Result ok=%d fail=%d\n", scriptname, okcount, failcount);

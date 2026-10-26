@@ -75,7 +75,7 @@
 
 /*---- CLASS MEMBERS -------------------------------------------------------------------------------------------------*/
 
-
+static bool TRANSLATESCAN_IsSkippedScanDirectory(XSTRING& name);
 
 
 /**-------------------------------------------------------------------------------------------------------------------
@@ -215,11 +215,19 @@ bool TRANSLATESCAN_MANAGER::SearchFilesTarget(XCHAR* inipath, XVECTOR<TRANSLATES
       do{
           if(searchelement.GetType() == XDIRELEMENTTYPE_DIR)
             {
+              XSTRING dirname = searchelement.GetNameFile()->Get();
+
+              // Skip build/VCS trees (e.g. CMake/Build/.../CompilerIdC).
+              if( TRANSLATESCAN_IsSkippedScanDirectory(dirname))
+                {
+                  continue;
+                }
+
               XPATH inisubpath;
 
               inisubpath = inipath;                            
               inisubpath.Slash_Add();
-              inisubpath.Add(searchelement.GetNameFile()->Get());
+              inisubpath.Add(dirname.Get());
 
               SearchFilesTarget(inisubpath.Get(), filestarget);
             }
@@ -1223,8 +1231,128 @@ static void TRANSLATESCAN_Unescape(XSTRING& raw, XSTRING& text)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         static bool TRANSLATESCAN_IsSkippedScanDirectory(XSTRING& name)
+* @brief      True for build/VCS directories that must not be scanned for literals.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_IsSkippedScanDirectory(XSTRING& name)
+{
+  static XCHAR* skip[] = { NL("CMake")
+                         , NL("CMakeFiles")
+                         , NL("Build")
+                         , NL("build")
+                         , NL(".git")
+                         , NL(".vs")
+                         , NL(".svn")
+                         , NL("out")
+                         , NL("bin")
+                         , NL("obj")
+                         , NL("node_modules")
+                         , NL(".translatescan_ui_layouts")
+                         };
+
+  if(name.IsEmpty()) return true;
+  if(name.Compare(NL("."), true) == 0)  return true;
+  if(name.Compare(NL(".."), true) == 0) return true;
+
+  for(XDWORD c=0; c<(XDWORD)(sizeof(skip)/sizeof(XCHAR*)); c++)
+    {
+      if(name.Compare(skip[c], true) == 0) return true;
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_ResolveGENIDName(XDWORD id, XSTRING& outname)
+* @brief      Map a GEN catalogue ID to its XTRANSLATION_GEN_ID_* enumerator name.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_ResolveGENIDName(XDWORD id, XSTRING& outname)
+{
+  static XVECTOR<XSTRING*> names;
+  static bool              loaded = false;
+
+  outname.Empty();
+
+  if(!loaded)
+    {
+      XPATH    candidates[3];
+      XFILETXT header;
+      bool     opened = false;
+
+      candidates[0] = NL("../../GEN/XUtils/XTranslation_GEN_ID.h");
+      candidates[1] = NL("../../../GEN/XUtils/XTranslation_GEN_ID.h");
+      candidates[2] = NL("../GEN/XUtils/XTranslation_GEN_ID.h");
+
+      for(int c=0; c<3; c++)
+        {
+          if(header.Open(candidates[c], true) && header.ReadAllFile())
+            {
+              opened = true;
+              break;
+            }
+          header.Close();
+        }
+
+      if(opened)
+        {
+          for(int line=0; line<(int)header.GetNLines(); line++)
+            {
+              XSTRING* text = header.GetLine(line);
+              XSTRING  token;
+              int      start;
+              int      end;
+
+              if(!text) continue;
+              start = text->Find(NL("XTRANSLATION_GEN_ID_"), false);
+              if(start == XSTRING_NOTFOUND) continue;
+              if(text->Find(NL("XTRANSLATION_GEN_ID_LAST"), false) != XSTRING_NOTFOUND) continue;
+
+              end = start;
+              while((end < (int)text->GetSize()) &&
+                    ((text->Get()[end] == _C('_')) ||
+                     ((text->Get()[end] >= _C('A')) && (text->Get()[end] <= _C('Z'))) ||
+                     ((text->Get()[end] >= _C('a')) && (text->Get()[end] <= _C('z'))) ||
+                     ((text->Get()[end] >= _C('0')) && (text->Get()[end] <= _C('9')))))
+                {
+                  end++;
+                }
+
+              text->Copy(start, end, token);
+              if(token.IsEmpty()) continue;
+
+              XSTRING* name = GEN_NEW XSTRING();
+              if(name)
+                {
+                  (*name) = token;
+                  names.Add(name);
+                }
+            }
+
+          header.Close();
+        }
+
+      loaded = true;
+    }
+
+  if(id >= names.GetSize()) return false;
+  if(!names.Get(id) || names.Get(id)->IsEmpty()) return false;
+
+  outname = names.Get(id)->Get();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         static void TRANSLATESCAN_ShieldPrintfMasks(XSTRING& text, XSTRING& shielded, XVECTOR<XSTRING*>& masks)
-* @brief      Replace each C/C++ printf mask with {{n}} so the translator cannot rewrite it.
+* @brief      Replace each C/C++ printf mask with __PFn__ so the translator cannot rewrite it.
+* @note       Tokens avoid '{' / '}' so URL encoding in translation.g stays brace-free (G PreScan).
 * @ingroup    APPLICATION
 *
 *---------------------------------------------------------------------------------------------------------------------*/
@@ -1247,7 +1375,7 @@ static void TRANSLATESCAN_ShieldPrintfMasks(XSTRING& text, XSTRING& shielded, XV
 
               text.Copy(c, next, rawmask);
 
-              // Keep "%%" literal: translators often break {{n}} when it stands for a percent sign.
+              // Keep "%%" literal: percent-encoding and translators mishandle placeholder tokens for it.
               if(rawmask.Compare(NL("%%"), true) == 0)
                 {
                   shielded.Add(NL("%%"));
@@ -1261,7 +1389,7 @@ static void TRANSLATESCAN_ShieldPrintfMasks(XSTRING& text, XSTRING& shielded, XV
               if(mask)
                 {
                   (*mask) = rawmask;
-                  token.Format(NL("{{%d}}"), (int)masks.GetSize());
+                  token.Format(NL("__PF%d__"), (int)masks.GetSize());
                   masks.Add(mask);
                   shielded.Add(token);
                   c = next;
@@ -1288,17 +1416,20 @@ static bool TRANSLATESCAN_RestorePrintfMasks(XSTRING& text, XVECTOR<XSTRING*>& m
   for(int index=(int)masks.GetSize()-1; index>=0; index--)
     {
       XSTRING* mask = masks.Get((XDWORD)index);
-      XSTRING  token[4];
+      XSTRING  token[6];
       bool     found = false;
 
       if(!mask) return false;
 
-      token[0].Format(NL("{{%d}}"), index);
-      token[1].Format(NL("{{ %d }}"), index);
-      token[2].Format(NL("{%d}"), index);
-      token[3].Format(NL("{ %d }"), index);
+      // Current tokens (__PFn__) plus legacy {{n}} / {n} from older TranslateScan runs.
+      token[0].Format(NL("__PF%d__"), index);
+      token[1].Format(NL("__PF %d __"), index);
+      token[2].Format(NL("{{%d}}"), index);
+      token[3].Format(NL("{{ %d }}"), index);
+      token[4].Format(NL("{%d}"), index);
+      token[5].Format(NL("{ %d }"), index);
 
-      for(int pattern=0; pattern<4; pattern++)
+      for(int pattern=0; pattern<6; pattern++)
         {
           if(text.Find(token[pattern].Get(), false) == XSTRING_NOTFOUND) continue;
 
@@ -1359,6 +1490,91 @@ static int TRANSLATESCAN_CatalogueLanguageIndex(XCHAR* detected)
   if(code.Find(NL("zh"), true) == 0)    return 4;
 
   return -1;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_HasSpanishMarkers(XSTRING& text)
+* @brief      True when the literal shows Spanish orthography or clear Spanish UI vocabulary.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_HasSpanishMarkers(XSTRING& text)
+{
+  static const XCHAR* words[] = { NL("creando")
+                                , NL("fichero")
+                                , NL("ficheros")
+                                , NL("numero")
+                                , NL("n\u00FAmero")
+                                , NL("tamano")
+                                , NL("tama\u00F1o")
+                                , NL("actualizacion")
+                                , NL("actualizaci\u00F3n")
+                                , NL("argumentos")
+                                , NL("erroneos")
+                                , NL("err\u00F3neos")
+                                , NL("invalidos")
+                                , NL("inv\u00E1lidos")
+                                , NL("pulsa")
+                                , NL("tecla")
+                                , NL("continuar")
+                                , NL("sistema")
+                                , NL("versi\u00F3n")
+                                , NULL
+                                };
+  XSTRING lower;
+  XCHAR*  raw = text.Get();
+
+  for(XDWORD c=0; raw && (c<text.GetSize()); c++)
+    {
+      XCHAR ch = raw[c];
+
+      if((ch == 0x00E1) || (ch == 0x00E9) || (ch == 0x00ED) || (ch == 0x00F3) || (ch == 0x00FA) ||
+         (ch == 0x00F1) || (ch == 0x00FC) || (ch == 0x00C1) || (ch == 0x00C9) || (ch == 0x00CD) ||
+         (ch == 0x00D3) || (ch == 0x00DA) || (ch == 0x00D1) || (ch == 0x00DC) || (ch == 0x00BF) ||
+         (ch == 0x00A1))
+        {
+          return true;
+        }
+    }
+
+  lower = text;
+  lower.ToLowerCase();
+
+  for(int w=0; words[w]; w++)
+    {
+      if(lower.Find(words[w], false) != XSTRING_NOTFOUND) return true;
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static int TRANSLATESCAN_ResolveAppOrigin(XSTRING& human, XCHAR* detected)
+* @brief      Map the web detector onto ENG/SPA/FRE/GER/CHI, correcting common false Spanish hits.
+* @note       Always returns 0..4 so the human literal is kept in a catalogue column (never discarded).
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static int TRANSLATESCAN_ResolveAppOrigin(XSTRING& human, XCHAR* detected)
+{
+  int  origin   = TRANSLATESCAN_CatalogueLanguageIndex(detected);
+  bool spanish  = TRANSLATESCAN_HasSpanishMarkers(human);
+
+  // Detectors often return oc/pt/jam/it for Spanish UI copy. Trust orthography / vocabulary first.
+  if(spanish && ((origin < 0) || (origin == 0))) return 1;
+
+  // Unsupported / empty detection: keep the source text as English and translate from en.
+  if(origin < 0) return 0;
+
+  // Detectors often tag short technical English ("Error Control", "Version") as Spanish.
+  // Without Spanish markers, prefer English so the original stays in the English column.
+  if((origin == 1) && !spanish) return 0;
+
+  return origin;
 }
 
 
@@ -2206,6 +2422,7 @@ class TRANSLATESCAN_APPTEXT
       ready      = false;
       addtolng   = false;
       addtoenum  = false;
+      usegen     = false;
       idnumber   = 0;
     }
 
@@ -2218,6 +2435,7 @@ class TRANSLATESCAN_APPTEXT
     bool    ready;
     bool    addtolng;
     bool    addtoenum;
+    bool    usegen;       // true → replace with GEN_TL(XTRANSLATION_GEN_ID_*), not APP TL()
     int     idnumber;
 };
 
@@ -4390,20 +4608,48 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
 
                                   if(textindex < 0)
                                     {
-                                      TRANSLATESCAN_APPTEXT* entry = GEN_NEW TRANSLATESCAN_APPTEXT();
-                                      if(entry)
+                                      XDWORD  gen_ID = 0;
+                                      XSTRING genname;
+
+                                      if(Operation_LiteralStrings_IsGENInternal(literal, gen_ID) &&
+                                         TRANSLATESCAN_ResolveGENIDName(gen_ID, genname))
                                         {
-                                          entry->pathfile  = *pathfile;
-                                          entry->literal   = literal;
-                                          entry->human     = human;
-                                          entry->fixed     = (macro == TRANSLATESCAN_LITERALMACRO_FL) ? (int)literal.GetSize() : 0;
-                                          entry->ready     = false;
-                                          entry->addtolng  = false;
-                                          entry->addtoenum = false;
-                                          // Provisional name from the source literal; rebuilt from English after translation.
-                                          TRANSLATESCAN_BuildAppIDName(idprefix, *pathfile, literal, entry->idname);
-                                          textindex = (int)scope.texts.GetSize();
-                                          scope.texts.Add(entry);
+                                          TRANSLATESCAN_APPTEXT* entry = GEN_NEW TRANSLATESCAN_APPTEXT();
+                                          if(entry)
+                                            {
+                                              entry->pathfile  = *pathfile;
+                                              entry->literal   = literal;
+                                              entry->human     = human;
+                                              entry->idname    = genname;
+                                              entry->idnumber  = (int)gen_ID;
+                                              entry->fixed     = (macro == TRANSLATESCAN_LITERALMACRO_FL) ? (int)literal.GetSize() : 0;
+                                              entry->ready     = true;
+                                              entry->addtolng  = false;
+                                              entry->addtoenum = false;
+                                              entry->usegen    = true;
+                                              textindex = (int)scope.texts.GetSize();
+                                              scope.texts.Add(entry);
+
+                                              TRANSLATESCAN_Report(XTRACE_COLOR_PURPLE, NL("   %d  [GEN] %s  \"%s\""), nline + 1, genname.Get(), literal.Get());
+                                            }
+                                        }
+                                       else
+                                        {
+                                          TRANSLATESCAN_APPTEXT* entry = GEN_NEW TRANSLATESCAN_APPTEXT();
+                                          if(entry)
+                                            {
+                                              entry->pathfile  = *pathfile;
+                                              entry->literal   = literal;
+                                              entry->human     = human;
+                                              entry->fixed     = (macro == TRANSLATESCAN_LITERALMACRO_FL) ? (int)literal.GetSize() : 0;
+                                              entry->ready     = false;
+                                              entry->addtolng  = false;
+                                              entry->addtoenum = false;
+                                              // Provisional name from the source literal.
+                                              TRANSLATESCAN_BuildAppIDName(idprefix, *pathfile, literal, entry->idname);
+                                              textindex = (int)scope.texts.GetSize();
+                                              scope.texts.Add(entry);
+                                            }
                                         }
                                     }
 
@@ -4427,7 +4673,7 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
                                           {
                                             TRANSLATESCAN_APPTEXT* shown = scope.texts.Get((XDWORD)textindex);
 
-                                            if(shown)
+                                            if(shown && !shown->usegen)
                                               {
                                                 TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   %d  %s  \"%s\""), nline + 1, shown->idname.Get(), literal.Get());
                                               }
@@ -4743,7 +4989,9 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
             continue;
           }
 
-        origin = TRANSLATESCAN_CatalogueLanguageIndex(detected.GetSourceLanguage());
+        origin = TRANSLATESCAN_ResolveAppOrigin(entry->human, detected.GetSourceLanguage());
+        TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("     origin %s (api %s)"), alpha2[origin],
+                             detected.GetSourceLanguage() ? detected.GetSourceLanguage() : NL("?"));
 
         for(int lang=0; lang<5; lang++)
           {
@@ -4751,24 +4999,8 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
 
             if(lang == origin)
               {
+                // Always keep the scanned literal in its language column (never a reverse translation).
                 entry->sentence[lang] = entry->human;
-                continue;
-              }
-
-            if((origin < 0) && (lang == 0))
-              {
-                XSTRING decoded;
-
-                decoded = detected.GetTranslation();
-                if(!TRANSLATESCAN_RestorePrintfMasks(decoded, masks))
-                  {
-                    failed++;
-                    entry->ready = false;
-                    TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   mask lost  \"%s\""), entry->literal.Get());
-                    break;
-                  }
-
-                entry->sentence[lang] = decoded;
                 continue;
               }
 
@@ -4778,13 +5010,19 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
               XSTRING translation;
               XSTRING sourcecode;
 
-              sourcecode = (origin >= 0) ? alpha2[origin] : detected.GetSourceLanguage();
-              if(sourcecode.IsEmpty()) sourcecode = english;
+              sourcecode = alpha2[origin];
 
               TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("     -> %s"), targetcode.Get());
 
-              if(!scraper.Get(shielded, sourcecode, targetcode, translation) ||
-                 !TRANSLATESCAN_RestorePrintfMasks(translation, masks))
+              if(!scraper.Get(shielded, sourcecode, targetcode, translation))
+                {
+                  failed++;
+                  entry->ready = false;
+                  TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   translate failed  \"%s\" -> %s"), entry->literal.Get(), targetcode.Get());
+                  break;
+                }
+
+              if(!TRANSLATESCAN_RestorePrintfMasks(translation, masks))
                 {
                   failed++;
                   entry->ready = false;
@@ -4806,8 +5044,8 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
             continue;
           }
 
-        // Enum IDs always come from the English sentence, even when the source literal is not English.
-        TRANSLATESCAN_BuildAppIDName(idprefix, entry->pathfile, entry->sentence[0], entry->idname);
+        // Enum IDs come from the source literal (stable for a Spanish/English codebase; avoids "Si"→AND).
+        TRANSLATESCAN_BuildAppIDName(idprefix, entry->pathfile, entry->literal, entry->idname);
         TRANSLATESCAN_MakeUniqueAppID(entry->idname, headertext);
 
         entry->ready     = true;
@@ -5074,7 +5312,9 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
           if(!line) continue;
 
           line->Copy(0, place->index, rebuilt);
-          rebuilt.Add(NL("TL("));
+          if(entry->usegen)
+                rebuilt.Add(NL("GEN_TL("));
+           else rebuilt.Add(NL("TL("));
           rebuilt.Add(entry->idname);
           rebuilt.Add(NL(")"));
           line->Copy(place->endquote + 1, tail);
@@ -5084,27 +5324,79 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
           filetxt.InsertLine(place->nline, rebuilt);
           changed = true;
 
-          TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   replace %d  TL(%s)"), place->nline + 1, entry->idname.Get());
+          if(entry->usegen)
+                TRANSLATESCAN_Report(XTRACE_COLOR_PURPLE, NL("   replace %d  GEN_TL(%s)"), place->nline + 1, entry->idname.Get());
+           else TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   replace %d  TL(%s)"), place->nline + 1, entry->idname.Get());
         }
 
       if(changed)
         {
-          bool hasinclude = false;
-          int  insertat   = 0;
+          bool hasinclude     = false;
+          bool hasgeninclude  = false;
+          bool needgeninclude = false;
+          bool needappinclude = false;
+          int  insertat       = 0;
+
+          for(int p=0; p<(int)scope.places.GetSize(); p++)
+            {
+              TRANSLATESCAN_APPPLACE* place = scope.places.Get((XDWORD)p);
+              TRANSLATESCAN_APPTEXT*  entry = NULL;
+
+              if(!place || place->isxml) continue;
+              if(place->pathfile.Compare(pathfile->Get(), true) != 0) continue;
+              if((place->textindex < 0) || (place->textindex >= (int)scope.texts.GetSize())) continue;
+              entry = scope.texts.Get((XDWORD)place->textindex);
+              if(!entry || !entry->ready) continue;
+              if(entry->usegen) needgeninclude = true;
+                           else needappinclude = true;
+            }
 
           for(int c=0; c<(int)filetxt.GetNLines(); c++)
             {
               XSTRING* line = filetxt.GetLine(c);
               if(!line) continue;
               if(line->Find(NL("XTranslation.h"), false) != XSTRING_NOTFOUND) hasinclude = true;
+              if(line->Find(NL("XTranslation_GEN.h"), false) != XSTRING_NOTFOUND) hasgeninclude = true;
               if(line->Find(NL("#include \"GEN_Defines.h\""), false) != XSTRING_NOTFOUND) insertat = c + 1;
             }
 
-          if(!hasinclude)
+          if(needappinclude && !hasinclude)
             {
               XSTRING include = NL("#include \"XTranslation.h\"");
               filetxt.InsertLine(insertat, include);
               TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   include XTranslation.h"));
+              insertat++;
+            }
+
+          if(needgeninclude && !hasgeninclude)
+            {
+              XSTRING include = NL("#include \"XTranslation_GEN.h\"");
+              filetxt.InsertLine(insertat, include);
+              TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   include XTranslation_GEN.h"));
+              insertat++;
+            }
+
+          if(needappinclude)
+            {
+              XSTRING translateid_name;
+              bool    hastranslateid = false;
+
+              idheader.GetNamefileExt(translateid_name);
+
+              for(int c=0; c<(int)filetxt.GetNLines(); c++)
+                {
+                  XSTRING* line = filetxt.GetLine(c);
+                  if(!line) continue;
+                  if(line->Find(translateid_name.Get(), false) != XSTRING_NOTFOUND) hastranslateid = true;
+                }
+
+              if(!hastranslateid && !translateid_name.IsEmpty())
+                {
+                  XSTRING include;
+                  include.Format(NL("#include \"%s\""), translateid_name.Get());
+                  filetxt.InsertLine(insertat, include);
+                  TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   include %s"), translateid_name.Get());
+                }
             }
 
           if(!filetxt.WriteAllFile())
@@ -5697,7 +5989,9 @@ bool TRANSLATESCAN_MANAGER::Operation_LiteralStrings_IsApplicationName(XSTRING* 
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool TRANSLATESCAN_MANAGER::Operation_LiteralStrings_IsGENInternal(XSTRING& literal, XDWORD& out_ID)
-* @brief      True when the literal already exists in XTRANSLATION_GEN internal sentences.
+* @brief      True when the full literal is already a complete GEN catalogue sentence.
+* @note       Reuse requires an exact match of the whole string and a non-empty translation in every
+*             APP catalogue language (ENG, SPA, FRE, GER, CHI). Partial / single-language hits do not count.
 * @note       INTERNAL
 * @ingroup    APPLICATION
 *
@@ -5712,10 +6006,31 @@ bool TRANSLATESCAN_MANAGER::Operation_LiteralStrings_IsGENInternal(XSTRING& lite
     }
 
   #ifdef XTRANSLATION_GEN_ACTIVE
-  XTRANSLATION_GEN_SENTENCE* sentence = XTRANSLATION_GEN::GetInstance().Sentence_FindByText(literal.Get(), false);
+  static XDWORD required[] = { XLANGUAGE_ISO_639_3_CODE_ENG
+                             , XLANGUAGE_ISO_639_3_CODE_SPA
+                             , XLANGUAGE_ISO_639_3_CODE_FRE
+                             , XLANGUAGE_ISO_639_3_CODE_GER
+                             , XLANGUAGE_ISO_639_3_CODE_CHI
+                             };
+
+  XTRANSLATION_GEN&          gen      = XTRANSLATION_GEN::GetInstance();
+  XTRANSLATION_GEN_SENTENCE* sentence = gen.Sentence_FindByText(literal.Get(), false);
+
   if(!sentence)
     {
       return false;
+    }
+
+  // Exact full-literal hit only: Sentence_FindByText already compares the whole string.
+  // Additionally require every catalogue language to carry a non-empty translation for that ID.
+  for(XDWORD c=0; c<(XDWORD)(sizeof(required)/sizeof(XDWORD)); c++)
+    {
+      XTRANSLATION_GEN_SENTENCE* lang = gen.Sentence_Get(sentence->ID, required[c]);
+
+      if(!lang || !lang->sentence || !lang->sentence[0])
+        {
+          return false;
+        }
     }
 
   out_ID = sentence->ID;

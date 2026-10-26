@@ -111,7 +111,7 @@ class TRANSLATESCAN_MANAGER
     static TRANSLATESCAN_LITERALMACRO Operation_LiteralStrings_GetMacroAt(XSTRING* line, int index);
     static bool              Operation_LiteralStrings_IsApplicationName (XSTRING* line, int index);
     static bool              Operation_LiteralStrings_HasTranslatableText(XSTRING& literal);
-    static bool              Operation_LiteralStrings_IsGENInternal      (XSTRING& literal, XDWORD& out_ID);
+    static bool              Operation_LiteralStrings_IsGENInternal      (XSTRING& literal, XDWORD& out_ID); // full literal + all ENG/SPA/FRE/GER/CHI
     static int               Operation_LiteralStrings_FindStringEnd     (XCHAR* text, int size, int start);
     static int               Operation_LiteralStrings_SkipPrintfMask   (XCHAR* text, int size, int pos);
     static int               Operation_LiteralStrings_SkipEscape        (XCHAR* text, int size, int pos);

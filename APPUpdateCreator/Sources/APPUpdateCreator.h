@@ -73,10 +73,10 @@ enum APPUPDATEXFSMSTATES
 #define APPLICATION_SUBVERSION                    1
 #define APPLICATION_SUBVERSIONERR                 0
 
-#define APPLICATION_NAMEAPP                       _L("APP Update Creator")
-#define APPLICATION_NAMEFILE                      _L("appupdatecreator")
+#define APPLICATION_NAMEAPP                       NL("APP Update Creator")
+#define APPLICATION_NAMEFILE                      NL("appupdatecreator")
 
-#define APPLICATION_OWNER                         _L("EndoraSoft")
+#define APPLICATION_OWNER                         NL("EndoraSoft")
 
 #define APPLICATION_YEAROFCREATION                2018
 

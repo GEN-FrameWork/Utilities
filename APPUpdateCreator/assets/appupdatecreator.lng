@@ -1,0 +1,91 @@
+{
+  "languages"       : [ "Spanish" ,
+                        "English" ,
+                        "French"  ,
+                        "German"  ,
+                        "Chinese"
+                      ],
+
+  "translations"    : {
+
+                        "00001" : [ 0,
+                                    "   Version        : %d.\n" ,
+                                    "   Version        : %d.\n" ,
+                                    "   Version        : %d.\n" ,
+                                    "   Version        : %d.\n" ,
+                                    "   Version        : %d.\n"
+                                  ],
+
+                        "00002" : [ 0,
+                                    "   Subversion     : %d.\n" ,
+                                    "   Subversion     : %d.\n" ,
+                                    "   Subversion     : %d.\n" ,
+                                    "   Subversion     : %d.\n" ,
+                                    "   Subversion     : %d.\n"
+                                  ],
+
+                        "00003" : [ 0,
+                                    "   Error Control  : %d.\n" ,
+                                    "   Error Control  : %d.\n" ,
+                                    "   Error Control  : %d.\n" ,
+                                    "   Error Control  : %d.\n" ,
+                                    "   Error Control  : %d.\n"
+                                  ],
+
+                        "00004" : [ 0,
+                                    "   Ini Sistema    : %s.\n" ,
+                                    "   System Init    : %s.\n" ,
+                                    "   Init. système  : %s.\n" ,
+                                    "   System-Init    : %s.\n" ,
+                                    "   系统初始化      : %s.\n"
+                                  ],
+
+                        "00005" : [ 0,
+                                    "   Creando %s en [%s] ...\n" ,
+                                    "   Creating %s in [%s] ...\n" ,
+                                    "   Création de %s dans [%s] ...\n" ,
+                                    "   Erstelle %s in [%s] ...\n" ,
+                                    "   正在 [%s] 中创建 %s...\n"
+                                  ],
+
+                        "00006" : [ 0,
+                                    "   Fichero de actualizacion: %s\n" ,
+                                    "   Update file: %s\n" ,
+                                    "   Fichier de mise à jour: %s\n" ,
+                                    "   Update-Datei: %s\n" ,
+                                    "   更新文件: %s\n"
+                                  ],
+
+                        "00007" : [ 0,
+                                    "   Numero de ficheros      : %d\n" ,
+                                    "   Number of files         : %d\n" ,
+                                    "   Nombre de fichiers      : %d\n" ,
+                                    "   Anzahl der Dateien      : %d\n" ,
+                                    "   文件数量                : %d\n"
+                                  ],
+
+                        "00008" : [ 0,
+                                    "   Tamano de actualizacion : %dk\n" ,
+                                    "   Update size             : %dk\n" ,
+                                    "   Taille de mise à jour   : %dk\n" ,
+                                    "   Update-Größe            : %dk\n" ,
+                                    "   更新大小                : %dk\n"
+                                  ],
+
+                        "00009" : [ 0,
+                                    "   Error! Argumentos erroneos o invalidos.\n" ,
+                                    "   Error! Invalid or incorrect arguments.\n" ,
+                                    "   Erreur! Arguments erronés ou invalides.\n" ,
+                                    "   Fehler! Ungültige oder fehlerhafte Argumente.\n" ,
+                                    "   错误！参数错误或无效。\n"
+                                  ],
+
+                        "00010" : [ 0,
+                                    "  Pulsa una tecla para continuar... (%d)" ,
+                                    "  Press a key to continue... (%d)" ,
+                                    "  Appuyez sur une touche pour continuer... (%d)" ,
+                                    "  Drücken Sie eine Taste, um fortzufahren... (%d)" ,
+                                    "  按任意键继续... (%d)"
+                                  ]
+                      }
+}

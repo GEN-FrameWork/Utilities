@@ -101,67 +101,68 @@
 
 #include "ActionScriptQA_CFG.h"
 
-#ifdef WINDOWS
-#include <windows.h>
+#include "INPManager.h"
+#include "INPFactory.h"
+#include "INPDevice.h"
+#include "INPButton.h"
 
-struct ACTIONSCRIPTQA_FINDWND
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static void ActionScriptQA_FreeRunningList(XVECTOR<XPROCESS*>& applist)
+* @brief      Release process entries returned by Application_GetRunningList.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static void ActionScriptQA_FreeRunningList(XVECTOR<XPROCESS*>& applist)
 {
-  XSTRING* appname;
-  XSTRING* windowtitle;
-  HWND     found;
-};
-
-static BOOL CALLBACK ActionScriptQA_EnumFindWindow(HWND enumhwnd, LPARAM lparam)
-{
-  ACTIONSCRIPTQA_FINDWND* find = (ACTIONSCRIPTQA_FINDWND*)lparam;
-  if(!find || !IsWindowVisible(enumhwnd)) return TRUE;
-
-  XCHAR titlebuf[1024];
-  titlebuf[0] = 0;
-
-  DWORD_PTR getresult = 0;
-  if(!SendMessageTimeout(enumhwnd, WM_GETTEXT, (WPARAM)1024, (LPARAM)titlebuf, SMTO_ABORTIFHUNG | SMTO_BLOCK, 200, &getresult))
-    {
-      return TRUE;
-    }
-  titlebuf[1023] = 0;
-  if(!titlebuf[0]) return TRUE;
-
-  bool titlematch = find->windowtitle && !find->windowtitle->IsEmpty() &&
-                    (find->windowtitle->Compare(titlebuf, true) == 0);
-
-  DWORD pid = 0;
-  GetWindowThreadProcessId(enumhwnd, &pid);
-  bool namematch = false;
-  if(pid && find->appname && !find->appname->IsEmpty())
-    {
-      HANDLE hproc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-      if(!hproc) hproc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-      if(hproc)
-        {
-          XCHAR pathbuf[MAX_PATH + 1];
-          pathbuf[0] = 0;
-          DWORD pathsize = MAX_PATH;
-          if(QueryFullProcessImageName(hproc, 0, pathbuf, &pathsize) && pathbuf[0])
-            {
-              XPATH   fullpath(pathbuf);
-              XSTRING name;
-              fullpath.GetNamefileExt(name);
-              if(!name.IsEmpty() && name.Compare((*find->appname), true) == 0) namematch = true;
-            }
-          CloseHandle(hproc);
-        }
-    }
-
-  if(namematch || titlematch)
-    {
-      find->found = enumhwnd;
-      return FALSE;
-    }
-
-  return TRUE;
+  applist.DeleteContents();
+  applist.DeleteAll();
 }
-#endif
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static XPROCESS* ActionScriptQA_FindRunningByHandle(XVECTOR<XPROCESS*>& applist, void* hwnd)
+* @brief      Locate a running process entry by native window handle.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static XPROCESS* ActionScriptQA_FindRunningByHandle(XVECTOR<XPROCESS*>& applist, void* hwnd)
+{
+  if(!hwnd) return NULL;
+
+  for(XDWORD c=0; c<applist.GetSize(); c++)
+    {
+      XPROCESS* process = applist.Get(c);
+      if(process && (process->GetWindowHandle() == hwnd)) return process;
+    }
+
+  return NULL;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static XPROCESS* ActionScriptQA_FindRunningByNameTitle(XVECTOR<XPROCESS*>& applist, XSTRING& appname, XSTRING& windowtitle)
+* @brief      Locate a running process by executable name and optional window title.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static XPROCESS* ActionScriptQA_FindRunningByNameTitle(XVECTOR<XPROCESS*>& applist, XSTRING& appname, XSTRING& windowtitle)
+{
+  if(appname.IsEmpty()) return NULL;
+
+  for(XDWORD c=0; c<applist.GetSize(); c++)
+    {
+      XPROCESS* process = applist.Get(c);
+      if(!process || !process->GetWindowHandle()) continue;
+      if(!process->GetName() || process->GetName()->Compare(appname, true) != 0) continue;
+
+      if(windowtitle.IsEmpty()) return process;
+      if(process->GetWindowTitle() && (process->GetWindowTitle()->Compare(windowtitle, true) == 0)) return process;
+      if(process->GetWindowTitle() && (process->GetWindowTitle()->Find(windowtitle.Get(), true) != XSTRING_NOTFOUND)) return process;
+    }
+
+  return NULL;
+}
+
 
 #include "XMemory_Control.h"
 
@@ -381,6 +382,9 @@ bool ACTIONSCRIPTQA::AppProc_Ini()
 
   APPFLOW_EXTENDED.APPStart(&APPFLOW_CFG, this);
 
+  // Mouse/keyboard for ScriptRecord (console app has no APPFlowGraphics screen owner).
+  ScriptRecord_EnsureInputDevices();
+
   //--------------------------------------------------------------------------------------------------
 
   SetEvent(ACTIONSCRIPTQA_XFSMEVENT_INI);
@@ -557,6 +561,13 @@ bool ACTIONSCRIPTQA::AppProc_End()
       xtimerupdateconsole = NULL;
     }
 
+  {
+    INPDEVICE* mouse = GEN_INPMANAGER.GetDevice(INPDEVICE_TYPE_MOUSE);
+    if(mouse) GEN_INPMANAGER.DelDevice(mouse);
+
+    INPDEVICE* keyboard = GEN_INPMANAGER.GetDevice(INPDEVICE_TYPE_KEYBOARD);
+    if(keyboard) GEN_INPMANAGER.DelDevice(keyboard);
+  }
 
   //--------------------------------------------------------------------------------------
 
@@ -1042,7 +1053,7 @@ void ACTIONSCRIPTQA::Clean()
   scriptrecord_apppath.Empty();
   scriptrecord_windowtitle.Empty();
   scriptrecord_textpending.Empty();
-  memset(scriptrecord_keywasdown, 0, sizeof(scriptrecord_keywasdown));
+  memset(scriptrecord_btnwasdown, 0, sizeof(scriptrecord_btnwasdown));
 }
 
 
@@ -1190,7 +1201,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_Reset()
   scriptrecord_apppath.Empty();
   scriptrecord_windowtitle.Empty();
   scriptrecord_textpending.Empty();
-  memset(scriptrecord_keywasdown, 0, sizeof(scriptrecord_keywasdown));
+  memset(scriptrecord_btnwasdown, 0, sizeof(scriptrecord_btnwasdown));
 
   return true;
 }
@@ -1315,45 +1326,78 @@ bool ACTIONSCRIPTQA::ScriptRecord_ClearRecorded()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_EnsureInputDevices()
+* @brief      Create mouse/keyboard INP devices for console recording (no GRPSCREEN owner).
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_EnsureInputDevices()
+{
+  if(!GEN_INPMANAGER.GetDevice(INPDEVICE_TYPE_MOUSE))
+    {
+      INPDEVICE* mouse = INPFACTORY::GetInstance().CreateDevice(INPDEVICE_TYPE_MOUSE, NULL);
+      if(mouse) GEN_INPMANAGER.AddDevice(mouse);
+    }
+
+  if(!GEN_INPMANAGER.GetDevice(INPDEVICE_TYPE_KEYBOARD))
+    {
+      INPDEVICE* keyboard = INPFACTORY::GetInstance().CreateDevice(INPDEVICE_TYPE_KEYBOARD, NULL);
+      if(keyboard) GEN_INPMANAGER.AddDevice(keyboard);
+    }
+
+  return (GEN_INPMANAGER.GetDevice(INPDEVICE_TYPE_MOUSE) != NULL);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool ACTIONSCRIPTQA::ScriptRecord_Update()
-* @brief      ScriptRecord_Update — poll left mouse button while recording
+* @brief      ScriptRecord_Update — poll mouse via INPDEVICE; cursor via GRPSCREEN (GEN).
 * @ingroup
 *
 * --------------------------------------------------------------------------------------------------------------------*/
 bool ACTIONSCRIPTQA::ScriptRecord_Update()
 {
-  #ifndef WINDOWS
-  return false;
-  #else
+  if(!ScriptRecord_EnsureInputDevices()) return false;
 
-  bool ldown = ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0);
-  bool rdown = ((GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0);
+  INPDEVICE* mouse = GEN_INPMANAGER.GetDevice(INPDEVICE_TYPE_MOUSE);
+  if(!mouse) return false;
 
-  if(ldown && !scriptrecord_mousewasdown)
+  bool ldown = false;
+  bool rdown = false;
+  INPBUTTON* lbtn = mouse->GetButton(INPBUTTON_ID_MOUSE_LEFT);
+  INPBUTTON* rbtn = mouse->GetButton(INPBUTTON_ID_MOUSE_RIGHT);
+  if(lbtn) ldown = lbtn->IsPressed();
+  if(rbtn) rdown = rbtn->IsPressed();
+
+  int  cursorx = 0;
+  int  cursory = 0;
+  bool havecursor = false;
+
+  {
+    GRPSCREEN* cursorscreen = GEN_GRPFACTORY.CreateScreen();
+    if(cursorscreen)
+      {
+        havecursor = cursorscreen->GetCursorDesktopPosition(cursorx, cursory);
+        GEN_GRPFACTORY.DeleteScreen(cursorscreen);
+      }
+  }
+
+  if(ldown && !scriptrecord_mousewasdown && havecursor)
     {
-      POINT pt;
-
-      if(GetCursorPos(&pt))
+      if(!scriptrecord_appselected)
         {
-          if(!scriptrecord_appselected)
-            {
-              ScriptRecord_SelectApp(pt.x, pt.y);
-            }
-           else
-            {
-              ScriptRecord_CaptureClick(pt.x, pt.y, ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK);
-            }
+          ScriptRecord_SelectApp(cursorx, cursory);
+        }
+       else
+        {
+          ScriptRecord_CaptureClick(cursorx, cursory, ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK);
         }
     }
 
-  if(rdown && !scriptrecord_rbuttonwasdown)
+  if(rdown && !scriptrecord_rbuttonwasdown && scriptrecord_appselected && havecursor)
     {
-      POINT pt;
-
-      if(scriptrecord_appselected && GetCursorPos(&pt))
-        {
-          ScriptRecord_CaptureClick(pt.x, pt.y, ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT);
-        }
+      ScriptRecord_CaptureClick(cursorx, cursory, ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT);
     }
 
   scriptrecord_mousewasdown   = ldown;
@@ -1365,8 +1409,6 @@ bool ACTIONSCRIPTQA::ScriptRecord_Update()
     }
 
   return true;
-
-  #endif
 }
 
 
@@ -1455,65 +1497,76 @@ bool ACTIONSCRIPTQA::ScriptRecord_AddKeyLiteral(XCHAR* literal)
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool ACTIONSCRIPTQA::ScriptRecord_UpdateKeys()
-* @brief      Poll keyboard edges while recording (text + special keys)
+* @brief      Poll keyboard edges via INPDEVICE (specials + layout Unicode text).
 * @ingroup
 *
 * --------------------------------------------------------------------------------------------------------------------*/
 bool ACTIONSCRIPTQA::ScriptRecord_UpdateKeys()
 {
-  #ifndef WINDOWS
-  return false;
-  #else
-
   if(!scriptrecord_appselected) return false;
+  if(!ScriptRecord_EnsureInputDevices()) return false;
 
-  for(int vk = 1; vk < 256; vk++)
+  INPDEVICE* keyboard = GEN_INPMANAGER.GetDevice(INPDEVICE_TYPE_KEYBOARD);
+  if(!keyboard) return false;
+
+  bool shift = false;
+  INPBUTTON* shiftr = keyboard->GetButton(INPBUTTON_ID_SHIFT_RIGHT);
+  INPBUTTON* shiftl = keyboard->GetButton(INPBUTTON_ID_SHIFT_LEFT);
+  if(shiftr && shiftr->IsPressed()) shift = true;
+  if(shiftl && shiftl->IsPressed()) shift = true;
+
+  for(int id = (int)INPBUTTON_ID_NOBUTTON + 1; id < (int)INPBUTTON_ID_LAST; id++)
     {
-      // Mouse buttons and pure modifiers are not recorded as key steps.
-      if((vk >= VK_LBUTTON && vk <= VK_XBUTTON2) ||
-         (vk == VK_SHIFT) || (vk == VK_CONTROL) || (vk == VK_MENU) ||
-         (vk == VK_LSHIFT) || (vk == VK_RSHIFT) ||
-         (vk == VK_LCONTROL) || (vk == VK_RCONTROL) ||
-         (vk == VK_LMENU) || (vk == VK_RMENU) ||
-         (vk == VK_LWIN) || (vk == VK_RWIN) ||
-         (vk == VK_CAPITAL) || (vk == VK_NUMLOCK) || (vk == VK_SCROLL))
+      // Skip mouse / console recorder controls / pure modifiers.
+      if((id == (int)INPBUTTON_ID_MOUSE_LEFT)   ||
+         (id == (int)INPBUTTON_ID_MOUSE_RIGHT)  ||
+         (id == (int)INPBUTTON_ID_MOUSE_MIDDLE) ||
+         (id == (int)INPBUTTON_ID_SHIFT_LEFT)   ||
+         (id == (int)INPBUTTON_ID_SHIFT_RIGHT)  ||
+         (id == (int)INPBUTTON_ID_CONTROL_LEFT) ||
+         (id == (int)INPBUTTON_ID_CONTROL_RIGHT)||
+         (id == (int)INPBUTTON_ID_ALT_LEFT)     ||
+         (id == (int)INPBUTTON_ID_ALT_RIGHT)    ||
+         (id == (int)INPBUTTON_ID_LWIN)         ||
+         (id == (int)INPBUTTON_ID_RWIN)         ||
+         (id == (int)INPBUTTON_ID_CAPS_LOCK)    ||
+         (id == (int)INPBUTTON_ID_NUMLOCK)      ||
+         (id == (int)INPBUTTON_ID_SCROLL_LOCK)  ||
+         (id == (int)INPBUTTON_ID_ESCAPE)       ||
+         ((id >= (int)INPBUTTON_ID_F1) && (id <= (int)INPBUTTON_ID_F12)))
         {
-          scriptrecord_keywasdown[vk] = ((GetAsyncKeyState(vk) & 0x8000) != 0);
+          INPBUTTON* skipbtn = keyboard->GetButton((INPBUTTON_ID)id);
+          scriptrecord_btnwasdown[id] = (skipbtn && skipbtn->IsPressed());
           continue;
         }
 
-      // F1 / ESC control the recorder itself.
-      if((vk == VK_F1) || (vk == VK_ESCAPE) || (vk >= VK_F2 && vk <= VK_F24))
-        {
-          scriptrecord_keywasdown[vk] = ((GetAsyncKeyState(vk) & 0x8000) != 0);
-          continue;
-        }
+      INPBUTTON* button = keyboard->GetButton((INPBUTTON_ID)id);
+      if(!button) continue;
 
-      bool down = ((GetAsyncKeyState(vk) & 0x8000) != 0);
-      bool was  = scriptrecord_keywasdown[vk];
-      scriptrecord_keywasdown[vk] = down;
+      bool down = button->IsPressed();
+      bool was  = scriptrecord_btnwasdown[id];
+      scriptrecord_btnwasdown[id] = down;
 
       if(!(down && !was)) continue;
 
       XCHAR* literal = NULL;
-      switch(vk)
+      switch(id)
         {
-          case VK_RETURN : literal = _L("ENTER");      break;
-          case VK_TAB    : literal = _L("TAB");        break;
-          case VK_BACK   : literal = _L("BACKSPACE");  break;
-          case VK_DELETE : literal = _L("DEL");        break;
-          case VK_LEFT   : literal = _L("LEFT ARROW"); break;
-          case VK_RIGHT  : literal = _L("RIGHT ARROW");break;
-          case VK_UP     : literal = _L("UP ARROW");   break;
-          case VK_DOWN   : literal = _L("DOWN ARROW"); break;
-          case VK_HOME   : literal = _L("HOME");       break;
-          case VK_END    : literal = _L("END");        break;
-          case VK_PRIOR  : literal = _L("PAGE UP");    break;
-          case VK_NEXT   : literal = _L("PAGE DOWN");  break;
-          case VK_INSERT : literal = _L("INS");        break;
-          case VK_SPACE  : // Space goes into typed text (login fields).
-                           break;
-                 default : break;
+          case INPBUTTON_ID_RETURN    :
+          case INPBUTTON_ID_INTRO     : literal = _L("ENTER");       break;
+          case INPBUTTON_ID_TAB       : literal = _L("TAB");         break;
+          case INPBUTTON_ID_BACK_SPACE: literal = _L("BACKSPACE");   break;
+          case INPBUTTON_ID_DELETE    : literal = _L("DEL");         break;
+          case INPBUTTON_ID_LEFT      : literal = _L("LEFT ARROW");  break;
+          case INPBUTTON_ID_RIGHT     : literal = _L("RIGHT ARROW"); break;
+          case INPBUTTON_ID_UP        : literal = _L("UP ARROW");    break;
+          case INPBUTTON_ID_DOWN      : literal = _L("DOWN ARROW");  break;
+          case INPBUTTON_ID_HOME      : literal = _L("HOME");        break;
+          case INPBUTTON_ID_END       : literal = _L("END");         break;
+          case INPBUTTON_ID_PAGE_UP   : literal = _L("PAGE UP");     break;
+          case INPBUTTON_ID_PAGE_DOWN : literal = _L("PAGE DOWN");   break;
+          case INPBUTTON_ID_INSERT    : literal = _L("INS");         break;
+                              default : break;
         }
 
       if(literal)
@@ -1522,26 +1575,32 @@ bool ACTIONSCRIPTQA::ScriptRecord_UpdateKeys()
           continue;
         }
 
-      BYTE  keystate[256];
-      WCHAR chars[8];
-      UINT  scancode;
-
-      memset(keystate, 0, sizeof(keystate));
-      for(int i=0; i<256; i++)
+      XSTRING translated;
+      if(keyboard->TranslateButtonToUnicode(button, translated) && !translated.IsEmpty())
         {
-          SHORT s = GetAsyncKeyState(i);
-          keystate[i] = (BYTE)(((s & 0x8000) ? 0x80 : 0) | ((s & 0x0001) ? 0x01 : 0));
+          // Skip pure control codes from layout translation (keep printable + tab).
+          bool hasprintable = false;
+          for(XDWORD c=0; c<translated.GetSize(); c++)
+            {
+              XCHAR ch = translated.Get()[c];
+              if((ch >= 32) || (ch == 9))
+                {
+                  hasprintable = true;
+                  break;
+                }
+            }
+          if(!hasprintable) continue;
+
+          scriptrecord_textpending.Add(translated);
         }
-
-      scancode = MapVirtualKey((UINT)vk, MAPVK_VK_TO_VSC);
-      int n = ToUnicode((UINT)vk, scancode, keystate, chars, 8, 0);
-      if(n <= 0) continue;
-
-      for(int c=0; c<n; c++)
+       else
         {
-          WCHAR ch = chars[c];
-          if(ch < 32 && ch != 9) continue; // skip controls except TAB (handled above)
-          scriptrecord_textpending.Add((XCHAR)ch);
+          // Fallback: static CreateAllButtons symbol + Shift case-fold.
+          XCHAR ch = button->GetSymbol();
+          if(!ch) continue;
+          if((ch >= _C('A')) && (ch <= _C('Z')) && !shift) ch = (XCHAR)(ch - _C('A') + _C('a'));
+          if((ch < 32) && (ch != 9)) continue;
+          scriptrecord_textpending.Add(ch);
         }
 
       if(!scriptrecord_textpending.IsEmpty())
@@ -1552,103 +1611,69 @@ bool ACTIONSCRIPTQA::ScriptRecord_UpdateKeys()
     }
 
   return true;
-
-  #endif
 }
 
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool ACTIONSCRIPTQA::ScriptRecord_SelectApp(int screenx, int screeny)
-* @brief      Identify target application from window under cursor
+* @brief      Identify target application from window under cursor (GEN FindWindowAtPoint).
 * @ingroup
 *
 * --------------------------------------------------------------------------------------------------------------------*/
 bool ACTIONSCRIPTQA::ScriptRecord_SelectApp(int screenx, int screeny)
 {
-  #ifndef WINDOWS
-  return false;
-  #else
+  XPROCESS process;
 
-  POINT pt;
-  pt.x = screenx;
-  pt.y = screeny;
-
-  HWND hwnd = WindowFromPoint(pt);
-  if(!hwnd)
+  if(!GEN_XPROCESSMANAGER.Application_FindWindowAtPoint(screenx, screeny, process))
     {
       ScriptRecord_Print(_L("[ScriptRecord] No window under cursor."));
       return false;
     }
 
-  hwnd = GetAncestor(hwnd, GA_ROOT);
-  if(!hwnd) return false;
-
-  // Resolve process from HWND directly (avoid Application_GetRunningList — very slow with browsers).
-  DWORD pid = 0;
-  GetWindowThreadProcessId(hwnd, &pid);
-  if(!pid)
+  if(!process.GetWindowHandle())
     {
-      ScriptRecord_Print(_L("[ScriptRecord] Cannot get process id for window."));
+      ScriptRecord_Print(_L("[ScriptRecord] No window under cursor."));
       return false;
     }
 
-  XCHAR pathbuf[MAX_PATH + 1];
-  pathbuf[0] = 0;
-
-  HANDLE hproc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-  if(!hproc)
-    {
-      hproc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-    }
-
-  if(hproc)
-    {
-      DWORD pathsize = MAX_PATH;
-      if(!QueryFullProcessImageName(hproc, 0, pathbuf, &pathsize))
-        {
-          pathbuf[0] = 0;
-        }
-      CloseHandle(hproc);
-    }
-
-  if(!pathbuf[0])
-    {
-      ScriptRecord_Print(_L("[ScriptRecord] Cannot resolve executable path for window."));
-      return false;
-    }
-
-  XPATH  fullpath(pathbuf);
-  XSTRING appname;
-  fullpath.GetNamefileExt(appname);
-  if(appname.IsEmpty())
+  if(!process.GetName() || process.GetName()->IsEmpty())
     {
       ScriptRecord_Print(_L("[ScriptRecord] Cannot resolve executable name for window."));
       return false;
     }
 
-  if(appname.Find(APPLICATION_NAMEFILE, true) != XSTRING_NOTFOUND)
+  if(process.GetName()->Find(APPLICATION_NAMEFILE, true) != XSTRING_NOTFOUND)
     {
       ScriptRecord_Print(_L("[ScriptRecord] Ignored click on ActionScriptQA itself."));
       return false;
     }
 
-  scriptrecord_windowhandle = (void*)hwnd;
-  scriptrecord_appname      = appname.Get();
-  scriptrecord_apppath      = fullpath.Get();
+  scriptrecord_windowhandle = process.GetWindowHandle();
+  scriptrecord_appname      = process.GetName()->Get();
+  if(process.GetPath() && !process.GetPath()->IsEmpty())
+    {
+      scriptrecord_apppath = process.GetPath()->Get();
+    }
+   else
+    {
+      scriptrecord_apppath = scriptrecord_appname;
+    }
   ScriptRecord_PathForScript(scriptrecord_apppath);
 
-  // Browsers: never call GetWindowText (can hang) and use a stable short title for Screen_* Find().
+  // Browsers: use a stable short title for Screen_* Find() (dynamic tab titles break matching).
   if(ScriptRecord_IsBrowserApp(scriptrecord_appname, scriptrecord_apppath))
     {
       ScriptRecord_BrowserWindowTitle(scriptrecord_appname, scriptrecord_apppath, scriptrecord_windowtitle);
     }
+   else if(process.GetWindowTitle())
+    {
+      scriptrecord_windowtitle = process.GetWindowTitle()->Get();
+      scriptrecord_windowtitle.Character_Change(_C('%'), _C('_'));
+    }
    else
     {
-      if(!ScriptRecord_GetWindowTextSafe(hwnd, scriptrecord_windowtitle, 300))
-        {
-          scriptrecord_windowtitle.Empty();
-        }
+      scriptrecord_windowtitle.Empty();
     }
 
   scriptrecord_appselected = true;
@@ -1665,8 +1690,6 @@ bool ACTIONSCRIPTQA::ScriptRecord_SelectApp(int screenx, int screeny)
   ScriptRecord_WriteScript();
 
   return true;
-
-  #endif
 }
 
 
@@ -1679,60 +1702,72 @@ bool ACTIONSCRIPTQA::ScriptRecord_SelectApp(int screenx, int screeny)
 * --------------------------------------------------------------------------------------------------------------------*/
 bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny, ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype)
 {
-  #ifndef WINDOWS
-  return false;
-  #else
-
   if(!scriptrecord_appselected) return false;
   if((steptype != ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK) && (steptype != ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT)) return false;
 
   ScriptRecord_FlushText();
 
-  HWND hwnd = (HWND)scriptrecord_windowhandle;
-  if(!hwnd || !IsWindow(hwnd))
+  XVECTOR<XPROCESS*> applist;
+  XPROCESS*          process = NULL;
+
+  if(!GEN_XPROCESSMANAGER.Application_GetRunningList(applist, true))
     {
-      // Re-resolve by title/name without Application_GetRunningList (browsers make that very slow).
-      ACTIONSCRIPTQA_FINDWND data;
-      data.appname     = &scriptrecord_appname;
-      data.windowtitle = &scriptrecord_windowtitle;
-      data.found       = NULL;
-
-      EnumWindows(ActionScriptQA_EnumFindWindow, (LPARAM)&data);
-
-      if(!data.found)
-        {
-          ScriptRecord_Print(_L("[ScriptRecord] Target window no longer valid."));
-          return false;
-        }
-
-      scriptrecord_windowhandle = (void*)data.found;
-      hwnd = data.found;
-      ScriptRecord_Print(_L("[ScriptRecord] Target window handle refreshed."));
-    }
-
-  RECT  winrect;
-  RECT  clientrect;
-  POINT ptclient;
-
-  if(!GetWindowRect(hwnd, &winrect)) return false;
-  if(!GetClientRect(hwnd, &clientrect)) return false;
-
-  // CaptureContent/GetDC use client-area coordinates.
-  ptclient.x = screenx;
-  ptclient.y = screeny;
-  if(!ScreenToClient(hwnd, &ptclient))
-    {
-      ScriptRecord_Print(_L("[ScriptRecord] ScreenToClient failed."));
+      ScriptRecord_Print(_L("[ScriptRecord] Application_GetRunningList failed."));
       return false;
     }
 
-  int clientw = clientrect.right  - clientrect.left;
-  int clienth = clientrect.bottom - clientrect.top;
+  process = ActionScriptQA_FindRunningByHandle(applist, scriptrecord_windowhandle);
+  if(!process)
+    {
+      process = ActionScriptQA_FindRunningByNameTitle(applist, scriptrecord_appname, scriptrecord_windowtitle);
+      if(process && process->GetWindowHandle())
+        {
+          scriptrecord_windowhandle = process->GetWindowHandle();
+          ScriptRecord_Print(_L("[ScriptRecord] Target window handle refreshed."));
+        }
+    }
+
+  if(!process || !process->GetWindowHandle() || !process->GetWindowRect())
+    {
+      ActionScriptQA_FreeRunningList(applist);
+      ScriptRecord_Print(_L("[ScriptRecord] Target window no longer valid."));
+      return false;
+    }
+
+  void*      hwnd    = process->GetWindowHandle();
+  GRPRECTINT winrect = (*process->GetWindowRect());
+  int        border  = process->GetWindowBorderWidth();
+  int        titleh  = process->GetWindowTitleHeight();
+
+  GRPSCREEN* screen = GEN_GRPFACTORY.CreateScreen();
+  if(!screen)
+    {
+      ActionScriptQA_FreeRunningList(applist);
+      ScriptRecord_Print(_L("[ScriptRecord] CreateScreen failed."));
+      return false;
+    }
+
+  screen->SetHandle(hwnd);
+
+  int clientw = 0;
+  int clienth = 0;
+  if(!screen->GetClientSize(clientw, clienth) || (clientw <= 0) || (clienth <= 0))
+    {
+      // Fallback from outer rect minus chrome metrics already on XPROCESS.
+      clientw = (int)winrect.GetWidth()  - (border * 2);
+      clienth = (int)winrect.GetHeight() - titleh - border;
+    }
+
+  // CaptureContent uses client-area coordinates (same convention as Script_Lib_Screen).
+  int ptclientx = screenx - (winrect.x1 + border);
+  int ptclienty = screeny - (winrect.y1 + titleh);
 
   if((clientw <= 0) || (clienth <= 0) ||
-     (ptclient.x < 0) || (ptclient.y < 0) ||
-     (ptclient.x >= clientw) || (ptclient.y >= clienth))
+     (ptclientx < 0) || (ptclienty < 0) ||
+     (ptclientx >= clientw) || (ptclienty >= clienth))
     {
+      GEN_GRPFACTORY.DeleteScreen(screen);
+      ActionScriptQA_FreeRunningList(applist);
       ScriptRecord_Print(_L("[ScriptRecord] Click outside client area (ignored)."));
       return false;
     }
@@ -1748,8 +1783,8 @@ bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny, ACTIONS
   int halfh = capth / 2;
 
   GRPRECTINT rect;
-  rect.x1 = ptclient.x - halfw;
-  rect.y1 = ptclient.y - halfh;
+  rect.x1 = ptclientx - halfw;
+  rect.y1 = ptclienty - halfh;
 
   if(rect.x1 < 0) rect.x1 = 0;
   if(rect.y1 < 0) rect.y1 = 0;
@@ -1760,22 +1795,15 @@ bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny, ACTIONS
   rect.y2 = rect.y1 + capth;
 
   // Layout fallback uses outer window origin (Screen_GetPosXY without bitmap).
-  int layoutx = screenx - winrect.left;
-  int layouty = screeny - winrect.top;
+  int layoutx = screenx - winrect.x1;
+  int layouty = screeny - winrect.y1;
 
-  GRPSCREEN* screen = GEN_GRPFACTORY.CreateScreen();
-  if(!screen)
-    {
-      ScriptRecord_Print(_L("[ScriptRecord] CreateScreen failed."));
-      return false;
-    }
-
-  screen->SetHandle((void*)hwnd);
   screen->SetWidth(clientw);
   screen->SetHeight(clienth);
 
-  GRPBITMAP* bitmap = screen->CaptureContent(&rect, (void*)hwnd);
+  GRPBITMAP* bitmap = screen->CaptureContent(&rect, hwnd);
   GEN_GRPFACTORY.DeleteScreen(screen);
+  ActionScriptQA_FreeRunningList(applist);
 
   if(!bitmap)
     {
@@ -1836,14 +1864,12 @@ bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny, ACTIONS
    else
     {
       ScriptRecord_Print(_L("[ScriptRecord] Step %d: CLICK %s capt %dx%d at client %d,%d layout %d,%d"),
-                         (int)scriptrecord_steps.GetSize(), bmpname.Get(), captw, capth, ptclient.x, ptclient.y, layoutx, layouty);
+                         (int)scriptrecord_steps.GetSize(), bmpname.Get(), captw, capth, ptclientx, ptclienty, layoutx, layouty);
     }
 
   ScriptRecord_WriteScript();
 
   return true;
-
-  #endif
 }
 
 
@@ -2307,55 +2333,6 @@ void ACTIONSCRIPTQA::ScriptRecord_AddJSVarString(XFILETXT& file, XCHAR* varname,
   line += escaped;
   line += _L("\";");
   file.AddLine(line);
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool ACTIONSCRIPTQA::ScriptRecord_GetWindowTextSafe(...)
-* @brief      Read window title with timeout (GetWindowText can hang on browser UI threads)
-* @ingroup
-*
-* --------------------------------------------------------------------------------------------------------------------*/
-bool ACTIONSCRIPTQA::ScriptRecord_GetWindowTextSafe(void* hwndvoid, XSTRING& title, XDWORD timeoutms)
-{
-  title.Empty();
-
-  #ifndef WINDOWS
-  return false;
-  #else
-
-  HWND hwnd = (HWND)hwndvoid;
-  if(!hwnd || !IsWindow(hwnd)) return false;
-
-  DWORD_PTR lenresult = 0;
-  if(!SendMessageTimeout(hwnd, WM_GETTEXTLENGTH, 0, 0, SMTO_ABORTIFHUNG | SMTO_BLOCK, timeoutms, &lenresult))
-    {
-      return false;
-    }
-
-  int len = (int)lenresult;
-  if(len <= 0) return false;
-  if(len > 1023) len = 1023;
-
-  XCHAR titlebuf[1024];
-  titlebuf[0] = 0;
-
-  DWORD_PTR getresult = 0;
-  if(!SendMessageTimeout(hwnd, WM_GETTEXT, (WPARAM)1024, (LPARAM)titlebuf, SMTO_ABORTIFHUNG | SMTO_BLOCK, timeoutms, &getresult))
-    {
-      return false;
-    }
-
-  titlebuf[1023] = 0;
-  if(!titlebuf[0]) return false;
-
-  title = titlebuf;
-  // Neutralize '%' so later Format/Printf of derived messages cannot hang FormatArg.
-  title.Character_Change(_C('%'), _C('_'));
-  return true;
-
-  #endif
 }
 
 

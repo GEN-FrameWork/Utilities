@@ -31,6 +31,8 @@
 
 #include "Script_XEvent.h"
 
+#include "INPButton.h"
+
 #include "APPFlowConsole.h"
 
 class XFILETXT;
@@ -178,6 +180,7 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
     bool                            ScriptRecord_IsActive       ();
     bool                            ScriptRecord_Toggle         ();
     bool                            ScriptRecord_ClearRecorded  ();
+    bool                            ScriptRecord_EnsureInputDevices();
     bool                            ScriptRecord_Update         ();
     bool                            ScriptRecord_UpdateKeys     ();
     bool                            ScriptRecord_SelectApp      (int screenx, int screeny);
@@ -196,7 +199,6 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
     bool                            ScriptRecord_IsBrowserApp   (XSTRING& appname, XPATH& apppath);
     void                            ScriptRecord_BrowserWindowTitle(XSTRING& appname, XPATH& apppath, XSTRING& windowtitle);
     void                            ScriptRecord_AddJSVarString (XFILETXT& file, XCHAR* varname, XSTRING& value);
-    bool                            ScriptRecord_GetWindowTextSafe(void* hwnd, XSTRING& title, XDWORD timeoutms = 300);
     bool                            ScriptRecord_GetRecordedBaseName(XSTRING& basename);
     bool                            ScriptRecord_ResolveScriptPath(XPATH& xpath);
     bool                            ScriptRecord_PrepareRecordedLayout();
@@ -220,7 +222,7 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
     bool                            scriptrecord_appselected;
     bool                            scriptrecord_mousewasdown;
     bool                            scriptrecord_rbuttonwasdown;
-    bool                            scriptrecord_keywasdown[256];
+    bool                            scriptrecord_btnwasdown[INPBUTTON_ID_LAST];
     XSTRING                         scriptrecord_textpending;
     XSTRING                         scriptrecord_appname;
     XPATH                           scriptrecord_apppath;

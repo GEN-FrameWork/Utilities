@@ -30,6 +30,8 @@
 /*---- PRECOMPILATION CONTROL ----------------------------------------------------------------------------------------*/
 
 #include "GEN_Defines.h"
+#include "XTranslation_GEN.h"
+#include "APPUpdateCreator_TranslateID.h"
 
 /*---- INCLUDES ------------------------------------------------------------------------------------------------------*/
 
@@ -203,17 +205,20 @@ bool APPUPDATECREATOR::AppProc_Ini()
 
   //--------------------------------------------------------------------------------------
 
-  /*
-  GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_ROOT, xpathsection);
-  xpath.Create(3 , xpathsection.Get(), POS_VOMBE_LNG_NAMEFILE, XTRANSLATION_NAMEFILEEXT);
+  { XPATH xpathsection;
+    XPATH xpath;
 
-  if(!GEN_XTRANSLATION.Ini(xpath))
-    {
-      //return false;
-    }
-  */
+    GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_ROOT, xpathsection);
+    // Must not Create() into xpathsection using its own Get(): Create() Empty()s first and the root path is lost.
+    xpath.Create(3, xpathsection.Get(), APPLICATION_NAMEFILE, XTRANSLATION_NAMEFILEEXT);
 
-  GEN_XTRANSLATION.SetActual( XLANGUAGE_ISO_639_3_CODE_SPA);
+    if(!GEN_XTRANSLATION.Ini(xpath))
+      {
+        return false;
+      }
+  }
+  
+
 
   //--------------------------------------------------------------------------------------
 
@@ -286,25 +291,25 @@ bool APPUPDATECREATOR::AppProc_Update()
 
                                                         if(GetApplicationParam(xpath, applicationversiondata))
                                                           {
-                                                            console->Printf(_L("   Version        : %d.\n"), applicationversiondata.GetVersion());
-                                                            console->Printf(_L("   Subversion     : %d.\n"), applicationversiondata.GetSubVersion());
-                                                            console->Printf(_L("   Error Control  : %d.\n"), applicationversiondata.GetSubVersionError());
-                                                            console->Printf(_L("   Ini Sistema    : %s.\n"), applicationversiondata.SystemMustBeInit()?_L("Si"):_L("No"));
-                                                            console->Printf(_L("\n"));
-                                                            console->Printf(_L("   Creando %s en [%s] ...\n"), DIOAPPLICATIONUPDATE_INIFILE, xpath.Get());
+                                                            console->Printf(TL(APPUPDATECREATOR_TRANSLATEID_APPUPDATECREATOR_VERSION), applicationversiondata.GetVersion());
+                                                            console->Printf(TL(APPUPDATECREATOR_TRANSLATEID_APPUPDATECREATOR_SUBVERSION), applicationversiondata.GetSubVersion());
+                                                            console->Printf(TL(APPUPDATECREATOR_TRANSLATEID_APPUPDATECREATOR_ERROR_CONTROL), applicationversiondata.GetSubVersionError());
+                                                            console->Printf(TL(APPUPDATECREATOR_TRANSLATEID_APPUPDATECREATOR_INI_SISTEMA), applicationversiondata.SystemMustBeInit()?GEN_TL(XTRANSLATION_GEN_ID_YES):GEN_TL(XTRANSLATION_GEN_ID_NO));
+                                                            console->Printf(NL("\n"));
+                                                            console->Printf(TL(APPUPDATECREATOR_TRANSLATEID_APPUPDATECREATOR_CREANDO_EN), DIOAPPLICATIONUPDATE_INIFILE, xpath.Get());
 
                                                             status = GenerateUpdateFile(xpath, applicationversiondata, nfiles, sizetotal);
 
-                                                            console->Printf(_L("   Fichero de actualizacion: %s\n"), status?_L("Ok."):_L("Error!"));
-                                                            console->Printf(_L("   Numero de ficheros      : %d\n"), nfiles);
-                                                            console->Printf(_L("   Tamano de actualizacion : %dk\n"), sizetotal /1024);
+                                                            console->Printf(TL(APPUPDATECREATOR_TRANSLATEID_APPUPDATECREATOR_FICHERO_DE_ACTUALIZACION), status?GEN_TL(XTRANSLATION_GEN_ID_OK):GEN_TL(XTRANSLATION_GEN_ID_ERROR));
+                                                            console->Printf(TL(APPUPDATECREATOR_TRANSLATEID_APPUPDATECREATOR_NUMERO_DE_FICHEROS), nfiles);
+                                                            console->Printf(TL(APPUPDATECREATOR_TRANSLATEID_APPUPDATECREATOR_TAMANO_DE_ACTUALIZACION_K), sizetotal /1024);
                                                           }
                                                          else
                                                           {
-                                                            console->Printf(_L("   Error! Argumentos erroneos o invalidos.\n"));
+                                                            console->Printf(TL(APPUPDATECREATOR_TRANSLATEID_APPUPDATECREATOR_ERROR_ARGUMENTOS_ERRONEOS_O_INVALIDOS));
                                                           }
 
-                                                        console->Printf(_L("\n"));
+                                                        console->Printf(NL("\n"));
 
                                                         SetExitType(APPFLOWBASE_EXITTYPE_BY_APPLICATION);
                                                         SetEvent(APPUPDATECREATOR_XFSMEVENT_END);
@@ -344,8 +349,9 @@ bool APPUPDATECREATOR::AppProc_End()
 
   if(waitkeyatend)
     {
-      console->PrintMessage(_L(" "),0,false,true);
-      console->WaitKey(_L("  Pulsa una tecla para continuar... (%d)"), 1, false, 5);
+      console->PrintMessage(NL(" "),0,false,true);
+
+      console->WaitKey(TL(APPUPDATECREATOR_TRANSLATEID_APPUPDATECREATOR_PULSA_UNA_TECLA_PARA_CONTINUAR), 1, false, 5);
     }
 
   //--------------------------------------------------------------------------------------
@@ -382,12 +388,12 @@ bool APPUPDATECREATOR::GetApplicationParam(XPATH& xpath, DIOAPPLICATIONUPDATE_VE
   } COMANDINLINE;
 
   XSTRING       actualcmd;
-  COMANDINLINE  commandinline[] = { { _L("path")     , 1 },
-                                    { _L("version")  , 2 },
-                                    { _L("subver")   , 3 },
-                                    { _L("vererr")   , 4 },
-                                    { _L("boot")     , 5 },
-                                    { _L("nokey")    , 6 }
+  COMANDINLINE  commandinline[] = { { NL("path")     , 1 },
+                                    { NL("version")  , 2 },
+                                    { NL("subver")   , 3 },
+                                    { NL("vererr")   , 4 },
+                                    { NL("boot")     , 5 },
+                                    { NL("nokey")    , 6 }
                                   };
   int           codecmd;
   XDWORD        c = 0;
@@ -467,7 +473,7 @@ bool APPUPDATECREATOR::CreateListOfFiles(XPATH& xpath, XVECTOR<XPATH*>* updatefi
 
   XDIRELEMENT xdirelement;
 
-  if(xdir->FirstSearch(xpath, _L("*") ,&xdirelement))
+  if(xdir->FirstSearch(xpath, NL("*") ,&xdirelement))
     {
       do{ if(xdirelement.GetNameFile()->Compare(DIOAPPLICATIONUPDATE_INIFILE, true))
             {
@@ -570,8 +576,8 @@ bool APPUPDATECREATOR::GenerateUpdateFile(XPATH& xpath, DIOAPPLICATIONUPDATE_VER
                   if((namefile->Get()[0] == _C('/')) || (namefile->Get()[0] == _C('\\'))) namefile->DeleteCharacters(0, 1);
                 }
 
-              key.Format(_L("%s%d"), DIOAPPLICATIONUPDATE_FILESSECTION_FILES, c);
-              value.Format(_L("%s,%d,%08X"), namefile->Get(), (XDWORD)size, hashcrc32.GetResultCRC32());
+              key.Format(NL("%s%d"), DIOAPPLICATIONUPDATE_FILESSECTION_FILES, c);
+              value.Format(NL("%s,%d,%08X"), namefile->Get(), (XDWORD)size, hashcrc32.GetResultCRC32());
 
               xfileini.WriteValue(DIOAPPLICATIONUPDATE_FILESSECTION, key, value);
             }
