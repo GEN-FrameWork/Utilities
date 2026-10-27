@@ -27,15 +27,15 @@
 /*---- DEFINES & ENUMS  ----------------------------------------------------------------------------------------------*/
 #pragma region DEFINES_ENUMS
 
-#define ACTIONSCRIPTQACFG_SECTIONGENERAL          _L("general")
+#define ACTIONSCRIPTQACFG_SECTIONGENERAL          NL("general")
 
-#define ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD    _L("scriptrecord")
-#define ACTIONSCRIPTQACFG_SCRIPTRECORD_OUTPUT     _L("outputscript")
-#define ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX  _L("bitmapprefix")
-#define ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREW   _L("capturewidth")
-#define ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREH   _L("captureheight")
-#define ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITTO     _L("waittimeoutms")
-#define ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITIV     _L("waitintervalms")
+#define ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD    NL("scriptrecord")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_OUTPUT     NL("outputscript")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX  NL("bitmapprefix")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREW   NL("capturewidth")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREH   NL("captureheight")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITTO     NL("waittimeoutms")
+#define ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITIV     NL("waitintervalms")
 
 #pragma endregion
 
@@ -63,9 +63,9 @@ class ACTIONSCRIPTQA_CFG : public APPFLOWCFG
     int                             ScriptRecord_GetWaitIntervalMs          ();
 
   private:
-                                    ACTIONSCRIPTQA_CFG                                (XCHAR* namefile);
-                                    ACTIONSCRIPTQA_CFG                                (ACTIONSCRIPTQA_CFG const&);        // Don't implement
-    virtual                        ~ACTIONSCRIPTQA_CFG                                ();
+                                    ACTIONSCRIPTQA_CFG                      (XCHAR* namefile);
+                                    ACTIONSCRIPTQA_CFG                      (ACTIONSCRIPTQA_CFG const&);        // Don't implement
+    virtual                        ~ACTIONSCRIPTQA_CFG                      ();
 
     void                            operator =                              (ACTIONSCRIPTQA_CFG const&);        // Don't implement
 

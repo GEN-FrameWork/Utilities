@@ -17,6 +17,8 @@
 #pragma region PRECOMPILATION_INCLUDES
 
 #include "GEN_Defines.h"
+#include "XTranslation.h"
+#include "ActionScriptQA_TranslateID.h"
 
 #pragma endregion
 
@@ -121,15 +123,15 @@ bool ACTIONSCRIPTQA_CFG::DoVariableMapping()
       return false;
     }
 
-  AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, _L("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
-  AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, _L(" Script recorder (F1)"), 0, 2);
+  AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
+  AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_CFG_SCRIPT_RECORDER_F1), 0, 2);
 
-  AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_OUTPUT   , &scriptrecord_outputscript , _L("Output .js under Tests/<base>/"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
-  AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX, &scriptrecord_bitmapprefix , _L("Bitmap file name prefix")  , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
-  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREW , &scriptrecord_capturewidth  , _L("Capture width (pixels)")  , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
-  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREH , &scriptrecord_captureheight , _L("Capture height (pixels)") , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
-  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITTO   , &scriptrecord_waittimeoutms, _L("WaitBitmap timeout (ms)") , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
-  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITIV   , &scriptrecord_waitintervalms,_L("WaitBitmap interval (ms)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_OUTPUT   , &scriptrecord_outputscript   , TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_CFG_OUTPUT_JS_UNDER_TESTS_BASE)  , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX, &scriptrecord_bitmapprefix   , TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_CFG_BITMAP_FILE_NAME_PREFIX)         , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREW , &scriptrecord_capturewidth   , TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_CFG_CAPTURE_WIDTH_PIXELS)          , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_CAPTUREH , &scriptrecord_captureheight  , TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_CFG_CAPTURE_HEIGHT_PIXELS)         , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITTO   , &scriptrecord_waittimeoutms  , TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_CFG_WAITBITMAP_TIMEOUT_MS)         , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT    , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_WAITIV   , &scriptrecord_waitintervalms , TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_CFG_WAITBITMAP_INTERVAL_MS)        , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
 
   return true;
 }
@@ -161,19 +163,19 @@ bool ACTIONSCRIPTQA_CFG::DoDefault()
   log_activesectionsID.Empty();
 
   log_activesectionsID                 += APPFLOW_CFG_LOG_SECTIONID_INITIATION;
-  log_activesectionsID                 += _L(",");
+  log_activesectionsID                 += NL(",");
   log_activesectionsID                 += APPFLOW_CFG_LOG_SECTIONID_GENERIC;
-  log_activesectionsID                 += _L(",");
+  log_activesectionsID                 += NL(",");
   log_activesectionsID                 += APPFLOW_CFG_LOG_SECTIONID_STATUSAPP;
-  log_activesectionsID                 += _L(",");
+  log_activesectionsID                 += NL(",");
   log_activesectionsID                 += APPFLOW_CFG_LOG_SECTIONID_ENDING;
 
   log_levelmask                         = XLOGLEVEL_ALL;
   log_maxsize                           = 3000;
   log_reductionpercent                  = 10;
 
-  scriptrecord_outputscript             = _L("Tests_Recorded.js");
-  scriptrecord_bitmapprefix             = _L("rec_");
+  scriptrecord_outputscript             = NL("Tests_Recorded.js");
+  scriptrecord_bitmapprefix             = NL("rec_");
   scriptrecord_capturewidth             = 96;
   scriptrecord_captureheight            = 32;
   scriptrecord_waittimeoutms            = 10000;
@@ -315,6 +317,7 @@ void ACTIONSCRIPTQA_CFG::Clean()
 {
   scriptrecord_outputscript.Empty();
   scriptrecord_bitmapprefix.Empty();
+
   scriptrecord_capturewidth   = 96;
   scriptrecord_captureheight  = 32;
   scriptrecord_waittimeoutms  = 10000;

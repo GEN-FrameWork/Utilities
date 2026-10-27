@@ -1,7 +1,9 @@
 {
-  "languages" 			: [ "Spanish"    ,
-                        "English"    ,
-                        "French"     
+  "languages"       : [ "Spanish" ,
+                        "English" ,
+                        "French"  ,
+                        "German"  ,
+                        "Chinese"
                       ],
                        
                      
@@ -15,6 +17,518 @@
                                     "mas mensage" 	                            			                                      ,
                                     "more message"                            				                                      ,
                                     "jau radiola"                             				
+                                  ],
+
+                        "00102" : [ 0,
+                                    "Tecla presionada: 0x%02X [%c]" ,
+                                    "Key pressed: 0x%02X [%c]" ,
+                                    "Touche enfoncée : 0x%02X [%c]" ,
+                                    "Taste gedrückt: 0x%02X [%c]" ,
+                                    "按下按键：0x%02X [%c]"
+                                  ],
+
+                        "00103" : [ 0,
+                                    "A todo el tiempo de trabajo %s" ,
+                                    "Total working time %s" ,
+                                    "Pendant toute la durée de travail %s" ,
+                                    "An alle, die im %s arbeiten" ,
+                                    "致所有工作时间 %s"
+                                  ],
+
+                        "00104" : [ 0,
+                                    "[Tes s] No puedo crear un motor de script para %s" ,
+                                    "[Tests] Cannot create script engine for %s" ,
+                                    "[Tes s] Impossible de créer un moteur de script pour %s" ,
+                                    "[Tests] Es ist nicht möglich, eine Scrip-Engine für %s zu erstellen." ,
+                                    "[Tes s] 无法为 %s 创建电子脚本引擎"
+                                  ],
+
+                        "00105" : [ 0,
+                                    "[Tes s] No se puede cargar %s" ,
+                                    "[Tests] Cannot load %s" ,
+                                    "[Tes s] Impossible de charger %s" ,
+                                    "[Tests] %s kann nicht geladen werden" ,
+                                    "[Tes s] 无法加载 %s"
+                                  ],
+
+                        "00106" : [ 0,
+                                    "[Tes s] Ejecutando %s" ,
+                                    "[Tests] Running %s" ,
+                                    "[Tes s] Exécution de %s" ,
+                                    "[Tests] Ausführen von %s" ,
+                                    "[Tes] 运行 %s"
+                                  ],
+
+                        "00107" : [ 0,
+                                    "Scrip S a nosotros" ,
+                                    "Script Status" ,
+                                    "Scrip S à nous" ,
+                                    "Scrip S a us" ,
+                                    "票据 S a us"
+                                  ],
+
+                        "00108" : [ 0,
+                                    "ERROR de script [%d]: %s línea %d -\\u003e \\\"%s\\\"" ,
+                                    "Script ERROR [%d]: %s line %d -> \"%s\"" ,
+                                    "ERREUR de script [%d] : %s ligne %d -\\u003e \\\"%s\\\"" ,
+                                    "Skriptfehler [%d]: %s Zeile %d -\\u003e „%s“" ,
+                                    "脚本错误 [%d]：%s 行 %d -\\u003e“%s”"
+                                  ],
+
+                        "00109" : [ 0,
+                                    "Script BREAK: línea %d -\\u003e \\\"%s\\\"" ,
+                                    "Script BREAK: line %d -> \"%s\"" ,
+                                    "Script BREAK : ligne %d -\\u003e \\\"%s\\\"" ,
+                                    "Scrip BREAK: Zeile %d -\\u003e „%s“" ,
+                                    "脚本 BREAK：第 %d 行 -\\u003e“%s”"
+                                  ],
+
+                        "00110" : [ 0,
+                                    "[Registro de guión] Sesión final: lavado ex..." ,
+                                    "[ScriptRecord] Finishing session: flushing text..." ,
+                                    "[Scrip Record] Session de finition : rinçage des ex..." ,
+                                    "[Scrip Record] Abschlusssitzung: Spülung ..." ,
+                                    "【草稿记录】整理环节：冲水前..."
+                                  ],
+
+                        "00111" : [ 0,
+                                    "[Registro de guión] Finalización de la sesión: redacción del guión..." ,
+                                    "[ScriptRecord] Finishing session: writing script..." ,
+                                    "[Enregistrement du script] Session de finition : rédaction du script ..." ,
+                                    "[Skriptaufzeichnung] Abschlusssitzung: Skript schreiben ..." ,
+                                    "【抄本记录】整理环节：写抄本……"
+                                  ],
+
+                        "00112" : [ 0,
+                                    "[Registro de guión] ERROR al escribir el guión; " ,
+                                    "[ScriptRecord] ERROR writing script; left record mode anyway." ,
+                                    "[Enregistrement du script] ERREUR d'écriture du script ; " ,
+                                    "[Scrip Record] FEHLER beim Schreiben des Scrip; " ,
+                                    "[脚本记录] 编写脚本时出错；"
+                                  ],
+
+                        "00113" : [ 0,
+                                    "[Grabación de guión] Modo de grabación izquierda (no se selecciona ninguna aplicación)." ,
+                                    "[ScriptRecord] Left record mode (no app selected)." ,
+                                    "[Scrip Record] Mode d'enregistrement Lef (aucune application sélectionnée)." ,
+                                    "[Scrip Record] Linker Aufnahmemodus (keine App ausgewählt)." ,
+                                    "[脚本记录] 左记录模式（未选择应用程序）。"
+                                  ],
+
+                        "00114" : [ 0,
+                                    "[Grabación de script] ON (F1/ESC finalizar, F5 descartar+eliminar e Tes s_Recorded)." ,
+                                    "[ScriptRecord] ON (F1/ESC finish, F5 discard+delete Tests_Recorded)." ,
+                                    "[Enregistrement Scrip] ON (Fin F1/ESC, F5 rejet+suppression et Test s_Recorded)." ,
+                                    "[Scrip Record] EIN (F1/ESC beenden, F5 verwerfen+löschen und Tes s_Recorded löschen)." ,
+                                    "[脚本记录] ON（F1/ESC 完成，F5 丢弃+删除 Tes s_Recorded）。"
+                                  ],
+
+                        "00115" : [ 0,
+                                    "[Scrip Record] 1) Haga clic izquierdo en una ventana de la aplicación en es." ,
+                                    "[ScriptRecord] 1) Left-click a window of the app under test." ,
+                                    "[Scrip\\tRecord] 1) Lef\\t-cliquez sur une fen\\u00eatre de \\tl'application sous \\tes." ,
+                                    "[Scrip Record] 1) Klicken Sie mit der linken Maustaste auf ein Fenster der App unter es." ,
+                                    "[脚本记录] 1) 左键单击 es 下的应用程序窗口。"
+                                  ],
+
+                        "00116" : [ 0,
+                                    "[Registro de script] 2) Haga clic izquierdo en UI arge s (clic del mouse en segundos)." ,
+                                    "[ScriptRecord] 2) Left-click UI targets (mouse click steps)." ,
+                                    "[Scrip Record] 2) Cliquez avec le bouton gauche sur les boutons de l'interface utilisateur (cliquez sur les boutons de la souris)." ,
+                                    "[Scrip Record] 2) Linksklick auf UI arge s (Mausklick s eps)." ,
+                                    "[脚本记录] 2) 左键单击 UI arge s（鼠标单击 s eps）。"
+                                  ],
+
+                        "00117" : [ 0,
+                                    "[Grabación de script] 3) Haga clic derecho en una zona o wai /asser i aparece en la pantalla." ,
+                                    "[ScriptRecord] 3) Right-click a zone to wait/assert it appears on screen." ,
+                                    "[Scrip Record] 3) Cliquez avec le bouton droit sur une zone où wai /asser i apparaît à l'écran." ,
+                                    "[Scrip Record] 3) Klicken Sie mit der rechten Maustaste auf eine Zone, um auf dem Bildschirm zu erscheinen." ,
+                                    "[脚本记录] 3) 右键单击\\u200b\\u200b屏幕上出现的区域 o wai /asser i。"
+                                  ],
+
+                        "00118" : [ 0,
+                                    "[Registro de guión] 4) Escriba ex (inicio de sesión/contraseña); " ,
+                                    "[ScriptRecord] 4) Type text (login/password); ENTER/TAB/BACKSPACE recorded as keys." ,
+                                    "[Enregistrement du script] 4) Tapez ex (identifiant/mot de passe) ; " ,
+                                    "[Scrip Record] 4) Geben Sie ex (Login/Passwort) ein; " ,
+                                    "[票据记录] 4) 输入ex（登录名/密码）； "
+                                  ],
+
+                        "00119" : [ 0,
+                                    "[Registro de guión] Ou pu : Tes s/%s/%s" ,
+                                    "[ScriptRecord] Output: Tests/%s/%s" ,
+                                    "[Enregistrement du certificat] Ou pu : Tes s/%s/%s" ,
+                                    "[Scrip Record] Ou pu: Tes s/%s/%s" ,
+                                    "【笔录】欧普：Tes s/%s/%s"
+                                  ],
+
+                        "00120" : [ 0,
+                                    "Tes s_Recorded.js" ,
+                                    "Tests_Recorded.js" ,
+                                    "Tes s_Recorded.js" ,
+                                    "Tes s_Recorded.js" ,
+                                    "Tes s_Recorded.js"
+                                  ],
+
+                        "00121" : [ 0,
+                                    "[Registro de script] Función de sesión: Grabado_%03d (nexo bimapa %03d)" ,
+                                    "[ScriptRecord] Session function: Recorded_%03d  (next bitmap %03d)" ,
+                                    "[Enregistrement de script] Fonction de session : Enregistré_%03d (bi-carte suivante %03d)" ,
+                                    "[Scrip Record] Sitzungsfunktion: Recorded_%03d (nex bi map %03d)" ,
+                                    "[脚本记录] 会话功能：已记录_%03d（接下来的 bi 映射 %03d）"
+                                  ],
+
+                        "00122" : [ 0,
+                                    "[Grabación de guión] Modo de grabación cancelado (F5)." ,
+                                    "[ScriptRecord] Record mode cancelled (F5)." ,
+                                    "[Enregistrement Scrip] Mode d'enregistrement annulé (F5)." ,
+                                    "[Scrip\\tRecord] Aufnahmemodus abgebrochen (F5)." ,
+                                    "[脚本记录] 取消记录模式 (F5)。"
+                                  ],
+
+                        "00123" : [ 0,
+                                    "[Scrip Record] ERROR al resolver el nombre del correo electrónico grabado." ,
+                                    "[ScriptRecord] ERROR resolving recorded test name." ,
+                                    "[Enregistrement de script] ERREUR lors de la résolution du nom enregistré." ,
+                                    "[Scrip Record] FEHLER beim Auflösen des aufgezeichneten ES-Namens." ,
+                                    "[脚本记录] 解析记录的 es 名称时出错。"
+                                  ],
+
+                        "00124" : [ 0,
+                                    "[Registro Scrip] ERROR al resolver Tes s/%s pa h." ,
+                                    "[ScriptRecord] ERROR resolving Tests/%s path." ,
+                                    "[Enregistrement de script] ERREUR lors de la résolution de Tes s/%s pa h." ,
+                                    "[Scrip Record] FEHLER beim Auflösen von Tes s/%s pa h." ,
+                                    "[脚本记录] 解决 Tes s/%s pa h 时出现错误。"
+                                  ],
+
+                        "00125" : [ 0,
+                                    "[Registro de script] ERROR al crear XDIR." ,
+                                    "[ScriptRecord] ERROR creating XDIR." ,
+                                    "[Enregistrement de script] ERREUR lors de la création de XDIR." ,
+                                    "[Scrip Record] FEHLER beim Erstellen des XDIR." ,
+                                    "[脚本记录] 创建 XDIR 时出错。"
+                                  ],
+
+                        "00126" : [ 0,
+                                    "[Registro de script] Tes s eliminado/%s (directorio y archivos)." ,
+                                    "[ScriptRecord] Deleted Tests/%s (directory and files)." ,
+                                    "[Enregistrement Scrip] Supprimé Tes s/%s (répertoire et fichiers)." ,
+                                    "[Scrip Record] Gelöschte Tes s/%s (Verzeichnis und Dateien)." ,
+                                    "[脚本记录]删除Tes s/%s（目录和文件）。"
+                                  ],
+
+                        "00127" : [ 0,
+                                    "[Registro de script] ERROR al eliminar Tes s/%s." ,
+                                    "[ScriptRecord] ERROR deleting Tests/%s." ,
+                                    "[Enregistrement de script] ERREUR lors de la suppression de Tes s/%s." ,
+                                    "[Scrip Record] FEHLER beim Löschen von Tes s/%s." ,
+                                    "[脚本记录] 删除 Tes s/%s 时出错。"
+                                  ],
+
+                        "00128" : [ 0,
+                                    "[Registro de guión] No hay nada que borrar: Tes s/%s (faltante)." ,
+                                    "[ScriptRecord] Nothing to delete: Tests/%s (missing)." ,
+                                    "[Enregistrement du certificat] Aucune suppression de lien : Tes s/%s (manquant)." ,
+                                    "[Scrip Record] Kein Problem mit der Löschung: Tes s/%s (fehlt)." ,
+                                    "[草稿记录] 无删除信息：Tes s/%s（缺失）。"
+                                  ],
+
+                        "00129" : [ 0,
+                                    "[Registro de guión] S ep %d: clave %s" ,
+                                    "[ScriptRecord] Step %d: key %s" ,
+                                    "[Enregistrement de certificat] S ép %d : clé %s" ,
+                                    "[Scrip Record] S ep %d: Schlüssel %s" ,
+                                    "[票据记录] 第 %d: 键 %s"
+                                  ],
+
+                        "00130" : [ 0,
+                                    "[Registro de guión] Escribiendo... (caracteres %d)" ,
+                                    "[ScriptRecord] Typing... (%d chars)" ,
+                                    "[Enregistrement de script] Saisie... (%d caractères)" ,
+                                    "[Skripteintrag] Eingabe... (%d Zeichen)" ,
+                                    "[脚本记录] 正在键入...（%d 字符）"
+                                  ],
+
+                        "00131" : [ 0,
+                                    "[Registro de guión] No hay ventana debajo del cursor." ,
+                                    "[ScriptRecord] No window under cursor." ,
+                                    "[Scrip Record] Aucune fenêtre sous le curseur." ,
+                                    "[Scrip Record] Kein Fenster unter dem Cursor." ,
+                                    "[脚本记录] 光标下无窗口。"
+                                  ],
+
+                        "00132" : [ 0,
+                                    "[Scrip Record] No se puede resolver el nombre ejecutable de la ventana." ,
+                                    "[ScriptRecord] Cannot resolve executable name for window." ,
+                                    "[Enregistrement de script] Impossible de résoudre le nom de l'exécutable pour la fenêtre." ,
+                                    "[Scrip Record] Der Name der ausführbaren Datei für das Fenster kann nicht aufgelöst werden." ,
+                                    "[脚本记录] 无法解析窗口的可执行名称。"
+                                  ],
+
+                        "00133" : [ 0,
+                                    "[Registro de script] Se ignoró el clic en Ac ionScrip QA i self." ,
+                                    "[ScriptRecord] Ignored click on ActionScriptQA itself." ,
+                                    "[Enregistrement Scrip] Ignoré, cliquez sur Ac ionScrip QA i self." ,
+                                    "[Scrip Record] Ignorierter Klick auf Ac ionScrip QA i self." ,
+                                    "[脚本记录] 忽略了对 Ac ionScrip QA i self 的点击。"
+                                  ],
+
+                        "00134" : [ 0,
+                                    "[Registro de guión] Aplicación seleccionada: %s" ,
+                                    "[ScriptRecord] App selected: %s" ,
+                                    "[Scrip Record] Application sélectionnée : %s" ,
+                                    "[Scrip Record] Ausgewählte App: %s" ,
+                                    "[草稿记录] 选择的应用程序：%s"
+                                  ],
+
+                        "00135" : [ 0,
+                                    "[Registro de guión] Pa h: %s" ,
+                                    "[ScriptRecord] Path: %s" ,
+                                    "[Enregistrement de certificat] Pa h : %s" ,
+                                    "[Scrip Record] Pa h: %s" ,
+                                    "[票据记录] Pa h: %s"
+                                  ],
+
+                        "00136" : [ 0,
+                                    "Ventana [Registro de guión]: %s" ,
+                                    "[ScriptRecord] Window: %s" ,
+                                    "Fenêtre [Enregistrement de script] : %s" ,
+                                    "Fenster [Aktendatensatz]: %s" ,
+                                    "[票据记录]窗口：%s"
+                                  ],
+
+                        "00137" : [ 0,
+                                    "[Registro Script] Navegador diseñado con ec ed: asegúrese de que utilice OpenURL (edi url en scrip)." ,
+                                    "[ScriptRecord] Browser detected: Ensure will use OpenURL (edit url in script)." ,
+                                    "[Enregistrement du script] Navigateur défini : assurez-vous qu'il utilisera OpenURL (URL edi dans le script)." ,
+                                    "[Scrip-Datensatz] Browser erkannt: Stellen Sie sicher, dass OpenURL (Edi-URL in Scrip) verwendet wird." ,
+                                    "[Scrip Record] 浏览器 de ec ed：确保将使用 OpenURL（scrip 中的 edi url）。"
+                                  ],
+
+                        "00138" : [ 0,
+                                    "[Registro de script] Haga clic en Controles de interfaz de usuario para capturar mapas bi..." ,
+                                    "[ScriptRecord] Click UI controls to capture bitmaps..." ,
+                                    "[Enregistrement de script] Cliquez sur les commandes de l'interface utilisateur pour capturer les bi-cartes..." ,
+                                    "[Scrip Record] Klicken Sie auf UI-Steuerelemente, um Bi-Maps zu erfassen ..." ,
+                                    "[脚本记录] 单击 UI 控制 o 捕获双图..."
+                                  ],
+
+                        "00139" : [ 0,
+                                    "[Registro de script] Error en la aplicación ion_Ge RunningLis." ,
+                                    "[ScriptRecord] Application_GetRunningList failed." ,
+                                    "[Enregistrement de script] L'application ion_Ge RunningLis a échoué." ,
+                                    "[Scrip Record] Application_Ge RunningLis ist fehlgeschlagen." ,
+                                    "[脚本记录] Applica ion_Ge RunningLi 失败。"
+                                  ],
+
+                        "00140" : [ 0,
+                                    "[Registro de script] Se actualizó el identificador de la ventana de destino." ,
+                                    "[ScriptRecord] Target window handle refreshed." ,
+                                    "[Enregistrement de script] La poignée de la fenêtre Targe a été actualisée." ,
+                                    "[Scrip Record] Zielfenster-Handle aktualisiert." ,
+                                    "[脚本记录] 刷新目标窗口句柄。"
+                                  ],
+
+                        "00141" : [ 0,
+                                    "[Registro de script] La ventana de destino ya no es válida." ,
+                                    "[ScriptRecord] Target window no longer valid." ,
+                                    "[Enregistrement de script] La fenêtre Targe n'est plus valide." ,
+                                    "[Scrip Record] Zielfenster nicht mehr gültig." ,
+                                    "[脚本记录] 目标窗口不再有效。"
+                                  ],
+
+                        "00142" : [ 0,
+                                    "[Registro de guión] Error en Crea eScreen." ,
+                                    "[ScriptRecord] CreateScreen failed." ,
+                                    "[Enregistrement de script] Crea eScreen a échoué." ,
+                                    "[Scrip Record] Die Erstellung von eScreen ist fehlgeschlagen." ,
+                                    "[脚本记录] 创建 eScreen 失败。"
+                                  ],
+
+                        "00143" : [ 0,
+                                    "[Registro de guión] Haga clic en el área del cliente lateral (ignorado)." ,
+                                    "[ScriptRecord] Click outside client area (ignored)." ,
+                                    "[Scrip Record] Cliquez sur notre zone client latérale (ignorée)." ,
+                                    "[Scrip Record] Klicken Sie auf den seitlichen Clientbereich (ignoriert)." ,
+                                    "[脚本记录] 单击客户端区域（忽略）。"
+                                  ],
+
+                        "00144" : [ 0,
+                                    "[Registro de guión] No se pudo guardar %s (se admite PNG no compilado)." ,
+                                    "[ScriptRecord] Failed to save %s (PNG support not compiled)." ,
+                                    "[Enregistrement du script] Échec de la sauvegarde de %s (support PNG non compilé)." ,
+                                    "[Scrip Record] Speichern von %s fehlgeschlagen (PNG-Unterstützung nicht kompiliert)." ,
+                                    "[脚本记录] 保存%s失败（PNG支持未编译）。"
+                                  ],
+
+                        "00145" : [ 0,
+                                    "[Registro de guión] Error al guardar %s" ,
+                                    "[ScriptRecord] Failed to save %s" ,
+                                    "[Enregistrement de script] Échec de la sauvegarde de %s" ,
+                                    "[Scrip Record] Fehler beim Speichern von %s" ,
+                                    "[脚本记录] 保存%s失败"
+                                  ],
+
+                        "00146" : [ 0,
+                                    "[Registro de script] Main() existente migrado a Recorded_001." ,
+                                    "[ScriptRecord] Existing main() migrated to Recorded_001." ,
+                                    "[Scrip Record] Existant main() migré vers Recorded_001." ,
+                                    "[Scrip Record] Vorhandenes main() wurde auf Recorded_001 migriert." ,
+                                    "[脚本记录] 现有的 main() 已迁移至 Recorded_001。"
+                                  ],
+
+                        "00147" : [ 0,
+                                    "[Registro de script] Agregar script existente (%d líneas de mantenimiento, %d sesiones)." ,
+                                    "[ScriptRecord] Appending to existing script (%d kept lines, %d sessions)." ,
+                                    "[Enregistrement du certificat] Ajout d'un certificat existant (lignes de conservation %d, sessions %d)." ,
+                                    "[Skriptdatensatz] Anhängen eines vorhandenen Skripts (%d Kep-Zeilen, %d Sitzungen)." ,
+                                    "[脚本记录] 追加现有脚本（%d 保留行，%d 会话）。"
+                                  ],
+
+                        "00148" : [ 0,
+                                    "[Registro de guión] Canno crea e %s" ,
+                                    "[ScriptRecord] Cannot create %s" ,
+                                    "[Enregistrement de script] Impossible de créer %s" ,
+                                    "[Scrip Record] Kann %s nicht erstellen" ,
+                                    "[草稿记录] 无法创建 %s"
+                                  ],
+
+                        "00149" : [ 0,
+                                    "[Registro de Scrip] Wri eScrip: garantizar ayudantes de aplicación..." ,
+                                    "[ScriptRecord] WriteScript: ensuring application helpers..." ,
+                                    "[Scrip Record] Wri eScrip : assurer les aides à l'application..." ,
+                                    "[Scrip Record] Wri eScrip: Sicherstellen, dass Anwendungshelfer ..." ,
+                                    "[脚本记录] Wri eScrip：确保应用程序助手..."
+                                  ],
+
+                        "00150" : [ 0,
+                                    "[Registro de guión] Escritura eScrip: escritura grabada_%03d (%d s eps)..." ,
+                                    "[ScriptRecord] WriteScript: writing Recorded_%03d (%d steps)..." ,
+                                    "[Enregistrement de script] ÉcrireScrip : écriture enregistrée_%03d (%d s eps)..." ,
+                                    "[Scrip Record] Wri eScrip: schriftlich aufgezeichnet_%03d (%d s eps)..." ,
+                                    "[脚本记录] 写入脚本：写入记录__%03d (%d s eps)..."
+                                  ],
+
+                        "00151" : [ 0,
+                                    "[Registro Scrip] Wri eScrip: vaciar el archivo del disco..." ,
+                                    "[ScriptRecord] WriteScript: flushing file to disk..." ,
+                                    "[Scrip Record] Wri eScrip : vidage du fichier ou du disque..." ,
+                                    "[Scrip Record] Wri eScrip: Datei auf Festplatte leeren ..." ,
+                                    "[脚本记录] Wri eScrip : 刷新磁盘文件..."
+                                  ],
+
+                        "00152" : [ 0,
+                                    "[Registro de script] Error en la escritura de AllFile para %s" ,
+                                    "[ScriptRecord] WriteAllFile failed for %s" ,
+                                    "[Enregistrement de script] Échec de l'écriture eAllFile pour %s" ,
+                                    "[Scrip Record] Wri eAllFile ist für %s fehlgeschlagen" ,
+                                    "[脚本记录] %s 的 Wri eAllFile 失败"
+                                  ],
+
+                        "00153" : [ 0,
+                                    "[Registro Scrip] Wri eScrip: listo." ,
+                                    "[ScriptRecord] WriteScript: done." ,
+                                    "[Scrip Record] Wri eScrip : terminé." ,
+                                    "[Scrip Record] Wri eScrip: fertig." ,
+                                    "[脚本记录] 写 eScrip ：完成。"
+                                  ],
+
+                        "00154" : [ 0,
+                                    "Grabadora de guiones (F1)" ,
+                                    " Script recorder (F1)" ,
+                                    "Enregistreur de scripts (F1)" ,
+                                    "Belegschreiber (F1)" ,
+                                    "脚本记录器 (F1)"
+                                  ],
+
+                        "00155" : [ 0,
+                                    "O pu .js en Tes s/\\u003cbase\\u003e/" ,
+                                    "Or pu .js under Tes s/\\u003cbase\\u003e/" ,
+                                    "Output .js under Tests/<base>/" ,
+                                    "Oder pu .js unter Tes s/\\u003cbase\\u003e/" ,
+                                    "或者 Tes s/\\u003cbase\\u003e/ 下的 pu .js"
+                                  ],
+
+                        "00156" : [ 0,
+                                    "Prefijo de nombre de archivo de mapa bi" ,
+                                    "Bitmap file name prefix" ,
+                                    "Préfixe du nom de fichier bi-carte" ,
+                                    "Präfix für den Bi-Map-Dateinamen" ,
+                                    "Bi图文件名前缀"
+                                  ],
+
+                        "00157" : [ 0,
+                                    "Ancho de captura (píxeles)" ,
+                                    "Capture width (pixels)" ,
+                                    "Largeur de capture (pixels)" ,
+                                    "Aufnahmebreite (Pixel)" ,
+                                    "捕获宽度（像素）"
+                                  ],
+
+                        "00158" : [ 0,
+                                    "Altura de captura (píxeles)" ,
+                                    "Capture height (pixels)" ,
+                                    "Hauteur de capture (pixels)" ,
+                                    "Aufnahmehöhe (Pixel)" ,
+                                    "捕获高度（像素）"
+                                  ],
+
+                        "00159" : [ 0,
+                                    "Mapa Wai Bi imeou (ms)" ,
+                                    "WaitBitmap timeout (ms)" ,
+                                    "Carte Wai Bi imeou (ms)" ,
+                                    "Wai Bi-Karte imeou (ms)" ,
+                                    "外币地图 imeou (ms)"
+                                  ],
+
+                        "00160" : [ 0,
+                                    "Mapa de Wai Bi en erval (ms)" ,
+                                    "WaitBitmap interval (ms)" ,
+                                    "Carte Wai Bi à erval (ms)" ,
+                                    "Wai Bi-Karte in Erval (ms)" ,
+                                    "erval 中的 Wai Bi 地图（毫秒）"
+                                  ],
+
+                        "00161" : [ 0,
+                                    "[Grabación de guion] Guión guardado y modo de grabación izquierda." ,
+                                    "[ScriptRecord] Saved script and left record mode." ,
+                                    "[Enregistrement de script] Mode d'enregistrement de script et de gauche enregistré." ,
+                                    "[Scrip Record] Gespeicherter Scrip- und Lef-Record-Modus." ,
+                                    "[脚本记录] 保存脚本和左记录模式。"
+                                  ],
+
+                        "00162" : [ 0,
+                                    "[Registro de guión] Septiembre%d: \\tex\\t \\\"%s\" (%dcaracteres)" ,
+                                    "[ScriptRecord] Step %d: text \"%s\" (%d chars)" ,
+                                    "[Enregistrement de certificat] septembre%d: \\tex\\t \\\"%s\" (%dcaractères)" ,
+                                    "[Scrip Record] S ep%d: \\tex\\t \\\"%s\" (%dZeichen)" ,
+                                    "[脚本记录] S ep%d： \\t前任\\t ”%s\" (%d字符）"
+                                  ],
+
+                        "00163" : [ 0,
+                                    "[Registro de Scrip] Falló la captura de ureCon." ,
+                                    "[ScriptRecord] CaptureContent failed." ,
+                                    "[Scrip Record] La capture ureCon a échoué." ,
+                                    "[Scrip Record] Capture ureCon en fehlgeschlagen." ,
+                                    "[脚本记录] Cap ureCon 失败。"
+                                  ],
+
+                        "00164" : [ 0,
+                                    "[Registro de guión] Septiembre%d: ESPERAR%stapa%dincógnita%d(aparece aser)" ,
+                                    "[ScriptRecord] Step %d: WAIT %s capt %dx%d (assert appears)" ,
+                                    "[Enregistrement de certificat] septembre%d: ATTENDEZ%scapuchon%dx%d(asser apparaît)" ,
+                                    "[Scrip Record] S ep%d: WARTEN%sKappe%dX%d(Asser erscheint)" ,
+                                    "[脚本记录] S ep%d： 等待%s帽%dx%d（断言者出现）"
+                                  ],
+
+                        "00165" : [ 0,
+                                    "[Registro de guión] Septiembre%d: HAGA CLIC%stapa%dincógnita%dun cliente%d,%dlayou%d,%d" ,
+                                    "[ScriptRecord] Step %d: CLICK %s capt %dx%d at client %d,%d layout %d,%d" ,
+                                    "[Enregistrement de certificat] septembre%d: CLIQUEZ%scapuchon%dx%dun client%d,%dallonge-toi%d,%d" ,
+                                    "[Scrip Record] S ep%d: KLICK%sKappe%dX%dein Kunde%d,%dLayyou%d,%d" ,
+                                    "[脚本记录] S ep%d： 点击%s帽%dx%d一个客户%d,%d拉友%d,%d"
                                   ]
                       }										
 }											 		

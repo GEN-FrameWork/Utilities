@@ -47,6 +47,7 @@
 #include "XMap.h"
 #include "XTrace.h"
 #include "XConsole.h"
+#include "XSleep.h"
 #include "XTranslation_GEN.h"
 #include "XLanguage_ISO_639_3.h"
 #include "APPFlowConsole.h"
@@ -1445,6 +1446,211 @@ static bool TRANSLATESCAN_RestorePrintfMasks(XSTRING& text, XVECTOR<XSTRING*>& m
 }
 
 
+#ifdef DIO_SCRAPERWEB_TRANSLATION_ACTIVE
+
+#define TRANSLATESCAN_TRANSLATE_RETRIES      3
+#define TRANSLATESCAN_TRANSLATE_TIMEOUT_SEC  15
+#define TRANSLATESCAN_TRANSLATE_RETRY_MS     700
+
+static void TRANSLATESCAN_Report(int color, XCHAR* mask, ...);
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_SegmentNeedsTranslation(XSTRING& segment)
+* @brief      True when the segment has letters worth sending to the web translator.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_SegmentNeedsTranslation(XSTRING& segment)
+{
+  XCHAR* text = segment.Get();
+  int    size = (int)segment.GetSize();
+
+  for(int c=0; text && (c<size); c++)
+    {
+      XCHAR ch = text[c];
+
+      if(((ch >= _C('A')) && (ch <= _C('Z'))) || ((ch >= _C('a')) && (ch <= _C('z')))) return true;
+      if((unsigned)ch > 127) return true;
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_ScraperGetRetry
+* @brief      Call DIOSCRAPERWEBTRANSLATION::Get with retries and a longer timeout.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_ScraperGetRetry(DIOSCRAPERWEBTRANSLATION& scraper, XSTRING& text, XSTRING& sl, XSTRING& tl, DIOTRANSLATION_RESULT& result)
+{
+  for(int attempt=0; attempt<TRANSLATESCAN_TRANSLATE_RETRIES; attempt++)
+    {
+      if(attempt > 0)
+        {
+          TRANSLATESCAN_Report(XTRACE_COLOR_GRAY, NL("     retry %d/%d -> %s"), attempt + 1, TRANSLATESCAN_TRANSLATE_RETRIES, tl.Get());
+          GEN_XSLEEP.MilliSeconds(TRANSLATESCAN_TRANSLATE_RETRY_MS * attempt);
+        }
+
+      if(scraper.Get(text, sl, tl, result, TRANSLATESCAN_TRANSLATE_TIMEOUT_SEC))
+        {
+          return true;
+        }
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_ScraperGetRetry (translation out)
+* @brief      Retrying Get that fills a translation string.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_ScraperGetRetry(DIOSCRAPERWEBTRANSLATION& scraper, XSTRING& text, XSTRING& sl, XSTRING& tl, XSTRING& translation)
+{
+  DIOTRANSLATION_RESULT result;
+
+  translation.Empty();
+  if(!TRANSLATESCAN_ScraperGetRetry(scraper, text, sl, tl, result)) return false;
+
+  translation = result.GetTranslation();
+  return !translation.IsEmpty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_TranslatePreservingMasks
+* @brief      Translate human text without sending printf masks to the API (split/join).
+* @note       Avoids mask lost when translators alter __PFn__ placeholders. Retries each request.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_TranslatePreservingMasks(DIOSCRAPERWEBTRANSLATION& scraper, XSTRING& human, XSTRING& sl, XSTRING& tl, XSTRING& translation, XSTRING* detected = NULL)
+{
+  XCHAR* source = human.Get();
+  int    size   = (int)human.GetSize();
+  XSTRING chunk;
+  XSTRING out;
+  bool    anyrequest = false;
+  bool    havedetected = false;
+
+  translation.Empty();
+  if(detected) detected->Empty();
+
+  if(!source || (size <= 0))
+    {
+      return false;
+    }
+
+  for(int c=0; c<size; )
+    {
+      if(source[c] == _C('%'))
+        {
+          int next = TRANSLATESCAN_MANAGER::Operation_LiteralStrings_SkipPrintfMask(source, size, c);
+
+          if(next > (c + 1))
+            {
+              if(!chunk.IsEmpty())
+                {
+                  if(TRANSLATESCAN_SegmentNeedsTranslation(chunk))
+                    {
+                      DIOTRANSLATION_RESULT result;
+                      XSTRING              part;
+
+                      anyrequest = true;
+                      if(!TRANSLATESCAN_ScraperGetRetry(scraper, chunk, sl, tl, result))
+                        {
+                          return false;
+                        }
+
+                      part = result.GetTranslation();
+                      if(part.IsEmpty()) return false;
+
+                      if(detected && !havedetected && result.GetSourceLanguage())
+                        {
+                          (*detected) = result.GetSourceLanguage();
+                          havedetected = true;
+                        }
+
+                      out.Add(part);
+                    }
+                   else
+                    {
+                      out.Add(chunk);
+                    }
+
+                  chunk.Empty();
+                }
+
+              {
+                XSTRING mask;
+
+                human.Copy(c, next, mask);
+                out.Add(mask);
+              }
+
+              c = next;
+              continue;
+            }
+        }
+
+      chunk.Add(source[c]);
+      c++;
+    }
+
+  if(!chunk.IsEmpty())
+    {
+      if(TRANSLATESCAN_SegmentNeedsTranslation(chunk))
+        {
+          DIOTRANSLATION_RESULT result;
+          XSTRING              part;
+
+          anyrequest = true;
+          if(!TRANSLATESCAN_ScraperGetRetry(scraper, chunk, sl, tl, result))
+            {
+              return false;
+            }
+
+          part = result.GetTranslation();
+          if(part.IsEmpty()) return false;
+
+          if(detected && !havedetected && result.GetSourceLanguage())
+            {
+              (*detected) = result.GetSourceLanguage();
+              havedetected = true;
+            }
+
+          out.Add(part);
+        }
+       else
+        {
+          out.Add(chunk);
+        }
+    }
+
+  // No letters at all (only masks/punctuation): keep original.
+  if(!anyrequest)
+    {
+      translation = human;
+      if(detected) (*detected) = sl;
+      return true;
+    }
+
+  translation = out;
+  return !translation.IsEmpty();
+}
+
+#endif
+
+
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         static bool TRANSLATESCAN_IDIsUsed(XSTRING& name, XSTRING& headertext)
@@ -2017,31 +2223,36 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateGENInternal(XPATH& operationdir)
             continue;
           }
 
-        XVECTOR<XSTRING*>      masks;
-        XSTRING                shielded;
-
         current++;
         TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   translate %d/%d  %s  \"%s\""), current, pending, entry->idname.Get(), entry->literal.Get());
 
         TRANSLATESCAN_Unescape(entry->literal, human);
         if(human.IsEmpty()) human = entry->literal;
 
-        TRANSLATESCAN_ShieldPrintfMasks(human, shielded, masks);
-
         autolang = NL("auto");
         english  = NL("en");
 
-        if(!scraper.Get(shielded, autolang, english, detected))
-          {
-            failed++;
-            masks.DeleteContents();
-            masks.DeleteAll();
-            TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   failed  \"%s\""), entry->literal.Get());
-            continue;
-          }
+        {
+          XSTRING              english_human;
+          XSTRING              detectedlang;
+          DIOTRANSLATION_RESULT detected_unused;
 
-        origin = TRANSLATESCAN_CatalogueLanguageIndex(detected.GetSourceLanguage());
-        if(origin == 0) english_for_id = human;
+          (void)detected_unused;
+
+          if(!TRANSLATESCAN_TranslatePreservingMasks(scraper, human, autolang, english, english_human, &detectedlang))
+            {
+              failed++;
+              TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   failed  \"%s\""), entry->literal.Get());
+              continue;
+            }
+
+          origin = TRANSLATESCAN_CatalogueLanguageIndex(detectedlang.Get());
+          if(origin == 0) english_for_id = human;
+           else if(!english_human.IsEmpty()) english_for_id = english_human;
+
+          // Keep detected object fields used below for sourcecode fallback.
+          detected.Set(detectedlang, english, english_human);
+        }
 
         for(int lang=0; lang<5; lang++)
           {
@@ -2058,11 +2269,11 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateGENInternal(XPATH& operationdir)
                 XSTRING decoded;
 
                 decoded = detected.GetTranslation();
-                if(!TRANSLATESCAN_RestorePrintfMasks(decoded, masks))
+                if(decoded.IsEmpty())
                   {
                     failed++;
                     entry->ready = false;
-                    TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   mask lost  \"%s\""), entry->literal.Get());
+                    TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   translate failed  \"%s\" -> en"), entry->literal.Get());
                     break;
                   }
 
@@ -2081,21 +2292,17 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateGENInternal(XPATH& operationdir)
 
             TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("     -> %s"), targetcode.Get());
 
-            if(!scraper.Get(shielded, sourcecode, targetcode, translation) ||
-               !TRANSLATESCAN_RestorePrintfMasks(translation, masks))
+            if(!TRANSLATESCAN_TranslatePreservingMasks(scraper, human, sourcecode, targetcode, translation))
               {
                 failed++;
                 entry->ready = false;
-                TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   mask lost  \"%s\""), entry->literal.Get());
+                TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   translate failed  \"%s\" -> %s"), entry->literal.Get(), targetcode.Get());
                 break;
               }
 
             if(lang == 0) english_for_id = translation;
             TRANSLATESCAN_EscapeForC(translation, entry->sentence[lang]);
           }
-
-        masks.DeleteContents();
-        masks.DeleteAll();
 
         if(entry->sentence[0].IsEmpty() || entry->sentence[1].IsEmpty() || entry->sentence[2].IsEmpty() ||
            entry->sentence[3].IsEmpty() || entry->sentence[4].IsEmpty())
@@ -4963,11 +5170,10 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
     for(XDWORD t=0; t<scope.texts.GetSize(); t++)
       {
         TRANSLATESCAN_APPTEXT* entry = scope.texts.Get(t);
-        DIOTRANSLATION_RESULT  detected;
-        XVECTOR<XSTRING*>      masks;
-        XSTRING                shielded;
         XSTRING                autolang;
         XSTRING                english;
+        XSTRING                detectedlang;
+        XSTRING                english_human;
         int                    origin = -1;
 
         if(!entry || entry->ready) continue;
@@ -4975,23 +5181,19 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
         current++;
         TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   translate %d/%d  %s  \"%s\""), current, pending, entry->idname.Get(), entry->literal.Get());
 
-        TRANSLATESCAN_ShieldPrintfMasks(entry->human, shielded, masks);
-
         autolang = NL("auto");
         english  = NL("en");
 
-        if(!scraper.Get(shielded, autolang, english, detected))
+        if(!TRANSLATESCAN_TranslatePreservingMasks(scraper, entry->human, autolang, english, english_human, &detectedlang))
           {
             failed++;
-            masks.DeleteContents();
-            masks.DeleteAll();
             TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   failed  \"%s\""), entry->literal.Get());
             continue;
           }
 
-        origin = TRANSLATESCAN_ResolveAppOrigin(entry->human, detected.GetSourceLanguage());
+        origin = TRANSLATESCAN_ResolveAppOrigin(entry->human, detectedlang.Get());
         TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("     origin %s (api %s)"), alpha2[origin],
-                             detected.GetSourceLanguage() ? detected.GetSourceLanguage() : NL("?"));
+                             detectedlang.IsEmpty() ? NL("?") : detectedlang.Get());
 
         for(int lang=0; lang<5; lang++)
           {
@@ -5001,6 +5203,13 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
               {
                 // Always keep the scanned literal in its language column (never a reverse translation).
                 entry->sentence[lang] = entry->human;
+                continue;
+              }
+
+            // Reuse the auto→en result when target is English (avoids a second request).
+            if((lang == 0) && !english_human.IsEmpty())
+              {
+                entry->sentence[lang] = english_human;
                 continue;
               }
 
@@ -5014,7 +5223,7 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
 
               TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("     -> %s"), targetcode.Get());
 
-              if(!scraper.Get(shielded, sourcecode, targetcode, translation))
+              if(!TRANSLATESCAN_TranslatePreservingMasks(scraper, entry->human, sourcecode, targetcode, translation))
                 {
                   failed++;
                   entry->ready = false;
@@ -5022,20 +5231,9 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
                   break;
                 }
 
-              if(!TRANSLATESCAN_RestorePrintfMasks(translation, masks))
-                {
-                  failed++;
-                  entry->ready = false;
-                  TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   mask lost  \"%s\""), entry->literal.Get());
-                  break;
-                }
-
               entry->sentence[lang] = translation;
             }
           }
-
-        masks.DeleteContents();
-        masks.DeleteAll();
 
         if(entry->sentence[0].IsEmpty() || entry->sentence[1].IsEmpty() || entry->sentence[2].IsEmpty() ||
            entry->sentence[3].IsEmpty() || entry->sentence[4].IsEmpty())
@@ -6665,9 +6863,7 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageGEN(XPATH& operationdir, XSTRIN
         TRANSLATESCAN_ADDLNG_GENENTRY* entry = entries.Get(e);
         XSTRING                        raw;
         XSTRING                        human;
-        XSTRING                        shielded;
         XSTRING                        translation;
-        XVECTOR<XSTRING*>              masks;
 
         if(!entry || (entry->lastline < 0)) continue;
 
@@ -6678,10 +6874,7 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageGEN(XPATH& operationdir, XSTRIN
 
         TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   translate %d/%d  %s"), current, pending, entry->idname.Get());
 
-        TRANSLATESCAN_ShieldPrintfMasks(human, shielded, masks);
-
-        if(!scraper.Get(shielded, sourcecode, targetcode, translation) ||
-           !TRANSLATESCAN_RestorePrintfMasks(translation, masks) ||
+        if(!TRANSLATESCAN_TranslatePreservingMasks(scraper, human, sourcecode, targetcode, translation) ||
            translation.IsEmpty())
           {
             // Keep a non-empty placeholder so the catalogue stays complete for this language.
@@ -6689,14 +6882,9 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageGEN(XPATH& operationdir, XSTRIN
             entry->translated = NL("--");
             entry->ready      = true;
             readycount++;
-            masks.DeleteContents();
-            masks.DeleteAll();
             TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   failed  %s  -> \"--\""), entry->idname.Get());
             continue;
           }
-
-        masks.DeleteContents();
-        masks.DeleteAll();
 
         TRANSLATESCAN_EscapeForC(translation, entry->translated);
         if(entry->translated.IsEmpty()) entry->translated = NL("--");
@@ -7025,9 +7213,7 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
       {
         TRANSLATESCAN_APPEXISTING* entry = scope.existing.Get(e);
         XSTRING                    human;
-        XSTRING                    shielded;
         XSTRING                    translation;
-        XVECTOR<XSTRING*>          masks;
         int                        srcindex;
 
         if(!entry) continue;
@@ -7050,20 +7236,14 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
             int     missingslot = langorder[entry->ntext];
             XSTRING missingcode;
             XSTRING padded;
-            XVECTOR<XSTRING*> padmasks;
-            XSTRING padshielded;
 
             if((missingslot >= 0) && (missingslot < 5)) missingcode = slotalpha2[missingslot];
              else missingcode = NL("en");
 
-            TRANSLATESCAN_ShieldPrintfMasks(human, padshielded, padmasks);
-            if(!scraper.Get(padshielded, sourcecode, missingcode, padded) ||
-               !TRANSLATESCAN_RestorePrintfMasks(padded, padmasks))
+            if(!TRANSLATESCAN_TranslatePreservingMasks(scraper, human, sourcecode, missingcode, padded))
               {
                 padded = human;
               }
-            padmasks.DeleteContents();
-            padmasks.DeleteAll();
 
             if(entry->ntext >= 16) break;
             entry->text[entry->ntext] = padded;
@@ -7072,10 +7252,7 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
 
         TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, NL("   translate %d/%d  id=%05d"), current, pending, entry->idnumber);
 
-        TRANSLATESCAN_ShieldPrintfMasks(human, shielded, masks);
-
-        if(!scraper.Get(shielded, sourcecode, targetcode, translation) ||
-           !TRANSLATESCAN_RestorePrintfMasks(translation, masks) ||
+        if(!TRANSLATESCAN_TranslatePreservingMasks(scraper, human, sourcecode, targetcode, translation) ||
            translation.IsEmpty())
           {
             // Keep a non-empty placeholder so every language column stays aligned.
@@ -7083,9 +7260,6 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
             translation = NL("--");
             TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("   failed  id=%05d  -> \"--\""), entry->idnumber);
           }
-
-        masks.DeleteContents();
-        masks.DeleteAll();
 
         if(entry->ntext < 16)
           {

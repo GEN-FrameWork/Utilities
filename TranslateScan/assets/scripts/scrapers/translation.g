@@ -3,7 +3,8 @@
 //   args   : text (required), tl (required), sl (optional, default auto), timeout (optional)
 //   results: ok, translation, detected
 // Note: do not put '{' / '}' inside G string literals — PreScan brace balance.
-// Printf masks from TranslateScan use __PFn__ (no braces) so URL encoding stays brace-free.
+// Percent-encode query robustly. '%' uses a placeholder first because XSTRING::Replace
+// re-scans and would loop forever on "%" → "%25".
 
 int main()
 {
@@ -40,16 +41,15 @@ int main()
       return 0;
     }
 
-  // Percent-encode query. '%' must be first so later replacements stay intact.
+  // Percent-encode query. Shield '%' before emitting "%25" (Replace re-scans).
   // Braces via SPrintf — G PreScan forbids '{' / '}' inside string literals.
-  // SPrintf(out, mask, ...) → return value is the formatted string.
   string lb;
   string rb;
   lb = SPrintf("", "%c", 123);
   rb = SPrintf("", "%c", 125);
 
   q = text;
-  q = ReplaceAllString(q, "%", "%25");
+  q = ReplaceAllString(q, "%", "__PCT__");
   q = ReplaceAllString(q, " ", "%20");
   q = ReplaceAllString(q, "\n", "%0A");
   q = ReplaceAllString(q, "\r", "%0D");
@@ -62,6 +62,7 @@ int main()
   q = ReplaceAllString(q, "\"", "%22");
   q = ReplaceAllString(q, lb, "%7B");
   q = ReplaceAllString(q, rb, "%7D");
+  q = ReplaceAllString(q, "__PCT__", "%25");
 
   url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=";
   url = AddString(url, sl);
