@@ -29,6 +29,7 @@
 /*---- PRECOMPILATION INCLUDES ---------------------------------------------------------------------------------------*/
 
 #include "GEN_Defines.h"
+#include "TranslateScan_TranslateID.h"
 
 
 
@@ -352,8 +353,8 @@ bool TRANSLATESCAN::AppProc_FirstUpdate()
 
   //--------------------------------------------------------------------------------------------------
   
-  //console->PrintMessage(_L(" "), 0, false, true);
-  //console->WaitKey(_L("  Pulsa una tecla para continuar... (%d)"), 1, false, 5);
+  //console->PrintMessage(NL(" "), 0, false, true);
+  //console->WaitKey(TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_PULSA_UNA_TECLA_PARA_CONTINUAR), 1, false, 5);
 
   //--------------------------------------------------------------------------------------------------
 
@@ -502,9 +503,9 @@ bool TRANSLATESCAN::KeyValidSecuences(int key)
   XCHAR character = (XCHAR)key;
 
   if((character<32) || (character>127)) character = _C('?');
-  APPFLOW_LOG_ENTRY(XLOGLEVEL_WARNING, APPFLOW_CFG_LOG_SECTIONID_STATUSAPP, false, _L("Key pressed: 0x%02X [%c]"), key, character);
+  APPFLOW_LOG_ENTRY(XLOGLEVEL_WARNING, APPFLOW_CFG_LOG_SECTIONID_STATUSAPP, false, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_KEY_PRESSED_0X), key, character);
 
-  console->Printf(_L("\r    \r"));
+  console->Printf(NL("\r    \r"));
 
   switch(key)
     {
@@ -534,7 +535,7 @@ bool TRANSLATESCAN::KeyValidSecuences(int key)
                         XSTRING brief_origin;
                         XSTRING brief_target;
 
-                        brief_origin = _L("Sender_SMTPConfig");
+                        brief_origin = NL("Sender_SMTPConfig");
 
                         manager->Operation_Remark_Brief_Construct(brief_origin, brief_target);
                       }

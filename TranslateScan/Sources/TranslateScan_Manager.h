@@ -72,53 +72,53 @@ class TRANSLATESCAN_FILETARGET
 class TRANSLATESCAN_MANAGER
 {
   public:
-                             TRANSLATESCAN_MANAGER                      ();
-    virtual                 ~TRANSLATESCAN_MANAGER                      ();
+                             TRANSLATESCAN_MANAGER                          ();
+    virtual                 ~TRANSLATESCAN_MANAGER                          ();
 
-    bool                     SearchFilesTarget                          (XCHAR* inipath, XVECTOR<TRANSLATESCAN_FILETARGET*>* filestarget);
-    bool                     SearchFilesTarget                          (XPATH& inipath, XVECTOR<TRANSLATESCAN_FILETARGET*>* filestarget);
+    bool                     SearchFilesTarget                              (XCHAR* inipath, XVECTOR<TRANSLATESCAN_FILETARGET*>* filestarget);
+    bool                     SearchFilesTarget                              (XPATH& inipath, XVECTOR<TRANSLATESCAN_FILETARGET*>* filestarget);
 
-    bool                     SearchInFile                               (XPATH& pathfile, XCHAR* searchstring, TRANSLANTESCAN_FOUNDINFILE_PTRFUNC foundinfileptrfunc, TRANSLANTESCAN_CHANGEINFILE_PTRFUNC changeinfileptrfunc = NULL);
+    bool                     SearchInFile                                   (XPATH& pathfile, XCHAR* searchstring, TRANSLANTESCAN_FOUNDINFILE_PTRFUNC foundinfileptrfunc, TRANSLANTESCAN_CHANGEINFILE_PTRFUNC changeinfileptrfunc = NULL);
 
-    bool                     Operation_Remark_Brief                     (XPATH& operationdir);
-    static bool              Operation_Remark_Brief_SearchLine          (XPATH* pathfile, XFILETXT* filetxt, int nline, int index, XSTRING& brief);
-    static bool              Operation_Remark_Brief_ChangeLine          (XPATH* pathfile, XFILETXT* filetxt, XSTRING& seachstring, int nline, int index, XSTRING& result);
-    static bool              Operation_Remark_Brief_Construct           (XSTRING& brief_origin, XSTRING& brief_target);
+    bool                     Operation_Remark_Brief                         (XPATH& operationdir);
+    static bool              Operation_Remark_Brief_SearchLine              (XPATH* pathfile, XFILETXT* filetxt, int nline, int index, XSTRING& brief);
+    static bool              Operation_Remark_Brief_ChangeLine              (XPATH* pathfile, XFILETXT* filetxt, XSTRING& seachstring, int nline, int index, XSTRING& result);
+    static bool              Operation_Remark_Brief_Construct               (XSTRING& brief_origin, XSTRING& brief_target);
 
-    bool                     Operation_Remark_InGroup                   (XPATH& operationdir);
-    static bool              Operation_Remark_InGroup_SearchLine        (XPATH* pathfile, XFILETXT* filetxt, int nline, int index, XSTRING& result);
-    static bool              Operation_Remark_InGroup_ChangeLine        (XPATH* pathfile, XFILETXT* filetxt, XSTRING& searchstring, int nline, int index, XSTRING& result);
+    bool                     Operation_Remark_InGroup                       (XPATH& operationdir);
+    static bool              Operation_Remark_InGroup_SearchLine            (XPATH* pathfile, XFILETXT* filetxt, int nline, int index, XSTRING& result);
+    static bool              Operation_Remark_InGroup_ChangeLine            (XPATH* pathfile, XFILETXT* filetxt, XSTRING& searchstring, int nline, int index, XSTRING& result);
 
-    bool                     ModifierGEN_Active                     (bool isactive);
-    bool                     ModifierGEN_IsActive                   ();
+    bool                     ModifierGEN_Active                             (bool isactive);
+    bool                     ModifierGEN_IsActive                           ();
 
-    bool                     Operation_TranslateGENInternal         (XPATH& operationdir);
-    bool                     Operation_AddLanguageGEN               (XPATH& operationdir, XSTRING& codealpha2);
+    bool                     Operation_TranslateGENInternal                 (XPATH& operationdir);
+    bool                     Operation_AddLanguageGEN                       (XPATH& operationdir, XSTRING& codealpha2);
 
-    bool                     ModifierAPP_Active                     (bool isactive);
-    bool                     ModifierAPP_IsActive                   ();
+    bool                     ModifierAPP_Active                             (bool isactive);
+    bool                     ModifierAPP_IsActive                           ();
 
-    bool                     Operation_TranslateAPP                 (XPATH& operationdir);
-    bool                     Operation_AddLanguageAPP               (XPATH& operationdir, XSTRING& codealpha2);
+    bool                     Operation_TranslateAPP                         (XPATH& operationdir);
+    bool                     Operation_AddLanguageAPP                       (XPATH& operationdir, XSTRING& codealpha2);
 
-    bool                     ModifierVIEW_Active                    (bool isactive);
-    bool                     ModifierVIEW_IsActive                  ();
+    bool                     ModifierVIEW_Active                            (bool isactive);
+    bool                     ModifierVIEW_IsActive                          ();
 
-    bool                     Operation_ViewLiteralStrings           (XPATH& operationdir);
+    bool                     Operation_ViewLiteralStrings                   (XPATH& operationdir);
 
-    bool                     Operation_LiteralStrings                   (XPATH& operationdir);
-    static bool              Operation_LiteralStrings_SearchLine        (XPATH* pathfile, XFILETXT* filetxt, int nline, int index, XSTRING& result);
-    static TRANSLATESCAN_LITERALMACRO Operation_LiteralStrings_GetMacroAt(XSTRING* line, int index);
-    static bool              Operation_LiteralStrings_IsApplicationName (XSTRING* line, int index);
-    static bool              Operation_LiteralStrings_HasTranslatableText(XSTRING& literal);
-    static bool              Operation_LiteralStrings_IsGENInternal      (XSTRING& literal, XDWORD& out_ID); // full literal + all ENG/SPA/FRE/GER/CHI
-    static int               Operation_LiteralStrings_FindStringEnd     (XCHAR* text, int size, int start);
-    static int               Operation_LiteralStrings_SkipPrintfMask   (XCHAR* text, int size, int pos);
-    static int               Operation_LiteralStrings_SkipEscape        (XCHAR* text, int size, int pos);
+    bool                     Operation_LiteralStrings                       (XPATH& operationdir);
+    static bool              Operation_LiteralStrings_SearchLine            (XPATH* pathfile, XFILETXT* filetxt, int nline, int index, XSTRING& result);
+    static TRANSLATESCAN_LITERALMACRO Operation_LiteralStrings_GetMacroAt   (XSTRING* line, int index);
+    static bool              Operation_LiteralStrings_IsApplicationName     (XSTRING* line, int index);
+    static bool              Operation_LiteralStrings_HasTranslatableText   (XSTRING& literal);
+    static bool              Operation_LiteralStrings_IsGENInternal         (XSTRING& literal, XDWORD& out_ID); // full literal + all ENG/SPA/FRE/GER/CHI
+    static int               Operation_LiteralStrings_FindStringEnd         (XCHAR* text, int size, int start);
+    static int               Operation_LiteralStrings_SkipPrintfMask        (XCHAR* text, int size, int pos);
+    static int               Operation_LiteralStrings_SkipEscape            (XCHAR* text, int size, int pos);
 
   private:
 
-    void                     Clean                                      ();
+    void                     Clean                                          ();
 
     bool                     modifiergen;
     bool                     modifierapp;

@@ -1,0 +1,795 @@
+{
+  "languages"       : [ "Spanish" ,
+                        "English" ,
+                        "French"  ,
+                        "German"  ,
+                        "Chinese"
+                      ],
+
+  "translations"    : {
+
+                        "00001" : [ 0,
+                                    "  Pulsa una tecla para continuar... (%d)" ,
+                                    "Press an arrow to inuate... (%d)" ,
+                                    "Appuyez sur une flèche pour inuer... (%d)" ,
+                                    "Drücken Sie einen Pfeil, um... (%d)" ,
+                                    "按箭头启动...（%d)"
+                                  ],
+
+                        "00002" : [ 0,
+                                    "Tecla presionada: 0x%02X [%c]" ,
+                                    "Key pressed: 0x%02X [%c]" ,
+                                    "Touche enfoncée : 0x%02X [%c]" ,
+                                    "Taste gedrückt: 0x%02X [%c]" ,
+                                    "按下按键：0x%02X [%c]"
+                                  ],
+
+                        "00003" : [ 0,
+                                    "re ry%d/%d -> %s" ,
+                                    "     retry %d/%d -> %s" ,
+                                    "ré ry%d/%d -> %s" ,
+                                    "re ry%d/%d -> %s" ,
+                                    "重新%d/%d -> %s"
+                                  ],
+
+                        "00004" : [ 0,
+                                    "conver ing%d_L o NL (ex no transferible)" ,
+                                    "   converting %d _L to NL (no translatable text)" ,
+                                    "conversion%d_L o NL (ex non exploitable)" ,
+                                    "Konvertieren%d_L o NL (kein übertragbares Beispiel)" ,
+                                    "转换%d_L o NL（不可翻译前）"
+                                  ],
+
+                        "00005" : [ 0,
+                                    "reemplazar%d_L-\\u003eNL \\\"%s\"" ,
+                                    "   replace %d  _L->NL \"%s\"" ,
+                                    "remplacer%d_L-\\u003eNL\\\"%s\"" ,
+                                    "ersetzen%d_L-\\u003eNL \\\"%s\"" ,
+                                    "代替%d_L-\\u003eNL”%s\""
+                                  ],
+
+                        "00006" : [ 0,
+                                    "escritura fallida%s" ,
+                                    "   write failed  %s" ,
+                                    "Échec de l'écriture%s" ,
+                                    "Das Schreiben ist fehlgeschlagen%s" ,
+                                    "写入失败%s"
+                                  ],
+
+                        "00007" : [ 0,
+                                    "actualización%s" ,
+                                    "   updated  %s" ,
+                                    "mise à jour%s" ,
+                                    "aktualisiert%s" ,
+                                    "更新版%s"
+                                  ],
+
+                        "00008" : [ 0,
+                                    "El raspador de iones GEN ransla no está compilado." ,
+                                    "GEN translation scraper is not compiled in." ,
+                                    "Le grattoir ionique GEN ransla n'est pas compilé." ,
+                                    "GEN ransla ion scraper ist nicht kompiliert." ,
+                                    "GEN ransla ion scraper 未编译。"
+                                  ],
+
+                        "00009" : [ 0,
+                                    "GEN no hay archivos fuente en%s" ,
+                                    "GEN no source files under %s" ,
+                                    "GEN aucun fichier source sous%s" ,
+                                    "GEN keine Quelldateien unter%s" ,
+                                    "GEN下没有源文件%s"
+                                  ],
+
+                        "00010" : [ 0,
+                                    "escaneo GEN%s" ,
+                                    "GEN scan %s" ,
+                                    "Analyse GEN%s" ,
+                                    "GEN-Scan%s" ,
+                                    "基因扫描%s"
+                                  ],
+
+                        "00011" : [ 0,
+                                    "   %d[NOTEXTO-\\u003e_NL] \\\"%s\"" ,
+                                    "   %d  [NOTEXT->_NL] \"%s\"" ,
+                                    "   %d[NOTEXT-\\u003e_NL] \\\"%s\"" ,
+                                    "   %d[NOTEXT-\\u003e_NL] \\\"%s\"" ,
+                                    "   %d[NOTEXT-\\u003e_NL] \\\"%s\""
+                                  ],
+
+                        "00012" : [ 0,
+                                    "traducción GEN%danillo(s). " ,
+                                    "GEN translating %d string(s). Each one needs several web requests." ,
+                                    "GEN ransla ing%ds bague(s). " ,
+                                    "GEN ransla ing%ds Ring(e). " ,
+                                    "GEN翻译%ds 环。"
+                                  ],
+
+                        "00013" : [ 0,
+                                    "GEN no hay anillos nuevos o ransla e." ,
+                                    "GEN no new strings to translate." ,
+                                    "GEN pas de nouvelles ni de rançon." ,
+                                    "GEN keine neuen Ringe o Ransla e." ,
+                                    "GEN 没有新闻 s 环或 ransla e。"
+                                  ],
+
+                        "00014" : [ 0,
+                                    "ranla e%d/%d  %s  \"%s\"" ,
+                                    "   translate %d/%d  %s  \"%s\"" ,
+                                    "ransla e%d/%d  %s  \"%s\"" ,
+                                    "ransla e%d/%d  %s  \"%s\"" ,
+                                    "兰斯拉埃%d/%d  %s  \"%s\""
+                                  ],
+
+                        "00015" : [ 0,
+                                    "fallido  \\\"%s\"" ,
+                                    "   failed  \"%s\"" ,
+                                    "échoué  \\\"%s\"" ,
+                                    "fehlgeschlagen  \\\"%s\"" ,
+                                    "失败的  ”%s\""
+                                  ],
+
+                        "00016" : [ 0,
+                                    "ransla e falló \\\"%s\" -> %s" ,
+                                    "   translate failed  \"%s\" -> %s" ,
+                                    "ransla e a échoué \\\"%s\" -> %s" ,
+                                    "ransla e fehlgeschlagen \\\"%s\" -> %s" ,
+                                    "兰斯拉 e 失败”%s\" -> %s"
+                                  ],
+
+                        "00017" : [ 0,
+                                    "e incompleto \\\"%s\"" ,
+                                    "   incomplete  \"%s\"" ,
+                                    "incomplet e \\\"%s\"" ,
+                                    "unvollständig e \\\"%s\"" ,
+                                    "不完整的 e \\\"%s\""
+                                  ],
+
+                        "00018" : [ 0,
+                                    "listo%s  \"%s\"" ,
+                                    "   ready  %s  \"%s\"" ,
+                                    "prêt%s  \"%s\"" ,
+                                    "bereit%s  \"%s\"" ,
+                                    "准备好%s  \"%s\""
+                                  ],
+
+                        "00019" : [ 0,
+                                    "GEN terminó sin cambios en el catálogo. %d" ,
+                                    "GEN finished with no catalogue changes. failed=%d" ,
+                                    "GEN s'est terminé sans changement de calendrier. %d" ,
+                                    "GEN wurde ohne analoge Änderungen fertiggestellt. %d" ,
+                                    "GEN 已完成，没有任何类似更改。%d"
+                                  ],
+
+                        "00020" : [ 0,
+                                    "GEN hecho. %dfalló \\u003d%d" ,
+                                    "GEN done. status=%d failed=%d" ,
+                                    "GEN terminé. %déchoué \\u003d%d" ,
+                                    "GEN fertig. %dfehlgeschlagen\\u003d%d" ,
+                                    "GEN 完成了。%d失败\\u003d%d"
+                                  ],
+
+                        "00021" : [ 0,
+                                    "GEN escribiendo un diálogo de ca (%dlisto)." ,
+                                    "GEN writing catalogue (%d ready)." ,
+                                    "Ca alogue d'écriture GEN (%dprêt)." ,
+                                    "GEN schreibt ca analog (%dbereit)." ,
+                                    "GEN 写作 ca 模拟 (%d准备好）。"
+                                  ],
+
+                        "00022" : [ 0,
+                                    "GEN no pudo abrir%s" ,
+                                    "GEN could not open %s" ,
+                                    "GEN n'a pas pu ouvrir%s" ,
+                                    "GEN konnte nicht geöffnet werden%s" ,
+                                    "GEN打不开%s"
+                                  ],
+
+                        "00023" : [ 0,
+                                    "GEN LAST enumera o no se encuentra en%s" ,
+                                    "GEN LAST enumerator not found in %s" ,
+                                    "GEN LAST énumération ou non trouvé dans%s" ,
+                                    "GEN LAST Enumera oder nicht gefunden in%s" ,
+                                    "GEN LAST 枚举或未找到%s"
+                                  ],
+
+                        "00024" : [ 0,
+                                    "Error de escritura GEN%s" ,
+                                    "GEN write failed  %s" ,
+                                    "Échec de l'écriture GEN%s" ,
+                                    "GEN-Schreiben fehlgeschlagen%s" ,
+                                    "GEN写入失败%s"
+                                  ],
+
+                        "00025" : [ 0,
+                                    "GEN actualizado%s" ,
+                                    "GEN updated  %s" ,
+                                    "GEN mis à jour%s" ,
+                                    "GEN aktualisiert%s" ,
+                                    "GEN 更新版%s"
+                                  ],
+
+                        "00026" : [ 0,
+                                    "GEN Sen ence_Agregar punto de inserción no encontrado en%s" ,
+                                    "GEN Sentence_Add insert point not found in %s" ,
+                                    "GEN Sen ence_Add insert poin no found in%s" ,
+                                    "GEN Sen ence_Add Einfügepunkt nicht gefunden in%s" ,
+                                    "GEN Sen ence_Add 插入点未找到%s"
+                                  ],
+
+                        "00027" : [ 0,
+                                    "reemplazar%dGEN_TL(%s)" ,
+                                    "   replace %d  GEN_TL(%s)" ,
+                                    "remplacer%dGEN_TL(%s)" ,
+                                    "ersetzen%dGEN_TL(%s)" ,
+                                    "代替%dGEN_TL(%s)"
+                                  ],
+
+                        "00028" : [ 0,
+                                    "incluir XTransla ion_GEN.h" ,
+                                    "   include XTranslation_GEN.h" ,
+                                    "inclure XTransla ion_GEN.h" ,
+                                    "enthalten XTransla ion_GEN.h" ,
+                                    "包括 XTransla ion_GEN.h"
+                                  ],
+
+                        "00029" : [ 0,
+                                    "La aplicación no pudo crear ni diseñar el directorio de trabajo zip.%s" ,
+                                    "APP could not create layout zip work dir  %s" ,
+                                    "L'application n'a pas pu créer un répertoire de travail zip%s" ,
+                                    "APP konnte kein ZIP-Arbeitsverzeichnis erstellen%s" ,
+                                    "APP 无法创建 zip 工作目录%s"
+                                  ],
+
+                        "00030" : [ 0,
+                                    "La aplicación no pudo abrir el diseño zip%s" ,
+                                    "APP could not open layout zip  %s" ,
+                                    "L'application n'a pas pu ouvrir votre zip%s" ,
+                                    "APP konnte Layou-Zip nicht öffnen%s" ,
+                                    "APP打不开layou zip%s"
+                                  ],
+
+                        "00031" : [ 0,
+                                    "Diseño de aplicación zip%s  (%den r%s)" ,
+                                    "APP layout zip  %s  (%d entr%s)" ,
+                                    "Mise en page de l'application Zip%s  (%dfr r%s)" ,
+                                    "APP-Layout-Zip%s  (%den r%s)" ,
+                                    "APP布局zip%s  (%d恩r%s)"
+                                  ],
+
+                        "00032" : [ 0,
+                                    "APP no podría ex rac%sde%s" ,
+                                    "APP could not extract  %s  from  %s" ,
+                                    "APP ne pouvait pas ex rac%sdepuis%s" ,
+                                    "APP konnte kein Ex-Rac%saus%s" ,
+                                    "APP无法ex rac%s从%s"
+                                  ],
+
+                        "00033" : [ 0,
+                                    "ex corredor%s  ->  %s" ,
+                                    "   extracted  %s  ->  %s" ,
+                                    "ancien coureur%s  ->  %s" ,
+                                    "Ex-Rennfahrer%s  ->  %s" ,
+                                    "前赛车%s  ->  %s"
+                                  ],
+
+                        "00034" : [ 0,
+                                    "La aplicación no pudo reabrir el diseño zip%s" ,
+                                    "APP could not reopen layout zip  %s" ,
+                                    "L'application n'a pas pu rouvrir votre zip%s" ,
+                                    "APP konnte Layou Zip nicht erneut öffnen%s" ,
+                                    "APP无法重新打开layou zip%s"
+                                  ],
+
+                        "00035" : [ 0,
+                                    "Miembro zip de la aplicación no encontrado%sen%s" ,
+                                    "APP zip member not found  %s  in  %s" ,
+                                    "Membre zip APP introuvable%sdans%s" ,
+                                    "APP-Zip-Mitglied nicht gefunden%sIn%s" ,
+                                    "APP zip 会员未找到%s在%s"
+                                  ],
+
+                        "00036" : [ 0,
+                                    "La aplicación no pudo eliminar el miembro zip%s" ,
+                                    "APP could not remove zip member  %s" ,
+                                    "APP n'a pas pu supprimer le membre zip%s" ,
+                                    "APP konnte Zip-Mitglied nicht entfernen%s" ,
+                                    "APP无法删除zip会员%s"
+                                  ],
+
+                        "00037" : [ 0,
+                                    "La aplicación no pudo abrir el diseño zip para escribir%s" ,
+                                    "APP could not open layout zip for write  %s" ,
+                                    "L'application n'a pas pu ouvrir le zip pour écrire%s" ,
+                                    "APP konnte Layou-Zip nicht zum Schreiben öffnen%s" ,
+                                    "APP无法打开layout zip进行写入%s"
+                                  ],
+
+                        "00038" : [ 0,
+                                    "Miembro zip actualizado de la aplicación%sen%s" ,
+                                    "APP updated zip member  %s  in  %s" ,
+                                    "APP mis à jour le membre zip%sdans%s" ,
+                                    "APP aktualisiert und ZIP-Mitglied%sIn%s" ,
+                                    "APP更新ed zip会员%s在%s"
+                                  ],
+
+                        "00039" : [ 0,
+                                    "La aplicación no pudo agregar un miembro zip%soh%s" ,
+                                    "APP could not add zip member  %s  to  %s" ,
+                                    "APP n'a pas pu ajouter de membre zip%so%s" ,
+                                    "APP konnte kein Zip-Mitglied hinzufügen%sO%s" ,
+                                    "APP无法添加zip会员%s哦%s"
+                                  ],
+
+                        "00040" : [ 0,
+                                    "Directorio creado por la aplicación%s" ,
+                                    "APP created directory  %s" ,
+                                    "Répertoire créé par l'application%s" ,
+                                    "APP-erstelltes Verzeichnis%s" ,
+                                    "APP创建目录%s"
+                                  ],
+
+                        "00041" : [ 0,
+                                    "La aplicación no pudo crear un directorio%s" ,
+                                    "APP could not create directory  %s" ,
+                                    "APP n'a pas pu créer de répertoire%s" ,
+                                    "APP konnte kein Verzeichnis erstellen%s" ,
+                                    "APP无法创建目录%s"
+                                  ],
+
+                        "00042" : [ 0,
+                                    "La aplicación ransla ion scraper no está compilada." ,
+                                    "APP translation scraper is not compiled in." ,
+                                    "APP ransla ion scraper n'est pas compilé." ,
+                                    "APP Ransla Ion Scraper ist nicht kompiliert." ,
+                                    "APP ransla ion scraper 未编译。"
+                                  ],
+
+                        "00043" : [ 0,
+                                    "La aplicación encontró más de un encabezado Transla eID en%s" ,
+                                    "APP found more than one TranslateID header under %s" ,
+                                    "APP a trouvé plus d'un en-tête Transla eID sous%s" ,
+                                    "APP hat unten mehr als einen Transla eID-Header gefunden%s" ,
+                                    "APP在下面发现了多一个Transla eID header%s"
+                                  ],
+
+                        "00044" : [ 0,
+                                    "El archivo de idioma de la aplicación no se encontró en%s" ,
+                                    "APP language file was not found under %s" ,
+                                    "Le fichier de langue APP n'a pas été trouvé sous%s" ,
+                                    "Die APP-Sprachdatei wurde unter nicht gefunden%s" ,
+                                    "下找不到APP语言文件%s"
+                                  ],
+
+                        "00045" : [ 0,
+                                    "El archivo de idioma de la aplicación es inglés, español, francés, alemán y chino." ,
+                                    "APP language file must list English, Spanish, French, German and Chinese." ,
+                                    "Le fichier de langue de l'application doit être l'anglais, l'espagnol, le français, l'allemand et le chinois." ,
+                                    "Die APP-Sprachdatei muss Englisch, Spanisch, Französisch, Deutsch und Chinesisch sein." ,
+                                    "APP语言文件必须为英语、西班牙语、法语、德语和中文。"
+                                  ],
+
+                        "00046" : [ 0,
+                                    "La enumeración de iones de traducción de APP no se encontró en%s" ,
+                                    "APP translation enum was not found in %s" ,
+                                    "L'énumération APP ransla ion n'a pas été trouvée dans%s" ,
+                                    "APP ransla ion enum wurde nicht gefunden%s" ,
+                                    "APP ransla ion enum 未找到%s"
+                                  ],
+
+                        "00047" : [ 0,
+                                    "El archivo de idioma de la aplicación no tiene traducciones en%s" ,
+                                    "APP language file has no translations in %s" ,
+                                    "Le fichier de langue APP n'a pas de ransla dans%s" ,
+                                    "Die APP-Sprachdatei enthält keine Ranslasionen%s" ,
+                                    "APP语言文件中没有翻译%s"
+                                  ],
+
+                        "00048" : [ 0,
+                                    "), Países Bajos(" ,
+                                    "), NL(" ,
+                                    "), T.-N.-L.(" ,
+                                    "), NL(" ,
+                                    "), NL("
+                                  ],
+
+                        "00049" : [ 0,
+                                    "Código postal (s) de diseño de la aplicación que se encuentra en%spero XFILE_ZIP_ACTIVE no está compilado en (%dignorado)" ,
+                                    "APP layout zip(s) found under %s but XFILE_ZIP_ACTIVE is not compiled in (%d ignored)" ,
+                                    "Zip(s) de mise en page de l'application trouvé(s) sous%smais XFILE_ZIP_ACTIVE n'est pas compilé dans (%dignoré)" ,
+                                    "APP-Layout-Zip(s) finden Sie unten%saber XFILE_ZIP_ACTIVE ist nicht kompiliert in (%dignoriert)" ,
+                                    "APP 布局 zip(s) 下找到%sbu XFILE_ZIP_ACTIVE 未编译在 (%d忽略）"
+                                  ],
+
+                        "00050" : [ 0,
+                                    "Escaneo XML del diseño de la aplicación%s (%darchivo(s)%s)" ,
+                                    "APP layout XML scan %s (%d file(s)%s)" ,
+                                    "Analyse XML de la présentation de l'application%s (%dfichier(s)%s)" ,
+                                    "APP-Layout-XML-Scan%s (%dDatei(en)%s)" ,
+                                    "APP布局XML扫描%s (%d文件%s)"
+                                  ],
+
+                        "00051" : [ 0,
+                                    ", incl. " ,
+                                    ", incl. zip extracts" ,
+                                    ", y compris " ,
+                                    ", inkl. " ,
+                                    "，包括。 "
+                                  ],
+
+                        "00052" : [ 0,
+                                    "Traducción de aplicaciones%danillo(s). " ,
+                                    "APP translating %d string(s). Each one needs several web requests." ,
+                                    "Téléchargement d'applications%ds bague(s). " ,
+                                    "APP ransla ing%ds Ring(e). " ,
+                                    "APP翻译%ds 环。"
+                                  ],
+
+                        "00053" : [ 0,
+                                    "Reutilización de aplicaciones%danillos del catálogo existente." ,
+                                    "APP reusing %d existing catalogue string(s)." ,
+                                    "Réutilisation d'applications%dbague(s) existante(s)." ,
+                                    "APP-Wiederverwendung%dvorhandene(r) analoge(s) Ring(e)." ,
+                                    "APP复用%d现有的 ca 类似物环。"
+                                  ],
+
+                        "00054" : [ 0,
+                                    "APP sin nuevos anillos o ransla e." ,
+                                    "APP no new strings to translate." ,
+                                    "APP pas de sonneries de nouvelles ou de rançon." ,
+                                    "APP keine neuen s klingelt oder ransla e." ,
+                                    "APP 没有新消息 s 响或 ransla e。"
+                                  ],
+
+                        "00055" : [ 0,
+                                    "origen%s(api%s)" ,
+                                    "     origin %s (api %s)" ,
+                                    "origine%s(API%s)" ,
+                                    "Herkunft%s(api%s)" ,
+                                    "起源%s（API%s)"
+                                  ],
+
+                        "00056" : [ 0,
+                                    "La aplicación finalizó sin cambios en el catálogo. %d" ,
+                                    "APP finished with no catalogue changes. failed=%d" ,
+                                    "APP terminée sans aucune modification analogique. %d" ,
+                                    "Die APP wurde fertiggestellt, ohne dass Änderungen am Kalog vorgenommen wurden. %d" ,
+                                    "APP 已完成，没有任何类似的更改。%d"
+                                  ],
+
+                        "00057" : [ 0,
+                                    "Aplicación de aplicación%danillo(s) listo(s)." ,
+                                    "APP applying %d ready string(s)." ,
+                                    "Application d'application%dla ou les sonneries sont prêtes." ,
+                                    "APP bewirbt sich%dBereiten Sie den/die Ring(e) vor." ,
+                                    "APP申请%d准备好戒指。"
+                                  ],
+
+                        "00058" : [ 0,
+                                    "Escritura de aplicaciones%dnuevo ca analog en ries." ,
+                                    "APP writing %d new catalogue entries." ,
+                                    "Écriture d'applications%dnouvelles entrées de ca alogue." ,
+                                    "APP-Schreiben%dNeuer Ca-Alog in Ries." ,
+                                    "APP编写%d新加州对话 en ries。"
+                                  ],
+
+                        "00059" : [ 0,
+                                    "La aplicación no se pudo abrir%s" ,
+                                    "APP could not open %s" ,
+                                    "L'application n'a pas pu s'ouvrir%s" ,
+                                    "APP konnte nicht geöffnet werden%s" ,
+                                    "APP打不开%s"
+                                  ],
+
+                        "00060" : [ 0,
+                                    "APLICACIÓN ÚLTIMA enumera o no encontrada en%s" ,
+                                    "APP LAST enumerator not found in %s" ,
+                                    "APP DERNIÈRE énumération ou non trouvée dans%s" ,
+                                    "APP LAST Enumera oder nicht gefunden in%s" ,
+                                    "APP LAST 枚举或未找到%s"
+                                  ],
+
+                        "00061" : [ 0,
+                                    "enumeración%s" ,
+                                    "   enum  %s" ,
+                                    "énumération%s" ,
+                                    "Aufzählung%s" ,
+                                    "枚举%s"
+                                  ],
+
+                        "00062" : [ 0,
+                                    "Error al escribir la aplicación%s" ,
+                                    "APP write failed  %s" ,
+                                    "Échec de l'écriture de l'application%s" ,
+                                    "APP-Schreiben fehlgeschlagen%s" ,
+                                    "APP写入失败%s"
+                                  ],
+
+                        "00063" : [ 0,
+                                    "Aplicación actualizada%s" ,
+                                    "APP updated  %s" ,
+                                    "APP mise à jour%s" ,
+                                    "APP aktualisiert%s" ,
+                                    "APP更新%s"
+                                  ],
+
+                        "00064" : [ 0,
+                                    "gas natural%s  %s" ,
+                                    "   lng  %s  %s" ,
+                                    "GNL%s  %s" ,
+                                    "lng%s  %s" ,
+                                    "液化石油气%s  %s"
+                                  ],
+
+                        "00065" : [ 0,
+                                    "reemplazar%dTL (%s)" ,
+                                    "   replace %d  TL(%s)" ,
+                                    "remplacer%dTL(%s)" ,
+                                    "ersetzen%dTL(%s)" ,
+                                    "代替%dTL(%s)"
+                                  ],
+
+                        "00066" : [ 0,
+                                    "incluir XTransla ion.h" ,
+                                    "   include XTranslation.h" ,
+                                    "inclure XTransla ion.h" ,
+                                    "enthalten XTransla ion.h" ,
+                                    "包括 XTransla ion.h"
+                                  ],
+
+                        "00067" : [ 0,
+                                    "reemplazar%d#[TRADUCIR_%d]  (%s)" ,
+                                    "   replace %d  #[TRANSLATE_%d]  (%s)" ,
+                                    "remplacer%d#[TRADUIRE_%d]  (%s)" ,
+                                    "ersetzen%d#[ÜBERSETZEN_%d]  (%s)" ,
+                                    "代替%d＃[翻译_%d]  (%s)"
+                                  ],
+
+                        "00068" : [ 0,
+                                    "APLICACIÓN terminada. %dfalló \\u003d%d" ,
+                                    "APP done. status=%d failed=%d" ,
+                                    "APPLICATION terminée. %déchoué \\u003d%d" ,
+                                    "APP fertig. %dfehlgeschlagen\\u003d%d" ,
+                                    "APP完成。%d失败\\u003d%d"
+                                  ],
+
+                        "00069" : [ 0,
+                                    "VER el análisis de origen falló en%s" ,
+                                    "VIEW source scan failed under %s" ,
+                                    "L'analyse de la source VIEW a échoué sous%s" ,
+                                    "Der Quellscan von VIEW ist unter fehlgeschlagen%s" ,
+                                    "查看源扫描失败%s"
+                                  ],
+
+                        "00070" : [ 0,
+                                    "VER escaneo%s" ,
+                                    "VIEW scan %s" ,
+                                    "VOIR l'analyse%s" ,
+                                    "VIEW-Scan%s" ,
+                                    "查看扫描%s"
+                                  ],
+
+                        "00071" : [ 0,
+                                    "VER diseño zip ex rac tenía errores en%s" ,
+                                    "VIEW layout zip extract had errors under %s" ,
+                                    "VIEW layou zip ex rac avait des erreurs sous%s" ,
+                                    "VIEW Layou Zip Ex Rac hatte Fehler unter%s" ,
+                                    "查看layout zip ex rac 下有错误%s"
+                                  ],
+
+                        "00072" : [ 0,
+                                    "VER el diseño zip(s) que se encuentra debajo%spero XFILE_ZIP_ACTIVE no está compilado en (%dignorado)" ,
+                                    "VIEW layout zip(s) found under %s but XFILE_ZIP_ACTIVE is not compiled in (%d ignored)" ,
+                                    "VOIR le(s) zip(s) de mise en page trouvé(s) sous%smais XFILE_ZIP_ACTIVE n'est pas compilé dans (%dignoré)" ,
+                                    "Sehen Sie sich die unten aufgeführten Layou-Reißverschluss(s) an%saber XFILE_ZIP_ACTIVE ist nicht kompiliert in (%dignoriert)" ,
+                                    "查看在下面找到的布局 zip(s)%sbu XFILE_ZIP_ACTIVE 未编译在 (%d忽略）"
+                                  ],
+
+                        "00073" : [ 0,
+                                    "VER escaneo XML de diseño%s (%darchivo(s)%s)" ,
+                                    "VIEW layout XML scan %s (%d file(s)%s)" ,
+                                    "AFFICHER l'analyse XML de la présentation%s (%dfichier(s)%s)" ,
+                                    "VIEW-Layout-XML-Scan%s (%dDatei(en)%s)" ,
+                                    "查看布局 XML 扫描%s (%d文件%s)"
+                                  ],
+
+                        "00074" : [ 0,
+                                    "VER hecho. %dcandida es\\u003d%d(FL\\u003d%dlayou \\u003d%d) gen\\u003d%dnl\\u003d%dnombre de la aplicación \\u003d%dsin ex \\u003d%dmáscara de diseño \\u003d%d" ,
+                                    "VIEW done. files=%d candidates=%d (FL=%d layout=%d) gen=%d nl=%d appname=%d notext=%d layoutmask=%d" ,
+                                    "VUE terminée. %dcandida es\\u003d%d(FL\\u003d%dposez-vous \\u003d%d) gén\\u003d%dnl\\u003d%dnom de l'application \\u003d%dpas d'ex \\u003d%dmasque de pose \\u003d%d" ,
+                                    "ANSICHT fertig. %dCandida es\\u003d%d(FL\\u003d%dlagou \\u003d%d) gen\\u003d%dnl\\u003d%dAppname\\u003d%dnein ex \\u003d%dLayou-Maske\\u003d%d" ,
+                                    "查看完成。%d念珠菌es\\u003d%d（FL\\u003d%d拉尤\\u003d%d) 根\\u003d%dnl\\u003d%d应用程序名称\\u003d%d没有前\\u003d%d敷面膜\\u003d%d"
+                                  ],
+
+                        "00075" : [ 0,
+                                    "El raspador GEN ADDLNG no está compilado." ,
+                                    "GEN ADDLNG scraper is not compiled in." ,
+                                    "Le scraper GEN ADDLNG n'est pas compilé." ,
+                                    "GEN ADDLNG Scraper ist nicht kompiliert." ,
+                                    "GEN ADDLNG scraper 未编译。"
+                                  ],
+
+                        "00076" : [ 0,
+                                    "ADDLNG código desconocidoalpha2 \\\"%s\"." ,
+                                    "ADDLNG unknown codealpha2 \"%s\"." ,
+                                    "ADDLNG codealpha2 inconnu \\\"%s\"." ,
+                                    "ADDLNG unbekannter Codealpha2 \\\"%s\"." ,
+                                    "ADDLNG未知代码alpha2“%s\"."
+                                  ],
+
+                        "00077" : [ 0,
+                                    "ADDLNG no pudo resolver alfa-3 por \\\"%s\"." ,
+                                    "ADDLNG could not resolve alpha-3 for \"%s\"." ,
+                                    "ADDLNG n'a pas pu résoudre l'alpha-3 pour \\\"%s\"." ,
+                                    "ADDLNG konnte Alpha-3 für „ nicht auflösen%s\"." ,
+                                    "ADDLNG 无法解析 alpha-3 的“%s\"."
+                                  ],
+
+                        "00078" : [ 0,
+                                    "AÑADIR GEN\\u003d%s (%s / %s)" ,
+                                    "GEN ADDLNG=%s (%s / %s)" ,
+                                    "GEN ADDLNG\\u003d%s (%s / %s)" ,
+                                    "GEN ADDLNG\\u003d%s (%s / %s)" ,
+                                    "发电机添加液化天然气\\u003d%s (%s / %s)"
+                                  ],
+
+                        "00079" : [ 0,
+                                    "GEN%s" ,
+                                    "GEN  %s" ,
+                                    "GÉNÉRATION%s" ,
+                                    "GEN%s" ,
+                                    "根%s"
+                                  ],
+
+                        "00080" : [ 0,
+                                    "Idiomas GEN disponibles no encontrados en%s" ,
+                                    "GEN languageavailables not found in %s" ,
+                                    "Langue GEN disponible non trouvée dans%s" ,
+                                    "GEN-Sprachverfügbarkeiten nicht gefunden in%s" ,
+                                    "没有找到 GEN 语言可用%s"
+                                  ],
+
+                        "00081" : [ 0,
+                                    "GEN sin sentencia_Agregar en ries en%s" ,
+                                    "GEN no Sentence_Add entries in %s" ,
+                                    "GEN no Sen ence_Ajouter des entrées dans%s" ,
+                                    "GEN no Sen ence_Add en ries in%s" ,
+                                    "GEN no Sen ence_添加条目于%s"
+                                  ],
+
+                        "00082" : [ 0,
+                                    "Idioma GEN ADDLNG ya presente (%s). " ,
+                                    "GEN ADDLNG language already present (%s). Nothing to do." ,
+                                    "Langue GEN ADDLNG déjà présente (%s). " ,
+                                    "GEN ADDLNG-Sprache bereits vorhanden (%s). " ,
+                                    "GEN ADDLNG 语言已存在（%s）。"
+                                  ],
+
+                        "00083" : [ 0,
+                                    "ranla e%d/%d  %s" ,
+                                    "   translate %d/%d  %s" ,
+                                    "ransla e%d/%d  %s" ,
+                                    "ransla e%d/%d  %s" ,
+                                    "兰斯拉埃%d/%d  %s"
+                                  ],
+
+                        "00084" : [ 0,
+                                    "fallido%s  -> \"--\"" ,
+                                    "   failed  %s  -> \"--\"" ,
+                                    "échoué%s  -> \"--\"" ,
+                                    "fehlgeschlagen%s  -> \"--\"" ,
+                                    "失败的%s  -> \"--\""
+                                  ],
+
+                        "00085" : [ 0,
+                                    "GEN agregó idiomas disponibles%s" ,
+                                    "GEN added languageavailables %s" ,
+                                    "GEN a ajouté les langues disponibles%s" ,
+                                    "GEN hat die verfügbare Sprache hinzugefügt%s" ,
+                                    "GEN 添加了可用语言%s"
+                                  ],
+
+                        "00086" : [ 0,
+                                    "GEN ADDLNG hecho. %dlisto\\u003d%dfalló \\u003d%d" ,
+                                    "GEN ADDLNG done. status=%d ready=%d failed=%d" ,
+                                    "GEN ADDLNG terminé. %dprêt\\u003d%déchoué \\u003d%d" ,
+                                    "GEN ADDLNG fertig. %dbereit\\u003d%dfehlgeschlagen\\u003d%d" ,
+                                    "GEN ADDLNG 完成。%d准备好\\u003d%d失败\\u003d%d"
+                                  ],
+
+                        "00087" : [ 0,
+                                    "La aplicación ADDLNG scraper no está compilada." ,
+                                    "APP ADDLNG scraper is not compiled in." ,
+                                    "APP ADDLNG scraper n’est pas compilé." ,
+                                    "APP ADDLNG Scraper ist nicht kompiliert." ,
+                                    "APP ADDLNG scraper 未编译。"
+                                  ],
+
+                        "00088" : [ 0,
+                                    "ADDLNG no pudo resolver el nombre en inglés de \\\"%s\"." ,
+                                    "ADDLNG could not resolve English name for \"%s\"." ,
+                                    "ADDLNG n'a pas pu résoudre le nom anglais de \\\"%s\"." ,
+                                    "ADDLNG konnte den englischen Namen für „ nicht auflösen%s\"." ,
+                                    "ADDLNG 无法解析“的英文名称”%s\"."
+                                  ],
+
+                        "00089" : [ 0,
+                                    "El archivo de idioma APP ADDLNG no se encontró en%s" ,
+                                    "APP ADDLNG language file was not found under %s" ,
+                                    "Le fichier de langue APP ADDLNG n'a pas été trouvé sous%s" ,
+                                    "Die APP ADDLNG-Sprachdatei wurde unter nicht gefunden%s" ,
+                                    "APP ADDLNG 语言文件下找不到%s"
+                                  ],
+
+                        "00090" : [ 0,
+                                    "AGREGAR APLICACIÓN \\u003d%s (%s)" ,
+                                    "APP ADDLNG=%s (%s)" ,
+                                    "AJOUT D'APPLICATION\\u003d%s (%s)" ,
+                                    "APP ADDLNG\\u003d%s (%s)" ,
+                                    "APP添加液化天然气\\u003d%s (%s)"
+                                  ],
+
+                        "00091" : [ 0,
+                                    "APLICACIÓN%s" ,
+                                    "APP  %s" ,
+                                    "APPLICATION%s" ,
+                                    "APP%s" ,
+                                    "应用程序%s"
+                                  ],
+
+                        "00092" : [ 0,
+                                    "APP ADDLNG idioma ya presente (%s). " ,
+                                    "APP ADDLNG language already present (%s). Nothing to do." ,
+                                    "Langue APP ADDLNG déjà présente (%s). " ,
+                                    "APP ADDLNG-Sprache bereits vorhanden (%s). " ,
+                                    "APP ADDLNG 语言已存在 (%s）。"
+                                  ],
+
+                        "00093" : [ 0,
+                                    "APP idiomas lis no se encontró en%s" ,
+                                    "APP languages list was not found in %s" ,
+                                    "Les langues de l'application lis n'ont pas été trouvées dans%s" ,
+                                    "APP-Sprachen LIS wurde nicht gefunden in%s" ,
+                                    "APP 语言 lis 未找到%s"
+                                  ],
+
+                        "00094" : [ 0,
+                                    "APP ADDLNG traducción%dfrase(es) o%s." ,
+                                    "APP ADDLNG translating %d sentence(s) to %s." ,
+                                    "APP ADDLNG ransla ing%dphrase(s) o%s." ,
+                                    "APP ADDLNG ransla ing%dSatz(e) o%s." ,
+                                    "APP ADDLNG 翻译%d句子 o%s."
+                                  ],
+
+                        "00095" : [ 0,
+                                    "emp y id\\u003d%d" ,
+                                    "   empty  id=%d" ,
+                                    "emp y identifiant \\u003d%d" ,
+                                    "emp y id\\u003d%d" ,
+                                    "员工 y id\\u003d%d"
+                                  ],
+
+                        "00096" : [ 0,
+                                    "ranla e%d/%didentificación \\u003d%05d" ,
+                                    "   translate %d/%d  id=%05d" ,
+                                    "ransla e%d/%didentifiant \\u003d%05d" ,
+                                    "ransla e%d/%did\\u003d%05d" ,
+                                    "兰斯拉埃%d/%d编号\\u003d%05d"
+                                  ],
+
+                        "00097" : [ 0,
+                                    "identificación fallida \\u003d%05d  -> \"--\"" ,
+                                    "   failed  id=%05d  -> \"--\"" ,
+                                    "identifiant d'échec \\u003d%05d  -> \"--\"" ,
+                                    "fehlgeschlagene ID\\u003d%05d  -> \"--\"" ,
+                                    "失败id\\u003d%05d  -> \"--\""
+                                  ],
+
+                        "00098" : [ 0,
+                                    "AGREGACIÓN DE APLICACIÓN realizada. %dfalló \\u003d%d" ,
+                                    "APP ADDLNG done. status=%d failed=%d" ,
+                                    "APP ADDLNG terminé. %déchoué \\u003d%d" ,
+                                    "APP-Hinzufügen abgeschlossen. %dfehlgeschlagen\\u003d%d" ,
+                                    "APP ADDLNG 完成。%d失败\\u003d%d"
+                                  ]
+                      }
+}
