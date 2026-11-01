@@ -1,0 +1,83 @@
+{
+  "languages"       : [ "Spanish" ,
+                        "English" ,
+                        "French"  ,
+                        "German"  ,
+                        "Chinese"
+                      ],
+
+
+  "translations": {
+    "00102" : [ 0,
+      "eXtended Trace Monitor" ,
+      "eXtended Trace Monitor" ,
+      "eXtended Trace Monitor" ,
+      "eXtended Trace Monitor" ,
+      "eXtended Trace Monitor"
+    ],
+
+    "00103" : [ 0,
+      "eXtended Trace Monitor" ,
+      "eXtended Trace Monitor" ,
+      "eXtended Trace Monitor" ,
+      "eXtended Trace Monitor" ,
+      "eXtended Trace Monitor"
+    ],
+
+    "00104" : [ 0,
+      "Salir" ,
+      "Exit" ,
+      "Quitter" ,
+      "Beenden" ,
+      "退出"
+    ],
+
+    "00105" : [ 0,
+      "Parar" ,
+      "Stop" ,
+      "Arreter" ,
+      "Stopp" ,
+      "停止"
+    ],
+
+    "00106" : [ 0,
+      "Arrancar" ,
+      "Run" ,
+      "Demarrer" ,
+      "Start" ,
+      "运行"
+    ],
+
+    "00107" : [ 0,
+      "Limpiar" ,
+      "Clear" ,
+      "Effacer" ,
+      "Leeren" ,
+      "清除"
+    ],
+
+    "00108" : [ 0,
+      "Del status" ,
+      "Del status" ,
+      "Del status" ,
+      "Del status" ,
+      "删除状态"
+    ],
+
+    "00109" : [ 0,
+      "DynDNS" ,
+      "DynDNS" ,
+      "DynDNS" ,
+      "DynDNS" ,
+      "DynDNS"
+    ],
+
+    "00110" : [ 0,
+      "Guardar" ,
+      "Save" ,
+      "Enregistrer" ,
+      "Speichern" ,
+      "保存"
+    ]
+  }
+}

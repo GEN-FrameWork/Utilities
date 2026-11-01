@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  XTraceMonitor layout.
+  Canvas / window: 1220 x 800 (20 margin + 310 tree + 10 gap + 860 valor/console + 20 margin).
+
+  Caption height 46. Icons 59x59 (tight-cropped).
+  Gaps chrome↔icon and icon↔legend = 8 (half of prior ~15).
+  Legends: forms centered under each button (text xpos=center).
+-->
+<layouts>
+
+  <skin name="" drawmode="canvas" rasterfont="verdana18" vectorfont="Nunito-SemiBold.ttf" backgroundcolor="24,28,36"></skin>
+
+  <color name="frame_line">70,80,95,255</color>
+  <color name="console_back">12,14,18,255</color>
+  <color name="label_ink">200,208,220,255</color>
+
+  <layout name="xtracemonitor" backgroundcolor="24,28,36">
+
+    <!-- Brand art right, toolbar strip; -10% size (119), 95% opacity. Valor covers lower overlap. -->
+    <element name="brand_monitor" type="image" xpos="1085" ypos="166" width="119" height="119">brand_monitor.png</element>
+
+    <!-- Left brand: native PNG size 1:1 (no scale). Gap icon→first button = 2× inter-button gap (44). -->
+    <element name="brand_toolbar" type="image" xpos="16" ypos="133" width="105" height="79">brand_toolbar.png</element>
+
+    <element name="stop-btn" type="multioption" xpos="165" ypos="113" width="59" height="59">
+      <element type="button" name="stop-btn" selectablestatus="active">
+        <element type="animation"><image width="59" height="59">Stop_Active.png</image></element>
+      </element>
+      <element type="button" name="stop-btn" selectablestatus="preselect">
+        <element type="animation"><image width="59" height="59">Stop_Preselected.png</image></element>
+      </element>
+      <element type="button" name="stop-btn" selectablestatus="selected">
+        <element type="animation"><image width="59" height="59">Stop_Pressed.png</image></element>
+      </element>
+      <element type="button" name="stop-btn" selectablestatus="deactive">
+        <element type="animation"><image width="59" height="59">Stop_Disabled.png</image></element>
+      </element>
+    </element>
+    <element name="stop-lbl" type="form" xpos="158" ypos="133" width="73" height="14" backgroundcolor="0,0,0,0">
+      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_STOP]</element>
+    </element>
+
+    <element name="run-btn" type="multioption" xpos="165" ypos="113" width="59" height="59" visible="false">
+      <element type="button" name="run-btn" selectablestatus="active">
+        <element type="animation"><image width="59" height="59">Run_Active.png</image></element>
+      </element>
+      <element type="button" name="run-btn" selectablestatus="preselect">
+        <element type="animation"><image width="59" height="59">Run_Preselected.png</image></element>
+      </element>
+      <element type="button" name="run-btn" selectablestatus="selected">
+        <element type="animation"><image width="59" height="59">Run_Pressed.png</image></element>
+      </element>
+      <element type="button" name="run-btn" selectablestatus="deactive">
+        <element type="animation"><image width="59" height="59">Run_Disabled.png</image></element>
+      </element>
+    </element>
+    <element name="run-lbl" type="form" xpos="158" ypos="133" width="73" height="14" backgroundcolor="0,0,0,0" visible="false">
+      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_RUN]</element>
+    </element>
+
+    <element name="clear-btn" type="multioption" xpos="246" ypos="113" width="59" height="59">
+      <element type="button" name="clear-btn" selectablestatus="active">
+        <element type="animation"><image width="59" height="59">Clear_Active.png</image></element>
+      </element>
+      <element type="button" name="clear-btn" selectablestatus="preselect">
+        <element type="animation"><image width="59" height="59">Clear_Preselected.png</image></element>
+      </element>
+      <element type="button" name="clear-btn" selectablestatus="selected">
+        <element type="animation"><image width="59" height="59">Clear_Pressed.png</image></element>
+      </element>
+      <element type="button" name="clear-btn" selectablestatus="deactive">
+        <element type="animation"><image width="59" height="59">Clear_Disabled.png</image></element>
+      </element>
+    </element>
+    <element name="clear-lbl" type="form" xpos="239" ypos="133" width="73" height="14" backgroundcolor="0,0,0,0">
+      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_CLEAR]</element>
+    </element>
+
+    <element name="delstatus-btn" type="multioption" xpos="327" ypos="113" width="59" height="59">
+      <element type="button" name="delstatus-btn" selectablestatus="active">
+        <element type="animation"><image width="59" height="59">Del_Status_Active.png</image></element>
+      </element>
+      <element type="button" name="delstatus-btn" selectablestatus="preselect">
+        <element type="animation"><image width="59" height="59">Del_Status_Preselected.png</image></element>
+      </element>
+      <element type="button" name="delstatus-btn" selectablestatus="selected">
+        <element type="animation"><image width="59" height="59">Del_Status_Pressed.png</image></element>
+      </element>
+      <element type="button" name="delstatus-btn" selectablestatus="deactive">
+        <element type="animation"><image width="59" height="59">Del_Status_Disabled.png</image></element>
+      </element>
+    </element>
+    <element name="delstatus-lbl" type="form" xpos="320" ypos="133" width="73" height="14" backgroundcolor="0,0,0,0">
+      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_DELSTATUS]</element>
+    </element>
+
+    <element name="dyndns-btn" type="multioption" xpos="408" ypos="113" width="59" height="59">
+      <element type="button" name="dyndns-btn" selectablestatus="active">
+        <element type="animation"><image width="59" height="59">DynDNS_Active.png</image></element>
+      </element>
+      <element type="button" name="dyndns-btn" selectablestatus="preselect">
+        <element type="animation"><image width="59" height="59">DynDNS_Preselected.png</image></element>
+      </element>
+      <element type="button" name="dyndns-btn" selectablestatus="selected">
+        <element type="animation"><image width="59" height="59">DynDNS_Pressed.png</image></element>
+      </element>
+      <element type="button" name="dyndns-btn" selectablestatus="deactive">
+        <element type="animation"><image width="59" height="59">DynDNS_Disabled.png</image></element>
+      </element>
+    </element>
+    <element name="dyndns-lbl" type="form" xpos="401" ypos="133" width="73" height="14" backgroundcolor="0,0,0,0">
+      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_DYNDNS]</element>
+    </element>
+
+    <element name="save-btn" type="multioption" xpos="489" ypos="113" width="59" height="59">
+      <element type="button" name="save-btn" selectablestatus="active">
+        <element type="animation"><image width="59" height="59">Save_Active.png</image></element>
+      </element>
+      <element type="button" name="save-btn" selectablestatus="preselect">
+        <element type="animation"><image width="59" height="59">Save_Preselected.png</image></element>
+      </element>
+      <element type="button" name="save-btn" selectablestatus="selected">
+        <element type="animation"><image width="59" height="59">Save_Pressed.png</image></element>
+      </element>
+      <element type="button" name="save-btn" selectablestatus="deactive">
+        <element type="animation"><image width="59" height="59">Save_Disabled.png</image></element>
+      </element>
+    </element>
+    <element name="save-lbl" type="form" xpos="482" ypos="133" width="73" height="14" backgroundcolor="0,0,0,0">
+      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_SAVE]</element>
+    </element>
+
+    <!-- valor: Name/Value status list (above the console, below the toolbar legends). ypos = bottom edge. -->
+    <element name="valor" type="propertylist" xpos="340" ypos="320" width="860" height="170"
+             roundrect="6" border-width="2" border-color="frame_line" bckgrdcolor="console_back"
+             color="label_ink" sizefont="12" namecolumnwidth="220" overflow-y="auto"></element>
+
+    <!-- tree: left column, same top as valor (790-640 = 150), full height down to the console bottom.
+         Width 310 fits 3 levels with IPv4 labels: pad 8 + 3*18 indent + 4 + ~190 text + scroll gutter. -->
+    <!-- overflow-x/y auto: generic TREE supports both axes; XTM may not need H day-to-day. -->
+    <element name="tree" type="tree" xpos="20" ypos="790" width="310" height="640"
+             roundrect="6" border-width="2" border-color="frame_line" bckgrdcolor="console_back"
+             color="label_ink" sizefont="12" rowheight="20" indentwidth="18"
+             overflow-y="auto" overflow-x="auto"></element>
+
+    <element name="log_console" type="console" xpos="340" ypos="790" width="860" height="450"
+             roundrect="6" border-width="2" border-color="frame_line" bckgrdcolor="console_back"
+             sizefont="14" linespacing="3" maxlines="500"
+             autoscroll="true" wordwrap="false" overflow-y="auto" overflow-x="auto"></element>
+
+  </layout>
+
+</layouts>
