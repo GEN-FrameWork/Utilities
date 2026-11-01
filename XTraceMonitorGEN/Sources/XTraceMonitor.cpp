@@ -62,6 +62,8 @@
 #include "UI_Layout.h"
 #include "UI_Element.h"
 #include "UI_Element_Text.h"
+#include "UI_Element_TextBox.h"
+#include "UI_Element_Form.h"
 #include "UI_Element_Console.h"
 #include "UI_Element_PropertyList.h"
 #include "UI_Element_Tree.h"
@@ -385,8 +387,21 @@ bool XTRACEMONITOR::UpdateInput()
 {
   int height = GetMainScreen()->GetHeight();
 
+  static int cursor_x = 0;
+  static int cursor_y = 0;
+
+  int  now_cursor_x = 0;
+  int  now_cursor_y = 0;
+  bool bar_owned    = false;
+
   if(cursor)
     {
+      now_cursor_x = (int)cursor->GetX();
+      now_cursor_y = (int)height - (int)cursor->GetY();
+
+      // Motion gestures (keep historical path). Click/release handling below must NOT live only
+      // inside this branch: IsPressedWithRelease needs to observe press frames, and IsReadyToTest
+      // would otherwise swallow short clicks (including opstatus double-click).
       if(cursor->GetMotion()->IsReadyToTest(50))
         {
           cursor->GetMotion()->InvertYAxis(height);
@@ -395,56 +410,110 @@ bool XTRACEMONITOR::UpdateInput()
 
           cursor->GetMotion()->Reset();
         }
-       else
+       else if(cursor->GetMotion()->GetNPoints() < 50)
         {
-          if(cursor->GetMotion()->GetNPoints() < 50)
+          bool changed = false;
+
+          if(cursor_x != now_cursor_x)
             {
-              static int   cursor_x       = 0;
-              static int   cursor_y       = 0;
-              int          now_cursor_x   = (int)cursor->GetX();
-              int          now_cursor_y   = (int)height - (int)cursor->GetY();
-              bool         changed        = false;
+              cursor_x = now_cursor_x;
+              changed  = true;
+            }
 
-              if(cursor_x != now_cursor_x)
-                {
-                  cursor_x = now_cursor_x;
-                  changed  = true;
-                }
+          if(cursor_y != now_cursor_y)
+            {
+              cursor_y = now_cursor_y;
+              changed  = true;
+            }
 
-              if(cursor_y != now_cursor_y)
-                {
-                  cursor_y = now_cursor_y;
-                  changed  = true;
-                }
+          if(changed)
+            {
+              GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_CURSOR_MOVE, cursor_x, cursor_y);
+            }
 
-              if(changed)
+          bool mouseheld = (button[XTRACEMONITOR_BUTTON_MOUSE] && button[XTRACEMONITOR_BUTTON_MOUSE]->IsPressed());
+
+          // Overlay scrollbar thumb drag (tree / propertylist / console): capture on press over the
+          // track, follow while held, release without firing a content SELECCTION.
+          if(mouseheld)
+            {
+              bar_owned = GEN_USERINTERFACE.ScrollBar_OnPointer(now_cursor_x, now_cursor_y, true);
+              if(bar_owned) cursor->GetMotion()->Reset();
+            }
+           else
+            {
+              bar_owned = GEN_USERINTERFACE.ScrollBar_OnPointer(cursor_x, cursor_y, false);
+            }
+
+          if(button[XTRACEMONITOR_BUTTON_TOUCHSCREEN])
+            {
+              if(button[XTRACEMONITOR_BUTTON_TOUCHSCREEN]->IsPressed())
                 {
                   GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_CURSOR_MOVE, cursor_x, cursor_y);
-                }
-
-              if(button[XTRACEMONITOR_BUTTON_MOUSE] && button[XTRACEMONITOR_BUTTON_MOUSE]->IsPressedWithRelease())
-                {
-                  GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_SELECCTION, cursor_x, cursor_y);
-
-                  cursor->GetMotion()->Reset();
-                }
-
-              if(button[XTRACEMONITOR_BUTTON_TOUCHSCREEN])
-                {
-                  if(button[XTRACEMONITOR_BUTTON_TOUCHSCREEN]->IsPressed())
+                  if(GEN_USERINTERFACE.ScrollBar_OnPointer(cursor_x, cursor_y, true))
                     {
-                      GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_CURSOR_MOVE, cursor_x, cursor_y);
+                      cursor->GetMotion()->Reset();
+                    }
+                   else
+                    {
                       GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_SELECCTION, cursor_x, cursor_y);
-
                       cursor->GetMotion()->Reset();
                     }
                 }
+               else
+                {
+                  GEN_USERINTERFACE.ScrollBar_OnPointer(cursor_x, cursor_y, false);
+                }
             }
+        }
+
+      // Always sample mouse click/release (independent of motion-buffer gating).
+      if(button[XTRACEMONITOR_BUTTON_MOUSE] && button[XTRACEMONITOR_BUTTON_MOUSE]->IsPressedWithRelease())
+        {
+          int click_x = now_cursor_x;
+          int click_y = now_cursor_y;
+
+          if(OpStatus_HitTest(click_x, click_y))
+            {
+              OpStatus_OnClick();
+            }
+           else if(!bar_owned)
+            {
+              GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_SELECCTION, click_x, click_y);
+            }
+
+          if(cursor) cursor->GetMotion()->Reset();
         }
     }
 
-  Valor_UpdateSplitter();
-  Tree_UpdateInput();
+  OpStatus_UpdateInput();
+
+  // Re-assert foot geometry after UI layout writeback (intrinsic/boundary can be restored mid-frame).
+  if(opstatus_form)
+    {
+      XDWORD visible = 1;
+      if(opstatus_expanded && (opstatus_count > 1))
+        {
+          visible = opstatus_count;
+          if(visible < 1) visible = 1;
+          if(visible > XTRACEMONITOR_OPSTATUS_MAXLINES) visible = XTRACEMONITOR_OPSTATUS_MAXLINES;
+        }
+      OpStatus_ApplyGeometry(visible);
+      if(opstatus_expanded && (opstatus_count > 1)) GEN_USERINTERFACE.Element_PutToLastPositionLayout(opstatus_form);
+
+      // Until line metrics are known, keep text dirty so ContentHeight is measured on draw.
+      if((opstatus_line_h < 1.0f) && opstatus_text)
+        {
+          opstatus_text->SetMustReDraw(true);
+          GEN_USERINTERFACE.Elements_SetToRedraw(opstatus_form, true);
+        }
+    }
+
+  if(!GEN_USERINTERFACE.ScrollBar_IsDragging())
+    {
+      Valor_UpdateSplitter();
+      Tree_UpdateInput();
+    }
 
   if(button[XTRACEMONITOR_BUTTON_ESC])
     {
@@ -489,8 +558,8 @@ bool XTRACEMONITOR::Ini_Graphics(GRPSCREEN* screen)
   screen->SetDesktopScreenSelected(GRPSCREENTYPE_DESKTOP_MAIN);
 
   screen->SetPosition(100, 100);
-  screen->SetWidth(1220);
-  screen->SetHeight(800);
+  screen->SetWidth(XTRACEMONITOR_WINDOW_WIDTH);
+  screen->SetHeight(XTRACEMONITOR_WINDOW_HEIGHT);
 
   // Custom chrome (borderless GEN caption). Must run before the native window is created.
   UserInterface_CFGChromes(screen);
@@ -537,9 +606,17 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
 {
   if(!on)
     {
-      consoleelement = NULL;
-      valorelement   = NULL;
-      treeelement    = NULL;
+      consoleelement  = NULL;
+      valorelement    = NULL;
+      treeelement     = NULL;
+      opstatus_form   = NULL;
+      opstatus_text   = NULL;
+
+      if(opstatus_click_timer)
+        {
+          GEN_XFACTORY.DeleteTimer(opstatus_click_timer);
+          opstatus_click_timer = NULL;
+        }
 
       GEN_USERINTERFACE.SubscribeOutputEvents(false, this, &GEN_USERINTERFACE.GetInstance());
       GEN_USERINTERFACE.SubscribeInputEvents(false);
@@ -616,8 +693,15 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       return false;
     }
 
+  if(!OpStatus_Resolve())
+    {
+      return false;
+    }
+
   // Default visible control is Stop (monitor considered running until the user stops it).
   Toolbar_SetRunning(true);
+
+  OpStatus_Log(NL("XTraceMonitor ready."));
 
   return true;
 }
@@ -854,11 +938,12 @@ bool XTRACEMONITOR::Tree_Seed()
 
   treeelement->Clear();
 
-  UI_ELEMENT_TREE_NODE* all = treeelement->AddNode(NULL, NL("All"));
+  // Optional per-node icons (PNG): drawn at height == sizefont in front of the label.
+  UI_ELEMENT_TREE_NODE* all = treeelement->AddNode(NULL, NL("All"), NL("tree_icon_all.png"));
   if(!all) return false;
 
-  treeelement->AddNode(all, NL("# Local (no internet)"));
-  treeelement->AddNode(all, NL("Home [88.14.204.122]"));
+  treeelement->AddNode(all, NL("# Local (no internet)"), NL("tree_icon_local.png"));
+  treeelement->AddNode(all, NL("Home [88.14.204.122]"), NL("tree_icon_home.png"));
 
   // Rich sample: many IPs + deep children with long labels to exercise generic H/V scroll.
   static const XCHAR* ips[] =
@@ -882,27 +967,27 @@ bool XTRACEMONITOR::Tree_Seed()
 
   for(XDWORD i=0; i<(XDWORD)(sizeof(ips) / sizeof(ips[0])); i++)
     {
-      UI_ELEMENT_TREE_NODE* ip = treeelement->AddNode(all, (XCHAR*)ips[i]);
+      UI_ELEMENT_TREE_NODE* ip = treeelement->AddNode(all, (XCHAR*)ips[i], NL("tree_icon_ip.png"));
       if(!ip) continue;
 
-      UI_ELEMENT_TREE_NODE* trace = treeelement->AddNode(ip, NL("Trace A — uplink via edge-router.primary"));
-      treeelement->AddNode(ip, NL("Trace B — secondary path (failover)"));
+      UI_ELEMENT_TREE_NODE* trace = treeelement->AddNode(ip, NL("Trace A — uplink via edge-router.primary"), NL("tree_icon_trace.png"));
+      treeelement->AddNode(ip, NL("Trace B — secondary path (failover)"), NL("tree_icon_trace.png"));
 
       if(trace)
         {
-          UI_ELEMENT_TREE_NODE* sess = treeelement->AddNode(trace, NL("Session peer [192.168.1.24] NAT"));
-          treeelement->AddNode(trace, NL("Session peer [10.0.0.7] NAT"));
-          treeelement->AddNode(trace, NL("Session peer [172.16.4.88] DMZ"));
+          UI_ELEMENT_TREE_NODE* sess = treeelement->AddNode(trace, NL("Session peer [192.168.1.24] NAT"), NL("tree_icon_session.png"));
+          treeelement->AddNode(trace, NL("Session peer [10.0.0.7] NAT"), NL("tree_icon_session.png"));
+          treeelement->AddNode(trace, NL("Session peer [172.16.4.88] DMZ"), NL("tree_icon_session.png"));
 
           if(sess)
             {
-              UI_ELEMENT_TREE_NODE* flow = treeelement->AddNode(sess, NL("Flow TCP/443 → cdn.endorasoft.local"));
-              treeelement->AddNode(sess, NL("Flow UDP/1194 → vpn.endorasoft.local"));
+              UI_ELEMENT_TREE_NODE* flow = treeelement->AddNode(sess, NL("Flow TCP/443 → cdn.endorasoft.local"), NL("tree_icon_flow.png"));
+              treeelement->AddNode(sess, NL("Flow UDP/1194 → vpn.endorasoft.local"), NL("tree_icon_flow.png"));
 
               if(flow)
                 {
-                  treeelement->AddNode(flow, NL("Packet sample #001 — SYN/ACK handshake complete"));
-                  treeelement->AddNode(flow, NL("Packet sample #002 — TLS ClientHello (SNI)"));
+                  treeelement->AddNode(flow, NL("Packet sample #001 — SYN/ACK handshake complete"), NL("tree_icon_packet.png"));
+                  treeelement->AddNode(flow, NL("Packet sample #002 — TLS ClientHello (SNI)"), NL("tree_icon_packet.png"));
                   treeelement->Expand(flow);
                 }
 
@@ -915,8 +1000,8 @@ bool XTRACEMONITOR::Tree_Seed()
       treeelement->Expand(ip);
     }
 
-  treeelement->AddNode(all, NL("UART STM32 F0"));
-  treeelement->AddNode(all, NL("UART STM32 F4 (long label overflow check)"));
+  treeelement->AddNode(all, NL("UART STM32 F0"), NL("tree_icon_uart.png"));
+  treeelement->AddNode(all, NL("UART STM32 F4 (long label overflow check)"), NL("tree_icon_uart.png"));
 
   treeelement->Expand(all);
   treeelement->SetSelected(all);
@@ -936,6 +1021,275 @@ bool XTRACEMONITOR::Tree_Seed()
 * @return     bool : true if the operation is successful; otherwise false.
 *
 *---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::OpStatus_Resolve()
+{
+  opstatus_form = (UI_ELEMENT_FORM*)GEN_USERINTERFACE.Element_Get(NL("opstatus"), UI_ELEMENT_TYPE_FORM);
+  opstatus_text = (UI_ELEMENT_TEXTBOX*)GEN_USERINTERFACE.Element_Get(NL("opstatus_text"), UI_ELEMENT_TYPE_TEXTBOX);
+  if(!opstatus_form || !opstatus_text) return false;
+
+  if(!opstatus_click_timer)
+    {
+      opstatus_click_timer = GEN_XFACTORY.CreateTimer();
+      if(!opstatus_click_timer) return false;
+    }
+
+  opstatus_click_timer->Reset();
+
+  // Lock the foot bottom edge (grows upward from this Y).
+  opstatus_foot_y = opstatus_form->GetYPosition();
+
+  // Foot never scrolls (form/textbox default overflow is AUTO and XML overflow is not
+  // applied to these element types at load time).
+  OpStatus_DisableScroll();
+
+  // Ensure the foot form paints above the console when expanded.
+  GEN_USERINTERFACE.Element_PutToLastPositionLayout(opstatus_form);
+
+  // Baseline is frozen on first real ContentHeight (see ApplyGeometry), not here.
+  opstatus_last_baseline = 0.0f;
+  opstatus_line_h        = 0.0f;
+
+  return OpStatus_Refresh();
+}
+
+
+bool XTRACEMONITOR::OpStatus_Log(XCHAR* message)
+{
+  if(!message) return false;
+
+  if(opstatus_count < XTRACEMONITOR_OPSTATUS_MAXLINES)
+    {
+      opstatus_msgs[opstatus_count].Set(message);
+      opstatus_count++;
+    }
+   else
+    {
+      for(XDWORD c=1; c<XTRACEMONITOR_OPSTATUS_MAXLINES; c++)
+        {
+          opstatus_msgs[c-1] = opstatus_msgs[c];
+        }
+      opstatus_msgs[XTRACEMONITOR_OPSTATUS_MAXLINES-1].Set(message);
+      opstatus_count = XTRACEMONITOR_OPSTATUS_MAXLINES;
+    }
+
+  return OpStatus_Refresh();
+}
+
+
+bool XTRACEMONITOR::OpStatus_Refresh()
+{
+  if(!opstatus_form || !opstatus_text) return false;
+
+  XDWORD visible = 1;
+  if(opstatus_expanded && (opstatus_count > 1))
+    {
+      visible = opstatus_count;
+      if(visible > XTRACEMONITOR_OPSTATUS_MAXLINES) visible = XTRACEMONITOR_OPSTATUS_MAXLINES;
+      if(visible < 1) visible = 1;
+    }
+
+  XSTRING body;
+  if(opstatus_count == 0)
+    {
+      body.Empty();
+    }
+   else
+    {
+      XDWORD start = opstatus_count - visible;
+      for(XDWORD c=start; c<opstatus_count; c++)
+        {
+          if(c > start) body.Add(NL("\n"));
+          body.Add(opstatus_msgs[c].Get());
+        }
+    }
+
+  opstatus_text->GetText()->Set(body.Get());
+
+  OpStatus_ApplyGeometry(visible);
+
+  if(opstatus_expanded && (opstatus_count > 1)) GEN_USERINTERFACE.Element_PutToLastPositionLayout(opstatus_form);
+
+  GEN_USERINTERFACE.Elements_SetToRedraw(opstatus_form);
+  if(consoleelement) GEN_USERINTERFACE.Elements_SetToRedraw(consoleelement);
+
+  return true;
+}
+
+
+bool XTRACEMONITOR::OpStatus_DisableScroll()
+{
+  if(!opstatus_form || !opstatus_text) return false;
+
+  opstatus_form->Scroll_SetOverflow(UI_PROPERTY_SCROLLEABLE_TYPE_ALL, UI_OVERFLOW_HIDDEN);
+  opstatus_form->Scroll_SetActivate(UI_PROPERTY_SCROLLEABLE_TYPE_HORIZONTAL, false);
+  opstatus_form->Scroll_SetActivate(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL  , false);
+  opstatus_form->Scroll_SetBarShown(UI_PROPERTY_SCROLLEABLE_TYPE_HORIZONTAL, false);
+  opstatus_form->Scroll_SetBarShown(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL  , false);
+  opstatus_form->Scroll_SetVisible(UI_PROPERTY_SCROLLEABLE_TYPE_HORIZONTAL, false);
+  opstatus_form->Scroll_SetVisible(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL  , false);
+
+  opstatus_text->Scroll_SetOverflow(UI_PROPERTY_SCROLLEABLE_TYPE_ALL, UI_OVERFLOW_HIDDEN);
+  opstatus_text->Scroll_SetActivate(UI_PROPERTY_SCROLLEABLE_TYPE_HORIZONTAL, false);
+  opstatus_text->Scroll_SetActivate(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL  , false);
+  opstatus_text->Scroll_SetBarShown(UI_PROPERTY_SCROLLEABLE_TYPE_HORIZONTAL, false);
+  opstatus_text->Scroll_SetBarShown(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL  , false);
+  opstatus_text->Scroll_SetVisible(UI_PROPERTY_SCROLLEABLE_TYPE_HORIZONTAL, false);
+  opstatus_text->Scroll_SetVisible(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL  , false);
+
+  return true;
+}
+
+
+bool XTRACEMONITOR::OpStatus_ApplyGeometry(XDWORD visible_lines)
+{
+  if(!opstatus_form || !opstatus_text) return false;
+
+  OpStatus_DisableScroll();
+
+  // Collapsed always shows exactly one line; ignore stale expanded counts.
+  XDWORD visible = visible_lines;
+  if(!opstatus_expanded) visible = 1;
+  if(visible < 1) visible = 1;
+  if(visible > XTRACEMONITOR_OPSTATUS_MAXLINES) visible = XTRACEMONITOR_OPSTATUS_MAXLINES;
+  if(visible > opstatus_count && opstatus_count > 0) visible = opstatus_count;
+
+  double foot_y = opstatus_foot_y;
+  if(foot_y <= 0.0f) foot_y = opstatus_form->GetYPosition();
+
+  double spacing  = (double)opstatus_text->GetLineSpacing();
+  double sizefont = (double)opstatus_text->GetSizeFont();
+  if(sizefont < 1.0f) sizefont = 12.0f;
+
+  // Lock TextBox lineheight once from a single-line draw. Never overwrite afterwards
+  // (multi-line content_h used to inflate line_h and prevent collapse).
+  double content_h = opstatus_text->GetContentHeight();
+
+  double collapsed_h_est = XTRACEMONITOR_OPSTATUS_PAD + XTRACEMONITOR_OPSTATUS_LINEHEIGHT;
+  double temp_baseline   = foot_y - (collapsed_h_est * 0.5f) + (sizefont * 0.5f);
+
+  if((opstatus_line_h < 1.0f) && (visible == 1) && (content_h > 1.0f))
+    {
+      // Preserve the pixel position of the last line while switching from the sizefont
+      // estimate to the real TextBox lineheight (font_a + spacing).
+      double prev_baseline = (opstatus_last_baseline > 0.0f) ? opstatus_last_baseline : temp_baseline;
+      double font_a        = content_h - spacing;
+      if(font_a < 1.0f) font_a = sizefont;
+      // With estimate text_h=sizefont+spacing, last ≈ prev_baseline - sizefont + font_a.
+      opstatus_last_baseline = prev_baseline - sizefont + font_a;
+      opstatus_line_h        = content_h;
+    }
+
+  double line_h = opstatus_line_h;
+  if(line_h < 1.0f) line_h = sizefont + spacing;
+
+  double collapsed_h = collapsed_h_est;
+  if(collapsed_h < (line_h + XTRACEMONITOR_OPSTATUS_PAD)) collapsed_h = line_h + XTRACEMONITOR_OPSTATUS_PAD;
+
+  if(opstatus_last_baseline <= 0.0f) opstatus_last_baseline = temp_baseline;
+  double last_baseline = opstatus_last_baseline;
+
+  // TextBox: content_h = n*lineheight => last baseline = text_y - spacing (stable for any n).
+  double text_h = (double)visible * line_h;
+  if(text_h < line_h) text_h = line_h;
+  double text_y = last_baseline + spacing;
+
+  // Local Y constant (CalculePosition: abs = father_y - boundaryline.y). Must not depend on height.
+  double text_local_y = foot_y - text_y;
+  if(text_local_y < 0.0f) text_local_y = 0.0f;
+
+  double box_top = text_y - text_h;
+  double top_pad = (collapsed_h - line_h) * 0.5f;
+  if(top_pad < 0.0f) top_pad = 0.0f;
+
+  double new_h = collapsed_h;
+  if(visible > 1)
+    {
+      new_h = (foot_y - box_top) + top_pad;
+      if(new_h < collapsed_h) new_h = collapsed_h;
+    }
+
+  opstatus_form->GetBoundaryLine()->height = new_h;
+  opstatus_form->SetIntrinsicHeight(new_h);
+  opstatus_form->SetYPosition(foot_y);
+
+  UI_BOUNDARYLINE* vis = opstatus_form->GetVisibleRect();
+  if(vis)
+    {
+      vis->x      = opstatus_form->GetXPosition();
+      vis->y      = foot_y;
+      vis->width  = opstatus_form->GetBoundaryLine()->width;
+      vis->height = new_h;
+    }
+
+  opstatus_text->GetBoundaryLine()->height = text_h;
+  opstatus_text->SetIntrinsicHeight(text_h);
+  opstatus_text->GetBoundaryLine()->y = text_local_y;
+  opstatus_text->SetYPosition(text_y);
+
+  return true;
+}
+
+
+bool XTRACEMONITOR::OpStatus_SetExpanded(bool expanded)
+{
+  opstatus_expanded = expanded;
+  return OpStatus_Refresh();
+}
+
+
+bool XTRACEMONITOR::OpStatus_ToggleExpanded()
+{
+  return OpStatus_SetExpanded(!opstatus_expanded);
+}
+
+
+bool XTRACEMONITOR::OpStatus_HitTest(int screen_x, int screen_y)
+{
+  if(!opstatus_form || !opstatus_form->GetBoundaryLine()) return false;
+
+  double x = opstatus_form->GetXPosition();
+  double y = (opstatus_foot_y > 0.0f) ? opstatus_foot_y : opstatus_form->GetYPosition();
+  double w = opstatus_form->GetBoundaryLine()->width;
+  double h = opstatus_form->GetBoundaryLine()->height;
+  double top = y - h;
+
+  if((double)screen_x < x || (double)screen_x >= (x + w)) return false;
+  if((double)screen_y < top || (double)screen_y >= y) return false;
+
+  return true;
+}
+
+
+bool XTRACEMONITOR::OpStatus_OnClick()
+{
+  if(!opstatus_click_timer) return false;
+
+  XQWORD elapsed = opstatus_click_timer->GetMeasureMilliSeconds();
+
+  if(opstatus_click_armed && (elapsed <= XTRACEMONITOR_OPSTATUS_DBLCLICK_MS))
+    {
+      OpStatus_ToggleExpanded();
+      opstatus_click_armed = false;
+    }
+   else
+    {
+      opstatus_click_armed = true;
+    }
+
+  opstatus_click_timer->Reset();
+
+  return true;
+}
+
+
+bool XTRACEMONITOR::OpStatus_UpdateInput()
+{
+  // Double-click is handled on IsPressedWithRelease in UpdateInput (same edge as SELECCTION).
+  // Keep this hook for symmetry with tree/valor input helpers.
+  return (opstatus_form != NULL);
+}
+
+
 bool XTRACEMONITOR::Tree_UpdateInput()
 {
   if(!treeelement || !cursor || !button[XTRACEMONITOR_BUTTON_MOUSE]) return false;
@@ -949,6 +1303,13 @@ bool XTRACEMONITOR::Tree_UpdateInput()
       int    cursor_y = (int)GetMainScreen()->GetHeight() - (int)cursor->GetY();
       double local_x  = 0.0f;
       double local_y  = 0.0f;
+
+      // Foot form owns the click when the pointer is over it (including expanded overlap).
+      if(OpStatus_HitTest(cursor_x, cursor_y))
+        {
+          tree_prevpressed = pressed;
+          return true;
+        }
 
       if(treeelement->ScreenToLocal(cursor_x, cursor_y, local_x, local_y))
         {
@@ -1003,7 +1364,7 @@ bool XTRACEMONITOR::Toolbar_SetRunning(bool running)
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool XTRACEMONITOR::Toolbar_ApplyRunStopVisibility()
-* @brief      Shows Stop or Run in the shared toolbar slot according to monitor_running.
+* @brief      Shows Stop or Run (icon + legend) in the shared toolbar slot according to monitor_running.
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the operation is successful; otherwise false.
@@ -1016,29 +1377,26 @@ bool XTRACEMONITOR::Toolbar_ApplyRunStopVisibility()
   UI_ELEMENT* stop_lbl = GEN_USERINTERFACE.Element_Get(NL("stop-lbl"), UI_ELEMENT_TYPE_FORM);
   UI_ELEMENT* run_lbl  = GEN_USERINTERFACE.Element_Get(NL("run-lbl") , UI_ELEMENT_TYPE_FORM);
 
-  if(stop_btn)
+  // Shared slot: hide the outgoing pair first, then show the incoming pair.
+  if(monitor_running)
     {
-      stop_btn->SetVisible(monitor_running);
-      GEN_USERINTERFACE.Elements_SetToRedraw(stop_btn);
+      if(run_btn)  run_btn->SetVisible(false);
+      if(run_lbl)  run_lbl->SetVisible(false);
+      if(stop_btn) stop_btn->SetVisible(true);
+      if(stop_lbl) stop_lbl->SetVisible(true);
+    }
+   else
+    {
+      if(stop_btn) stop_btn->SetVisible(false);
+      if(stop_lbl) stop_lbl->SetVisible(false);
+      if(run_btn)  run_btn->SetVisible(true);
+      if(run_lbl)  run_lbl->SetVisible(true);
     }
 
-  if(stop_lbl)
-    {
-      stop_lbl->SetVisible(monitor_running);
-      GEN_USERINTERFACE.Elements_SetToRedraw(stop_lbl);
-    }
-
-  if(run_btn)
-    {
-      run_btn->SetVisible(!monitor_running);
-      GEN_USERINTERFACE.Elements_SetToRedraw(run_btn);
-    }
-
-  if(run_lbl)
-    {
-      run_lbl->SetVisible(!monitor_running);
-      GEN_USERINTERFACE.Elements_SetToRedraw(run_lbl);
-    }
+  if(stop_btn) GEN_USERINTERFACE.Elements_SetToRedraw(stop_btn, true);
+  if(stop_lbl) GEN_USERINTERFACE.Elements_SetToRedraw(stop_lbl, true);
+  if(run_btn)  GEN_USERINTERFACE.Elements_SetToRedraw(run_btn , true);
+  if(run_lbl)  GEN_USERINTERFACE.Elements_SetToRedraw(run_lbl , true);
 
   // Drop hover/press left on the button that just hid (shared toolbar slot).
   GEN_USERINTERFACE.ResetPreselect();
@@ -1090,42 +1448,51 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
   if(!name->Compare(NL("stop-btn"), true))
     {
       Toolbar_SetRunning(false);
-      if(consoleelement) consoleelement->PrintColor(UI_ELEMENT_CONSOLE_COLOR_GRAY, NL("Stop: monitor paused."));
+      OpStatus_Log(NL("Stop: monitor paused."));
       return true;
     }
 
   if(!name->Compare(NL("run-btn"), true))
     {
       Toolbar_SetRunning(true);
-      if(consoleelement) consoleelement->PrintColor(UI_ELEMENT_CONSOLE_COLOR_GREEN, NL("Run: monitor running."));
+      OpStatus_Log(NL("Run: monitor running."));
       return true;
     }
 
   if(!name->Compare(NL("clear-btn"), true))
     {
-      if(consoleelement)
-        {
-          consoleelement->Clear();
-          consoleelement->PrintColor(UI_ELEMENT_CONSOLE_COLOR_GRAY, NL("Clear."));
-        }
+      if(consoleelement) consoleelement->Clear();
+      OpStatus_Log(NL("Clear."));
       return true;
     }
 
   if(!name->Compare(NL("delstatus-btn"), true))
     {
-      if(consoleelement) consoleelement->PrintColor(UI_ELEMENT_CONSOLE_COLOR_GRAY, NL("Del status (TODO)."));
+      OpStatus_Log(NL("Del status (TODO)."));
+      return true;
+    }
+
+  if(!name->Compare(NL("filter-btn"), true))
+    {
+      OpStatus_Log(NL("Filter (TODO)."));
       return true;
     }
 
   if(!name->Compare(NL("dyndns-btn"), true))
     {
-      if(consoleelement) consoleelement->PrintColor(UI_ELEMENT_CONSOLE_COLOR_GRAY, NL("DynDNS (TODO)."));
+      OpStatus_Log(NL("DynDNS (TODO)."));
       return true;
     }
 
   if(!name->Compare(NL("save-btn"), true))
     {
-      if(consoleelement) consoleelement->PrintColor(UI_ELEMENT_CONSOLE_COLOR_GRAY, NL("Save (TODO)."));
+      OpStatus_Log(NL("Save (TODO)."));
+      return true;
+    }
+
+  if(!name->Compare(NL("config-btn"), true))
+    {
+      OpStatus_Log(NL("Config (TODO)."));
       return true;
     }
 
@@ -1185,6 +1552,16 @@ bool XTRACEMONITOR::UserInterface_ChangeLiteralText(UI_ELEMENT_TEXT* element_tex
   if(!maskvalue->Compare(NL("BTN_SAVE"), true))
     {
       maskresolved->Set(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_BTN_SAVE));
+    }
+
+  if(!maskvalue->Compare(NL("BTN_FILTER"), true))
+    {
+      maskresolved->Set(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_BTN_FILTER));
+    }
+
+  if(!maskvalue->Compare(NL("BTN_CONFIG"), true))
+    {
+      maskresolved->Set(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_BTN_CONFIG));
     }
 
   return true;
@@ -1346,15 +1723,25 @@ void XTRACEMONITOR::HandleEvent(XEVENT* xevent)
 *---------------------------------------------------------------------------------------------------------------------*/
 void XTRACEMONITOR::Clean()
 {
-  xtimer          = NULL;
-  cursor          = NULL;
-  consoleelement  = NULL;
-  valorelement    = NULL;
-  valor_prevpressed = false;
-  treeelement     = NULL;
-  tree_prevpressed  = false;
-  monitor_running = true;
-  exitapp         = false;
+  xtimer                 = NULL;
+  cursor                 = NULL;
+  consoleelement         = NULL;
+  valorelement           = NULL;
+  valor_prevpressed      = false;
+  treeelement            = NULL;
+  tree_prevpressed       = false;
+  opstatus_form          = NULL;
+  opstatus_text          = NULL;
+  opstatus_count         = 0;
+  opstatus_foot_y        = 0.0f;
+  opstatus_last_baseline = 0.0f;
+  opstatus_line_h        = 0.0f;
+  opstatus_expanded      = false;
+  opstatus_prevpressed   = false;
+  opstatus_click_armed   = false;
+  opstatus_click_timer   = NULL;
+  monitor_running        = true;
+  exitapp                = false;
 
   for(int c=0; c<XTRACEMONITOR_BUTTON_MAX; c++)
     {

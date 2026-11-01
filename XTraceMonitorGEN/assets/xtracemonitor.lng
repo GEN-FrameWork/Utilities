@@ -78,6 +78,22 @@
       "Enregistrer" ,
       "Speichern" ,
       "保存"
+    ],
+
+    "00111" : [ 0,
+      "Filtro" ,
+      "Filter" ,
+      "Filtre" ,
+      "Filter" ,
+      "过滤"
+    ],
+
+    "00112" : [ 0,
+      "Configuracion" ,
+      "Settings" ,
+      "Configuration" ,
+      "Einstellungen" ,
+      "设置"
     ]
   }
 }

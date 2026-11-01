@@ -83,6 +83,14 @@ enum XTRACEMONITOR_BUTTONS
 
 #define APPLICATION_GUI_XTRACEMONITOR_VIEWPORT_ID NL("xtracemonitor_viewport")
 
+#define XTRACEMONITOR_WINDOW_WIDTH                1220
+#define XTRACEMONITOR_WINDOW_HEIGHT               832
+
+#define XTRACEMONITOR_OPSTATUS_MAXLINES           20
+#define XTRACEMONITOR_OPSTATUS_LINEHEIGHT         18.0f
+#define XTRACEMONITOR_OPSTATUS_PAD                4.0f
+#define XTRACEMONITOR_OPSTATUS_DBLCLICK_MS        700
+
 
 
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
@@ -93,6 +101,8 @@ class INPCURSOR;
 class UI_XEVENT;
 class UI_ELEMENT;
 class UI_ELEMENT_TEXT;
+class UI_ELEMENT_TEXTBOX;
+class UI_ELEMENT_FORM;
 class UI_ELEMENT_CONSOLE;
 class UI_ELEMENT_PROPERTYLIST;
 class UI_ELEMENT_TREE;
@@ -133,6 +143,17 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            Tree_Seed                               ();
     bool                            Tree_UpdateInput                        ();
 
+    bool                            OpStatus_Resolve                        ();
+    bool                            OpStatus_Log                            (XCHAR* message);
+    bool                            OpStatus_Refresh                        ();
+    bool                            OpStatus_DisableScroll                  ();
+    bool                            OpStatus_ApplyGeometry                  (XDWORD visible_lines);
+    bool                            OpStatus_SetExpanded                    (bool expanded);
+    bool                            OpStatus_ToggleExpanded                 ();
+    bool                            OpStatus_UpdateInput                    ();
+    bool                            OpStatus_OnClick                        ();
+    bool                            OpStatus_HitTest                        (int screen_x, int screen_y);
+
     bool                            Toolbar_SetRunning                      (bool running);
     bool                            Toolbar_ApplyRunStopVisibility          ();
 
@@ -157,6 +178,18 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
 
     UI_ELEMENT_TREE*                treeelement;
     bool                            tree_prevpressed;
+
+    UI_ELEMENT_FORM*                opstatus_form;
+    UI_ELEMENT_TEXTBOX*             opstatus_text;
+    XSTRING                         opstatus_msgs[XTRACEMONITOR_OPSTATUS_MAXLINES];
+    XDWORD                          opstatus_count;
+    double                          opstatus_foot_y;
+    double                          opstatus_last_baseline;
+    double                          opstatus_line_h;
+    bool                            opstatus_expanded;
+    bool                            opstatus_prevpressed;
+    bool                            opstatus_click_armed;
+    XTIMER*                         opstatus_click_timer;
 
     bool                            monitor_running;
     bool                            exitapp;

@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   XTraceMonitor layout.
-  Canvas / window: 1220 x 800 (20 margin + 310 tree + 10 gap + 860 valor/console + 20 margin).
+  Canvas / window: 1220 x 832 (800 content + ~32 footer band for opstatus).
 
   Caption height 46. Icons 59x59 (tight-cropped).
   Gaps chrome↔icon and icon↔legend = 8 (half of prior ~15).
   Legends: forms centered under each button (text xpos=center).
+
+  opstatus: foot form (same width as console). Collapsed = 1 line; double-click expands
+  upward (bottom edge fixed) over the console showing up to 20 operative messages.
 -->
 <layouts>
 
@@ -95,7 +98,26 @@
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_DELSTATUS]</element>
     </element>
 
-    <element name="dyndns-btn" type="multioption" xpos="408" ypos="113" width="59" height="59">
+    <!-- After Del status: Filtro, then DynDNS, Save, Configuracion (pitch 81). -->
+    <element name="filter-btn" type="multioption" xpos="408" ypos="113" width="59" height="59">
+      <element type="button" name="filter-btn" selectablestatus="active">
+        <element type="animation"><image width="59" height="59">Filtros_Active.png</image></element>
+      </element>
+      <element type="button" name="filter-btn" selectablestatus="preselect">
+        <element type="animation"><image width="59" height="59">Filtros_Preselected.png</image></element>
+      </element>
+      <element type="button" name="filter-btn" selectablestatus="selected">
+        <element type="animation"><image width="59" height="59">Filtros_Pressed.png</image></element>
+      </element>
+      <element type="button" name="filter-btn" selectablestatus="deactive">
+        <element type="animation"><image width="59" height="59">Filtros_Disabled.png</image></element>
+      </element>
+    </element>
+    <element name="filter-lbl" type="form" xpos="401" ypos="133" width="73" height="14" backgroundcolor="0,0,0,0">
+      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_FILTER]</element>
+    </element>
+
+    <element name="dyndns-btn" type="multioption" xpos="489" ypos="113" width="59" height="59">
       <element type="button" name="dyndns-btn" selectablestatus="active">
         <element type="animation"><image width="59" height="59">DynDNS_Active.png</image></element>
       </element>
@@ -109,11 +131,11 @@
         <element type="animation"><image width="59" height="59">DynDNS_Disabled.png</image></element>
       </element>
     </element>
-    <element name="dyndns-lbl" type="form" xpos="401" ypos="133" width="73" height="14" backgroundcolor="0,0,0,0">
+    <element name="dyndns-lbl" type="form" xpos="482" ypos="133" width="73" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_DYNDNS]</element>
     </element>
 
-    <element name="save-btn" type="multioption" xpos="489" ypos="113" width="59" height="59">
+    <element name="save-btn" type="multioption" xpos="570" ypos="113" width="59" height="59">
       <element type="button" name="save-btn" selectablestatus="active">
         <element type="animation"><image width="59" height="59">Save_Active.png</image></element>
       </element>
@@ -127,8 +149,26 @@
         <element type="animation"><image width="59" height="59">Save_Disabled.png</image></element>
       </element>
     </element>
-    <element name="save-lbl" type="form" xpos="482" ypos="133" width="73" height="14" backgroundcolor="0,0,0,0">
+    <element name="save-lbl" type="form" xpos="563" ypos="133" width="73" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_SAVE]</element>
+    </element>
+
+    <element name="config-btn" type="multioption" xpos="651" ypos="113" width="59" height="59">
+      <element type="button" name="config-btn" selectablestatus="active">
+        <element type="animation"><image width="59" height="59">Configuracion_Active.png</image></element>
+      </element>
+      <element type="button" name="config-btn" selectablestatus="preselect">
+        <element type="animation"><image width="59" height="59">Configuracion_Preselected.png</image></element>
+      </element>
+      <element type="button" name="config-btn" selectablestatus="selected">
+        <element type="animation"><image width="59" height="59">Configuracion_Pressed.png</image></element>
+      </element>
+      <element type="button" name="config-btn" selectablestatus="deactive">
+        <element type="animation"><image width="59" height="59">Configuracion_Disabled.png</image></element>
+      </element>
+    </element>
+    <element name="config-lbl" type="form" xpos="644" ypos="133" width="73" height="14" backgroundcolor="0,0,0,0">
+      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_CONFIG]</element>
     </element>
 
     <!-- valor: Name/Value status list (above the console, below the toolbar legends). ypos = bottom edge. -->
@@ -148,6 +188,14 @@
              roundrect="6" border-width="2" border-color="frame_line" bckgrdcolor="console_back"
              sizefont="14" linespacing="3" maxlines="500"
              autoscroll="true" wordwrap="false" overflow-y="auto" overflow-x="auto"></element>
+
+    <!-- Operative status foot (after console so it paints above when expanded). ypos = bottom edge. -->
+    <element name="opstatus" type="form" xpos="340" ypos="820" width="860" height="22"
+             roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
+             overflow-y="hidden" overflow-x="hidden">
+      <element name="opstatus_text" type="textbox" xpos="8" ypos="18" width="844" height="16"
+               sizefont="12" color="label_ink" linespacing="4" overflow-y="hidden" overflow-x="hidden"></element>
+    </element>
 
   </layout>
 
