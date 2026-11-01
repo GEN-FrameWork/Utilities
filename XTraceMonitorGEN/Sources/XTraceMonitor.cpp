@@ -67,6 +67,11 @@
 #include "UI_Element_Console.h"
 #include "UI_Element_PropertyList.h"
 #include "UI_Element_Tree.h"
+#include "UI_Element_Image.h"
+#include "UI_Skin.h"
+#include "UI_SkinCanvas.h"
+#include "UI_BoundaryLine.h"
+#include "GRP2DColor.h"
 
 #include "APPFlowLog.h"
 #include "APPFlowExtended.h"
@@ -586,7 +591,18 @@ bool XTRACEMONITOR::Ini_Canvas(GRPSCREEN* screen)
       return false;
     }
 
-  bool status = screen->CreateViewport(APPLICATION_GUI_XTRACEMONITOR_VIEWPORT_ID, 0.0f, 0.0f, (float)screen->GetWidth(), (float)screen->GetHeight(), 0, 0, screen->GetWidth(), screen->GetHeight());
+  bool status = screen->CreateViewport(GRPVIEWPORT_ID_MAIN, 0.0f, 0.0f, (float)screen->GetWidth(), (float)screen->GetHeight(), 0, 0, screen->GetWidth(), screen->GetHeight());
+  if(status)
+    {
+      GRPVIEWPORT* viewport = screen->GetViewport(GRPVIEWPORT_ID_MAIN);
+      if(viewport)
+        {
+          // Min = design size (1200×738). Max allows growth; chrome buttons track via UpdateCFGChromesButtonsPosition.
+          viewport->SetMinSize((float)XTRACEMONITOR_WINDOW_WIDTH, (float)XTRACEMONITOR_WINDOW_HEIGHT);
+          viewport->SetMaxSize(3840.0f, 2160.0f);
+        }
+    }
+
   return status;
 }
 
@@ -611,12 +627,16 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       treeelement     = NULL;
       opstatus_form   = NULL;
       opstatus_text   = NULL;
+      brand_monitor   = NULL;
 
       if(opstatus_click_timer)
         {
           GEN_XFACTORY.DeleteTimer(opstatus_click_timer);
           opstatus_click_timer = NULL;
         }
+
+      GRPSCREEN* screen = GetMainScreen();
+      if(screen) UnSubscribeEvent(GRPXEVENT_TYPE_SCREEN_CHANGESIZE, screen);
 
       GEN_USERINTERFACE.SubscribeOutputEvents(false, this, &GEN_USERINTERFACE.GetInstance());
       GEN_USERINTERFACE.SubscribeInputEvents(false);
@@ -660,6 +680,8 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
   GEN_USERINTERFACE.SubscribeInputEvents(true);
   GEN_USERINTERFACE.SubscribeOutputEvents(true, this, &GEN_USERINTERFACE.GetInstance());
 
+  SubscribeEvent(GRPXEVENT_TYPE_SCREEN_CHANGESIZE, screen);
+
   GEN_USERINTERFACE.Layout_PutBackground();
   GEN_USERINTERFACE.Elements_SetToRedraw();
 
@@ -693,13 +715,20 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       return false;
     }
 
+  if(!BrandMonitor_Resolve())
+    {
+      return false;
+    }
+
   if(!OpStatus_Resolve())
     {
       return false;
     }
 
-  // Default visible control is Stop (monitor considered running until the user stops it).
-  Toolbar_SetRunning(true);
+  // Default: workingmode on → Stop control visible (XML already shows stop, hides run).
+  // Only set the flag here — calling Apply at Ini re-discarded the legend TextBackdrop and
+  // left a gray plate that also shifted the Parar baseline vs the other toolbar labels.
+  workingmode = true;
 
   OpStatus_Log(NL("XTraceMonitor ready."));
 
@@ -725,7 +754,7 @@ bool XTRACEMONITOR::DrawFrame()
   GRP2DCANVAS* canvas   = NULL;
   bool         status   = false;
 
-  viewport = screen->GetViewport(APPLICATION_GUI_XTRACEMONITOR_VIEWPORT_ID);
+  viewport = screen->GetViewport(GRPVIEWPORT_ID_MAIN);
   if(viewport)
     {
       canvas = viewport->GetCanvas();
@@ -745,6 +774,15 @@ bool XTRACEMONITOR::DrawFrame()
       return true;
     }
 
+  // Belt-and-suspenders: CHANGESIZE can race with canvas recreate; re-apply flexible layout whenever
+  // the live client size diverges from the last geometry we laid out, then force a full redraw.
+  int live_w = (int)screen->GetWidth();
+  int live_h = (int)screen->GetHeight();
+  if((live_w != layout_applied_w) || (live_h != layout_applied_h))
+    {
+      Layout_ApplyFlexibleResize();
+    }
+
   canvas->ReleaseDrawFramerate();
 
   canvas->RebuildAllAreas();
@@ -754,6 +792,131 @@ bool XTRACEMONITOR::DrawFrame()
 
   GEN_USERINTERFACE.Elements_RebuildDrawAreas();
   GEN_USERINTERFACE.Update();
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::Layout_ApplyFlexibleResize()
+* @brief      Applies the flexible resize layout from the current screen size.
+*             Grows/shrinks: valor/footer width, console width+height, tree height (bottom-aligned with
+*             console; top fixed with valor), brand_monitor horizontal position. Toolbar and other chrome
+*             stay at design geometry. Custom chrome buttons track via UpdateCFGChromesButtonsPosition.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::Layout_ApplyFlexibleResize()
+{
+  GRPSCREEN* screen = GetMainScreen();
+  if(!screen) return false;
+
+  double W = (double)screen->GetWidth();
+  double H = (double)screen->GetHeight();
+
+  if(W < (double)XTRACEMONITOR_WINDOW_WIDTH)  W = (double)XTRACEMONITOR_WINDOW_WIDTH;
+  if(H < (double)XTRACEMONITOR_WINDOW_HEIGHT) H = (double)XTRACEMONITOR_WINDOW_HEIGHT;
+
+  const double margin   = XTRACEMONITOR_LAYOUT_MARGIN;
+  const double gap      = XTRACEMONITOR_LAYOUT_GAP;
+  const double panels_x = XTRACEMONITOR_LAYOUT_PANELS_X;
+  const double valor_top = XTRACEMONITOR_LAYOUT_VALOR_TOP;
+  const double valor_h  = XTRACEMONITOR_LAYOUT_VALOR_H;
+  const double foot_h   = XTRACEMONITOR_LAYOUT_FOOT_H;
+  const double brand_w  = XTRACEMONITOR_LAYOUT_BRAND_W;
+
+  double panel_w = W - margin - panels_x;
+  if(panel_w < 1.0) panel_w = 1.0;
+
+  double foot_y      = H - margin;
+  double console_bot = foot_y - foot_h - gap;
+  double valor_y     = valor_top + valor_h;
+  double console_top = valor_y + gap;
+  double console_h   = console_bot - console_top;
+  if(console_h < 1.0) console_h = 1.0;
+
+  // Keep opstatus text baseline glued to the foot when the window height changes.
+  if((opstatus_foot_y > 0.0) && (foot_y != opstatus_foot_y) && (opstatus_last_baseline > 0.0))
+    {
+      opstatus_last_baseline += (foot_y - opstatus_foot_y);
+    }
+
+  opstatus_foot_y = foot_y;
+
+  // Tree: fixed width/xpos; height tracks window so top stays with valor and bottom with console.
+  double tree_h = console_bot - valor_top;
+  if(tree_h < 1.0) tree_h = 1.0;
+
+  if(treeelement && treeelement->GetBoundaryLine())
+    {
+      treeelement->GetBoundaryLine()->height = tree_h;
+      treeelement->GetBoundaryLine()->y      = console_bot;
+      treeelement->SetIntrinsicHeight(tree_h);
+      treeelement->SetYPosition(console_bot);
+    }
+
+  if(valorelement && valorelement->GetBoundaryLine())
+    {
+      valorelement->GetBoundaryLine()->width = panel_w;
+      valorelement->SetIntrinsicWidth(panel_w);
+    }
+
+  if(consoleelement && consoleelement->GetBoundaryLine())
+    {
+      // Root elements: boundaryline.y is the absolute bottom edge used if CalculePosition re-runs.
+      consoleelement->GetBoundaryLine()->width  = panel_w;
+      consoleelement->GetBoundaryLine()->height = console_h;
+      consoleelement->GetBoundaryLine()->y      = console_bot;
+      consoleelement->SetIntrinsicWidth(panel_w);
+      consoleelement->SetIntrinsicHeight(console_h);
+      consoleelement->SetYPosition(console_bot);
+    }
+
+  if(opstatus_form && opstatus_form->GetBoundaryLine())
+    {
+      opstatus_form->GetBoundaryLine()->width = panel_w;
+      opstatus_form->GetBoundaryLine()->y     = foot_y;
+      opstatus_form->SetIntrinsicWidth(panel_w);
+      opstatus_form->SetYPosition(foot_y);
+
+      UI_BOUNDARYLINE* vis = opstatus_form->GetVisibleRect();
+      if(vis)
+        {
+          vis->x     = opstatus_form->GetXPosition();
+          vis->y     = foot_y;
+          vis->width = panel_w;
+        }
+
+      if(opstatus_text && opstatus_text->GetBoundaryLine())
+        {
+          double text_w = panel_w - (XTRACEMONITOR_LAYOUT_OPSTATUS_TEXT_PAD_X * 2.0);
+          if(text_w < 1.0) text_w = 1.0;
+          opstatus_text->GetBoundaryLine()->width = text_w;
+          opstatus_text->SetIntrinsicWidth(text_w);
+        }
+
+      XDWORD visible = 1;
+      if(opstatus_expanded && (opstatus_count > 1)) visible = opstatus_count;
+      OpStatus_ApplyGeometry(visible);
+    }
+
+  if(brand_monitor && brand_monitor->GetBoundaryLine())
+    {
+      double brand_x = W - margin - brand_w;
+      brand_monitor->SetXPosition(brand_x);
+      brand_monitor->GetBoundaryLine()->x = brand_x;
+    }
+
+  layout_applied_w = (int)W;
+  layout_applied_h = (int)H;
+
+  // Canvas was recreated empty on UpdateSize: wipe background and dirty EVERY layout element so tree /
+  // toolbar / flex panels all repaint at the new geometry (partial dirty left stale design-size AABBs).
+  GEN_USERINTERFACE.Layout_PutBackground();
+  GEN_USERINTERFACE.Elements_SetToRedraw();
 
   return true;
 }
@@ -1014,8 +1177,26 @@ bool XTRACEMONITOR::Tree_Seed()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
-* @fn         bool XTRACEMONITOR::Tree_UpdateInput()
-* @brief      Drives tree expand/collapse and selection from the mouse button press transition.
+* @fn         bool XTRACEMONITOR::BrandMonitor_Resolve()
+* @brief      Resolves the layout brand_monitor image element pointer.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::BrandMonitor_Resolve()
+{
+  brand_monitor = (UI_ELEMENT_IMAGE*)GEN_USERINTERFACE.Element_Get(NL("brand_monitor"), UI_ELEMENT_TYPE_IMAGE);
+  if(!brand_monitor) return false;
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_Resolve()
+* @brief      Resolves the opstatus foot form and textbox, and seeds their geometry.
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the operation is successful; otherwise false.
@@ -1334,29 +1515,120 @@ bool XTRACEMONITOR::Tree_UpdateInput()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
-* @fn         bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
-* @brief      Processes the selected user interface element.
+* @fn         bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible)
+* @brief      Shows or hides a shared-slot toolbar control without fade transition (avoids Stop/Run ghosts).
 * @ingroup    UTILITIES
 *
-* @param[in]  element : User interface element to process.
+* @param[in]  element : Element to show or hide.
+* @param[in]  visible : True to show; false to hide and restore the slot background.
 *
 * @return     bool : true if the operation is successful; otherwise false.
 *
 *---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible)
+{
+  if(!element) return false;
+
+  // Already in the desired state: leave the slot alone (re-redrawing the visible sibling
+  // made the shared legend TextBackdrop re-capture the icon rim as a gray plate).
+  if(element->IsVisible() == visible) return true;
+
+  element->SetVisible(visible);
+
+  // Same idiom as UI_System card swap: drop TOSHOW/TOHIDE so alpha fade cannot leave the sibling icon.
+  element->SetTransitionStateShow(UI_ELEMENT_TRANSITION_STATE_SHOW_NONE);
+
+  if(!visible)
+    {
+      // MultiOption has no RestoreOnHide cache (only FORM/MENU do). Layout also has no background
+      // bitmap here, so EraseElementWithLayoutBackground is a no-op — paint the page fill over the
+      // shared slot AABB or alpha Stop/Run stack (green play over leftover red STOP).
+      UI_LAYOUT* layout = element->GetLayout();
+      if(layout && layout->GetSkin() && layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
+        {
+          UI_SKINCANVAS* skin   = (UI_SKINCANVAS*)layout->GetSkin();
+          GRP2DCANVAS*   canvas = skin->GetCanvas();
+
+          XVECTOR<UI_ELEMENT*>* compose = element->GetComposeElements();
+          if(compose)
+            {
+              for(XDWORD c=0; c<compose->GetSize(); c++)
+                {
+                  UI_ELEMENT* option = compose->Get(c);
+                  if(!option) continue;
+
+                  XVECTOR<UI_ELEMENT*>* kids = option->GetComposeElements();
+                  if(!kids) continue;
+
+                  for(XDWORD k=0; k<kids->GetSize(); k++)
+                    {
+                      UI_ELEMENT* kid = kids->Get(k);
+                      if(kid && kid->GetType() == UI_ELEMENT_TYPE_ANIMATION) skin->DiscardAnimBackdrop(kid);
+                    }
+                }
+            }
+
+          // Do NOT EraseElementRebuildArea here: its pad intersects runstop-lbl and deletes the
+          // legend TextBackdrop without restore (leaves the gray rim plate under "Parar").
+
+          if(canvas && element->GetBoundaryLine())
+            {
+              double x = element->GetXPosition();
+              double y = element->GetYPosition();
+              double w = element->GetBoundaryLine()->width;
+              double h = element->GetBoundaryLine()->height;
+              const double pad = (double)UI_SKINCANVAS_PRESELECT_MAXEDGE;
+              double left   = UI_BOUNDARYLINE_EdgeLeft  (x, w) - pad;
+              double right  = UI_BOUNDARYLINE_EdgeRight (x, w) + pad;
+              double top    = UI_BOUNDARYLINE_EdgeTop   (y, h) - pad;
+              double bottom = UI_BOUNDARYLINE_EdgeBottom(y, h) + pad;
+
+              // Cap wipe at the shared legend top so page fill never paints through the caption.
+              UI_ELEMENT* legend = GEN_USERINTERFACE.Element_Get(NL("runstop-lbl"), UI_ELEMENT_TYPE_FORM);
+              if(legend && legend->GetBoundaryLine())
+                {
+                  double legend_top = UI_BOUNDARYLINE_EdgeTop(legend->GetYPosition(), legend->GetBoundaryLine()->height);
+                  if(bottom > legend_top) bottom = legend_top;
+                }
+
+              if(bottom > top)
+                {
+                  // Match layout skin backgroundcolor="24,28,36".
+                  GRP2DCOLOR_RGBA8 fill(24, 28, 36, 255);
+                  GRP2DCOLOR_RGBA8 noline(0, 0, 0, 0);
+                  canvas->SetFillColor(&fill);
+                  canvas->SetLineColor(&noline);
+                  canvas->SetLineWidth(1.0f);
+                  canvas->Rectangle(left, bottom, right, top, true);
+                }
+            }
+        }
+
+      // Already wiped: do not leave MustReDraw (RestoreOnHide is a no-op for MULTIOPTION).
+      element->SetMustReDraw(false);
+      return true;
+    }
+
+  GEN_USERINTERFACE.Elements_SetToRedraw(element, true);
+
+  return true;
+}
+
+
 /**-------------------------------------------------------------------------------------------------------------------
 *
-* @fn         bool XTRACEMONITOR::Toolbar_SetRunning(bool running)
-* @brief      Sets the run/stop toolbar state (shared slot: one visible at a time).
+* @fn         bool XTRACEMONITOR::Toolbar_SetWorkingMode(bool on)
+* @brief      Sets workingmode and refreshes the shared Stop/Run toolbar slot (+ legend).
 * @ingroup    UTILITIES
 *
-* @param[in]  running : true → show Stop; false → show Run.
+* @param[in]  on : True = working (Stop); false = paused (Arrancar).
 *
 * @return     bool : true if the operation is successful; otherwise false.
 *
 *---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::Toolbar_SetRunning(bool running)
+bool XTRACEMONITOR::Toolbar_SetWorkingMode(bool on)
 {
-  monitor_running = running;
+  workingmode = on;
   return Toolbar_ApplyRunStopVisibility();
 }
 
@@ -1364,7 +1636,7 @@ bool XTRACEMONITOR::Toolbar_SetRunning(bool running)
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool XTRACEMONITOR::Toolbar_ApplyRunStopVisibility()
-* @brief      Shows Stop or Run (icon + legend) in the shared toolbar slot according to monitor_running.
+* @brief      Shows Stop or Run in the shared toolbar slot according to workingmode.
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the operation is successful; otherwise false.
@@ -1372,31 +1644,79 @@ bool XTRACEMONITOR::Toolbar_SetRunning(bool running)
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::Toolbar_ApplyRunStopVisibility()
 {
-  UI_ELEMENT* stop_btn = GEN_USERINTERFACE.Element_Get(NL("stop-btn"), UI_ELEMENT_TYPE_MULTIOPTION);
-  UI_ELEMENT* run_btn  = GEN_USERINTERFACE.Element_Get(NL("run-btn") , UI_ELEMENT_TYPE_MULTIOPTION);
-  UI_ELEMENT* stop_lbl = GEN_USERINTERFACE.Element_Get(NL("stop-lbl"), UI_ELEMENT_TYPE_FORM);
-  UI_ELEMENT* run_lbl  = GEN_USERINTERFACE.Element_Get(NL("run-lbl") , UI_ELEMENT_TYPE_FORM);
+  UI_ELEMENT*      stop_btn = GEN_USERINTERFACE.Element_Get(NL("stop-btn"), UI_ELEMENT_TYPE_MULTIOPTION);
+  UI_ELEMENT*      run_btn  = GEN_USERINTERFACE.Element_Get(NL("run-btn") , UI_ELEMENT_TYPE_MULTIOPTION);
+  UI_ELEMENT*      lbl      = GEN_USERINTERFACE.Element_Get(NL("runstop-lbl"), UI_ELEMENT_TYPE_FORM);
+  UI_ELEMENT_TEXT* txt      = (UI_ELEMENT_TEXT*)GEN_USERINTERFACE.Element_Get(NL("runstop-txt"), UI_ELEMENT_TYPE_TEXT);
 
-  // Shared slot: hide the outgoing pair first, then show the incoming pair.
-  if(monitor_running)
+  // Hide outgoing first (restore slot), then show incoming — no transition fade.
+  if(workingmode)
     {
-      if(run_btn)  run_btn->SetVisible(false);
-      if(run_lbl)  run_lbl->SetVisible(false);
-      if(stop_btn) stop_btn->SetVisible(true);
-      if(stop_lbl) stop_lbl->SetVisible(true);
+      Toolbar_SlotSetVisible(run_btn , false);
+      Toolbar_SlotSetVisible(stop_btn, true);
     }
    else
     {
-      if(stop_btn) stop_btn->SetVisible(false);
-      if(stop_lbl) stop_lbl->SetVisible(false);
-      if(run_btn)  run_btn->SetVisible(true);
-      if(run_lbl)  run_lbl->SetVisible(true);
+      Toolbar_SlotSetVisible(stop_btn, false);
+      Toolbar_SlotSetVisible(run_btn , true);
     }
 
-  if(stop_btn) GEN_USERINTERFACE.Elements_SetToRedraw(stop_btn, true);
-  if(stop_lbl) GEN_USERINTERFACE.Elements_SetToRedraw(stop_lbl, true);
-  if(run_btn)  GEN_USERINTERFACE.Elements_SetToRedraw(run_btn , true);
-  if(run_lbl)  GEN_USERINTERFACE.Elements_SetToRedraw(run_lbl , true);
+  // Shared legend stays visible (after both buttons in XML); only the caption swaps.
+  // Skip legend churn when the caption is already correct (Ini SetWorkingMode): re-Discard/
+  // wash/redraw was re-centering the glyph box and misaligning vs clear/delstatus/…
+  if(lbl) lbl->SetVisible(true);
+  if(txt && txt->GetText())
+    {
+      XCHAR* legend = workingmode ? TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_BTN_STOP)
+                                  : TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_BTN_RUN);
+
+      if(txt->GetText()->Compare(legend))
+        {
+          UI_LAYOUT* layout = txt->GetLayout();
+          if(!layout && lbl) layout = lbl->GetLayout();
+          UI_SKINCANVAS* skin = NULL;
+          if(layout && layout->GetSkin() && layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
+            skin = (UI_SKINCANVAS*)layout->GetSkin();
+
+          // Parar↔Arrancar: page-fill the legend form and drop TextBackdrop so captions do not
+          // stack. Do not CalculePosition / remasure — that shifts Y vs clear/delstatus.
+          if(skin && lbl && lbl->GetBoundaryLine())
+            {
+              GRP2DCANVAS* canvas = skin->GetCanvas();
+              if(canvas)
+                {
+                  double lx = lbl->GetXPosition();
+                  double ly = lbl->GetYPosition();
+                  double lw = lbl->GetBoundaryLine()->width;
+                  double lh = lbl->GetBoundaryLine()->height;
+                  double left   = UI_BOUNDARYLINE_EdgeLeft  (lx, lw);
+                  double right  = UI_BOUNDARYLINE_EdgeRight (lx, lw);
+                  double top    = UI_BOUNDARYLINE_EdgeTop   (ly, lh);
+                  double bottom = UI_BOUNDARYLINE_EdgeBottom(ly, lh);
+
+                  GRP2DCOLOR_RGBA8 fill(24, 28, 36, 255);
+                  GRP2DCOLOR_RGBA8 noline(0, 0, 0, 0);
+                  canvas->SetFillColor(&fill);
+                  canvas->SetLineColor(&noline);
+                  canvas->SetLineWidth(1.0f);
+                  canvas->Rectangle(left, bottom, right, top, true);
+                }
+
+              skin->DiscardTextBackdrop(txt);
+            }
+
+          txt->GetText()->Set(legend);
+          if(txt->GetMaskText())
+            {
+              if(workingmode) txt->GetMaskText()->Set(NL("#[BTN_STOP]"));
+                         else txt->GetMaskText()->Set(NL("#[BTN_RUN]"));
+            }
+
+          txt->SetMustReDraw(true);
+          GEN_USERINTERFACE.Elements_SetToRedraw(txt, true);
+          if(lbl) GEN_USERINTERFACE.Elements_SetToRedraw(lbl, true);
+        }
+    }
 
   // Drop hover/press left on the button that just hid (shared toolbar slot).
   GEN_USERINTERFACE.ResetPreselect();
@@ -1447,15 +1767,15 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
 
   if(!name->Compare(NL("stop-btn"), true))
     {
-      Toolbar_SetRunning(false);
-      OpStatus_Log(NL("Stop: monitor paused."));
+      Toolbar_SetWorkingMode(false);
+      OpStatus_Log(NL("workingmode off (paused)."));
       return true;
     }
 
   if(!name->Compare(NL("run-btn"), true))
     {
-      Toolbar_SetRunning(true);
-      OpStatus_Log(NL("Run: monitor running."));
+      Toolbar_SetWorkingMode(true);
+      OpStatus_Log(NL("workingmode on."));
       return true;
     }
 
@@ -1602,7 +1922,7 @@ bool XTRACEMONITOR::UserInterface_CFGChromes(GRPSCREEN* screen)
 
   #endif
 
-  cfgchromes.SetResizeActive(false);
+  cfgchromes.SetResizeActive(true);
 
   screen->SetCFGChromes(cfgchromes);
 
@@ -1673,6 +1993,15 @@ void XTRACEMONITOR::HandleEvent_Graphics(GRPXEVENT* event)
                                                       Ini_Canvas(screen);
                                                     }
                                                     break;
+
+      case GRPXEVENT_TYPE_SCREEN_CHANGESIZE       : { GRPSCREEN* screen = event->GetScreen();
+                                                      if(!screen) break;
+
+                                                      Layout_ApplyFlexibleResize();
+                                                      GEN_USERINTERFACE.Elements_RebuildDrawAreas();
+                                                      GEN_USERINTERFACE.Update();
+                                                    }
+                                                    break;
     }
 }
 
@@ -1736,11 +2065,14 @@ void XTRACEMONITOR::Clean()
   opstatus_foot_y        = 0.0f;
   opstatus_last_baseline = 0.0f;
   opstatus_line_h        = 0.0f;
+  brand_monitor          = NULL;
+  layout_applied_w       = 0;
+  layout_applied_h       = 0;
   opstatus_expanded      = false;
   opstatus_prevpressed   = false;
   opstatus_click_armed   = false;
   opstatus_click_timer   = NULL;
-  monitor_running        = true;
+  workingmode            = true;
   exitapp                = false;
 
   for(int c=0; c<XTRACEMONITOR_BUTTON_MAX; c++)

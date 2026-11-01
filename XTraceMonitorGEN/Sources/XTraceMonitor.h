@@ -81,10 +81,19 @@ enum XTRACEMONITOR_BUTTONS
 
 #define APPLICATION_YEAROFCREATION                2026
 
-#define APPLICATION_GUI_XTRACEMONITOR_VIEWPORT_ID NL("xtracemonitor_viewport")
+#define XTRACEMONITOR_WINDOW_WIDTH                1200   // minimum client width (also design size)
+#define XTRACEMONITOR_WINDOW_HEIGHT               738    // minimum client height (also design size)
 
-#define XTRACEMONITOR_WINDOW_WIDTH                1220
-#define XTRACEMONITOR_WINDOW_HEIGHT               832
+// Flexible resize layout (only these grow/shrink; everything else stays fixed at design coords).
+#define XTRACEMONITOR_LAYOUT_MARGIN               6.0
+#define XTRACEMONITOR_LAYOUT_GAP                  6.0
+#define XTRACEMONITOR_LAYOUT_PANELS_X             222.0  // tree 6+210 + gap 6
+#define XTRACEMONITOR_LAYOUT_VALOR_TOP            146.0
+#define XTRACEMONITOR_LAYOUT_VALOR_H              184.0
+#define XTRACEMONITOR_LAYOUT_FOOT_H               22.0
+#define XTRACEMONITOR_LAYOUT_BRAND_W              107.0
+#define XTRACEMONITOR_LAYOUT_BRAND_H              107.0
+#define XTRACEMONITOR_LAYOUT_OPSTATUS_TEXT_PAD_X  8.0
 
 #define XTRACEMONITOR_OPSTATUS_MAXLINES           20
 #define XTRACEMONITOR_OPSTATUS_LINEHEIGHT         18.0f
@@ -106,6 +115,7 @@ class UI_ELEMENT_FORM;
 class UI_ELEMENT_CONSOLE;
 class UI_ELEMENT_PROPERTYLIST;
 class UI_ELEMENT_TREE;
+class UI_ELEMENT_IMAGE;
 class GRPXEVENT;
 class XTRACEMONITOR_CFG;
 
@@ -132,6 +142,8 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
 
     bool                            DrawFrame                               ();
 
+    bool                            Layout_ApplyFlexibleResize              ();
+
     bool                            Console_Resolve                         ();
     bool                            Console_SeedStartupLines                ();
 
@@ -142,6 +154,8 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            Tree_Resolve                            ();
     bool                            Tree_Seed                               ();
     bool                            Tree_UpdateInput                        ();
+
+    bool                            BrandMonitor_Resolve                    ();
 
     bool                            OpStatus_Resolve                        ();
     bool                            OpStatus_Log                            (XCHAR* message);
@@ -154,8 +168,9 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            OpStatus_OnClick                        ();
     bool                            OpStatus_HitTest                        (int screen_x, int screen_y);
 
-    bool                            Toolbar_SetRunning                      (bool running);
+    bool                            Toolbar_SetWorkingMode                  (bool on);
     bool                            Toolbar_ApplyRunStopVisibility          ();
+    bool                            Toolbar_SlotSetVisible                  (UI_ELEMENT* element, bool visible);
 
     bool                            UserInterface_ElementSelected           (UI_ELEMENT* element);
     bool                            UserInterface_ChangeLiteralText         (UI_ELEMENT_TEXT* element_text, XSTRING* maskvalue, XSTRING* maskresult);
@@ -191,7 +206,12 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            opstatus_click_armed;
     XTIMER*                         opstatus_click_timer;
 
-    bool                            monitor_running;
+    UI_ELEMENT_IMAGE*               brand_monitor;
+
+    int                             layout_applied_w;
+    int                             layout_applied_h;
+
+    bool                            workingmode;   // true = working (Stop visible); false = paused (Run visible)
     bool                            exitapp;
 };
 
