@@ -597,7 +597,7 @@ bool XTRACEMONITOR::Ini_Canvas(GRPSCREEN* screen)
       GRPVIEWPORT* viewport = screen->GetViewport(GRPVIEWPORT_ID_MAIN);
       if(viewport)
         {
-          // Min = design size (1200×738). Max allows growth; chrome buttons track via UpdateCFGChromesButtonsPosition.
+          // Min = design size (1200×699). Max allows growth; chrome buttons track via UpdateCFGChromesButtonsPosition.
           viewport->SetMinSize((float)XTRACEMONITOR_WINDOW_WIDTH, (float)XTRACEMONITOR_WINDOW_HEIGHT);
           viewport->SetMaxSize(3840.0f, 2160.0f);
         }
@@ -725,10 +725,11 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       return false;
     }
 
-  // Default: workingmode on → Stop control visible (XML already shows stop, hides run).
-  // Only set the flag here — calling Apply at Ini re-discarded the legend TextBackdrop and
-  // left a gray plate that also shifted the Parar baseline vs the other toolbar labels.
+  // Default: workingmode on → Stop visible / Run hidden. Apply once after first Layout_PutBackground
+  // so ConvertToBoolean-fixed XML visibility is enforced without painting into an empty canvas.
+  // (Calling Apply before any compose used to discard legend TextBackdrop into a gray plate.)
   workingmode = true;
+  Toolbar_ApplyRunStopVisibility();
 
   OpStatus_Log(NL("XTraceMonitor ready."));
 
@@ -793,6 +794,10 @@ bool XTRACEMONITOR::DrawFrame()
   GEN_USERINTERFACE.Elements_RebuildDrawAreas();
   GEN_USERINTERFACE.Update();
 
+  // Chrome paints after content and its right-side button rebuild can wipe the brand top.
+  // Re-blit after chrome (same-frame) so a larger brand can sit flush under the caption.
+  BrandMonitor_RepaintAfterChrome();
+
   return true;
 }
 
@@ -827,6 +832,8 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize()
   const double valor_h  = XTRACEMONITOR_LAYOUT_VALOR_H;
   const double foot_h   = XTRACEMONITOR_LAYOUT_FOOT_H;
   const double brand_w  = XTRACEMONITOR_LAYOUT_BRAND_W;
+  const double brand_h  = XTRACEMONITOR_LAYOUT_BRAND_H;
+  const double brand_gap_valor = XTRACEMONITOR_LAYOUT_BRAND_GAP_VALOR;
 
   double panel_w = W - margin - panels_x;
   if(panel_w < 1.0) panel_w = 1.0;
@@ -860,8 +867,12 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize()
 
   if(valorelement && valorelement->GetBoundaryLine())
     {
-      valorelement->GetBoundaryLine()->width = panel_w;
+      valorelement->GetBoundaryLine()->width  = panel_w;
+      valorelement->GetBoundaryLine()->height = valor_h;
+      valorelement->GetBoundaryLine()->y      = valor_y;
       valorelement->SetIntrinsicWidth(panel_w);
+      valorelement->SetIntrinsicHeight(valor_h);
+      valorelement->SetYPosition(valor_y);
     }
 
   if(consoleelement && consoleelement->GetBoundaryLine())
@@ -906,8 +917,16 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize()
   if(brand_monitor && brand_monitor->GetBoundaryLine())
     {
       double brand_x = W - margin - brand_w;
+      double brand_y = valor_top - brand_gap_valor;   // bottom edge; keeps 2px air above valor
+      if(brand_y < brand_h) brand_y = brand_h;
       brand_monitor->SetXPosition(brand_x);
-      brand_monitor->GetBoundaryLine()->x = brand_x;
+      brand_monitor->SetYPosition(brand_y);
+      brand_monitor->GetBoundaryLine()->x      = brand_x;
+      brand_monitor->GetBoundaryLine()->y      = brand_y;
+      brand_monitor->GetBoundaryLine()->width  = brand_w;
+      brand_monitor->GetBoundaryLine()->height = brand_h;
+      brand_monitor->SetIntrinsicWidth(brand_w);
+      brand_monitor->SetIntrinsicHeight(brand_h);
     }
 
   layout_applied_w = (int)W;
@@ -1190,6 +1209,68 @@ bool XTRACEMONITOR::BrandMonitor_Resolve()
   if(!brand_monitor) return false;
 
   return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::BrandMonitor_RepaintAfterChrome()
+* @brief      Re-blits brand_monitor after chrome so caption-button rebuild cannot crop its top.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the brand was repainted; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::BrandMonitor_RepaintAfterChrome()
+{
+  if(!brand_monitor || !brand_monitor->IsVisible() || !brand_monitor->GetBoundaryLine()) return false;
+
+  UI_LAYOUT* layout = brand_monitor->GetLayout();
+  if(!layout || !layout->GetSkin()) return false;
+  if(layout->GetSkin()->GetDrawMode() != UI_SKIN_DRAWMODE_CANVAS) return false;
+
+  UI_SKINCANVAS* skin_canvas = (UI_SKINCANVAS*)layout->GetSkin();
+  GRP2DCANVAS*   canvas      = skin_canvas->GetCanvas();
+  if(!canvas) return false;
+
+  // Opaque page wipe under the brand AABB so repeated alpha blits do not compound.
+  // Never paint into the valor band (top = VALOR_TOP): that was erasing the propertylist header.
+  double x = brand_monitor->GetXPosition();
+  double y = brand_monitor->GetYPosition();
+  double w = brand_monitor->GetBoundaryLine()->width;
+  double h = brand_monitor->GetBoundaryLine()->height;
+  if((w < 1.0) || (h < 1.0)) return false;
+
+  double left   = UI_BOUNDARYLINE_EdgeLeft(x, w);
+  double top    = UI_BOUNDARYLINE_EdgeTop (y, h);
+  double bottom = top + h;
+  const double valor_top = XTRACEMONITOR_LAYOUT_VALOR_TOP;
+  if(bottom > valor_top) bottom = valor_top;
+  if(bottom <= top) return false;
+
+  XBYTE pr = 24, pg = 28, pb = 36;
+  if(layout->GetBackground() && layout->GetBackground()->GetColor() &&
+     layout->GetBackground()->GetColor()->IsValid())
+    {
+      UI_COLOR* page = layout->GetBackground()->GetColor();
+      pr = (XBYTE)page->GetRed();
+      pg = (XBYTE)page->GetGreen();
+      pb = (XBYTE)page->GetBlue();
+    }
+
+  GRP2DCOLOR_RGBA8 pagecol(pr, pg, pb, 255);
+  int wi = (int)w; if(wi < 1) wi = 1;
+  int hi = (int)(bottom - top); if(hi < 1) hi = 1;
+  for(int py = 0; py < hi; py++)
+    {
+      for(int px = 0; px < wi; px++)
+        {
+          canvas->PutPixel(left + (double)px, top + (double)py, (const GRP2DCOLOR*)&pagecol);
+        }
+    }
+
+  brand_monitor->SetMustReDraw(true);
+  return skin_canvas->Draw(brand_monitor);
 }
 
 
@@ -1564,6 +1645,7 @@ bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible)
                     {
                       UI_ELEMENT* kid = kids->Get(k);
                       if(kid && kid->GetType() == UI_ELEMENT_TYPE_ANIMATION) skin->DiscardAnimBackdrop(kid);
+                      if(kid && kid->GetType() == UI_ELEMENT_TYPE_TEXT)      skin->DiscardTextBackdrop(kid);
                     }
                 }
             }
@@ -1678,32 +1760,9 @@ bool XTRACEMONITOR::Toolbar_ApplyRunStopVisibility()
           if(layout && layout->GetSkin() && layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
             skin = (UI_SKINCANVAS*)layout->GetSkin();
 
-          // Parar↔Arrancar: page-fill the legend form and drop TextBackdrop so captions do not
-          // stack. Do not CalculePosition / remasure — that shifts Y vs clear/delstatus.
-          if(skin && lbl && lbl->GetBoundaryLine())
-            {
-              GRP2DCANVAS* canvas = skin->GetCanvas();
-              if(canvas)
-                {
-                  double lx = lbl->GetXPosition();
-                  double ly = lbl->GetYPosition();
-                  double lw = lbl->GetBoundaryLine()->width;
-                  double lh = lbl->GetBoundaryLine()->height;
-                  double left   = UI_BOUNDARYLINE_EdgeLeft  (lx, lw);
-                  double right  = UI_BOUNDARYLINE_EdgeRight (lx, lw);
-                  double top    = UI_BOUNDARYLINE_EdgeTop   (ly, lh);
-                  double bottom = UI_BOUNDARYLINE_EdgeBottom(ly, lh);
-
-                  GRP2DCOLOR_RGBA8 fill(24, 28, 36, 255);
-                  GRP2DCOLOR_RGBA8 noline(0, 0, 0, 0);
-                  canvas->SetFillColor(&fill);
-                  canvas->SetLineColor(&noline);
-                  canvas->SetLineWidth(1.0f);
-                  canvas->Rectangle(left, bottom, right, top, true);
-                }
-
-              skin->DiscardTextBackdrop(txt);
-            }
+          // Parar↔Arrancar: GEN PrepareTextContentChange restores TextBackdrop (+ father form plate)
+          // before the string swap so glyphs never stack. Do not CalculePosition / remasure.
+          if(skin) skin->PrepareTextContentChange(txt);
 
           txt->GetText()->Set(legend);
           if(txt->GetMaskText())
@@ -1749,6 +1808,27 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
         switch(chrome_el->GetChromeRole())
           {
             case UI_ELEMENT_CHROMEROLE_MINIMIZE : if(GetMainScreen()) GetMainScreen()->Minimize(true);
+                                                  return true;
+
+            case UI_ELEMENT_CHROMEROLE_LANGUAGE :
+                                                  #ifdef XTRANSLATION_ACTIVE
+                                                  if(GEN_XTRANSLATION.IsInitialized() && GEN_XTRANSLATION.SetActual_Next())
+                                                    {
+                                                      GEN_USERINTERFACE.Layouts_ApplyTranslations();
+                                                      #ifdef APPFLOW_CFG_GENERAL_ACTIVE
+                                                      APPFLOW_CFG.Language_PersistActual();
+                                                      #endif
+                                                    }
+                                                  #endif
+                                                  return true;
+
+            case UI_ELEMENT_CHROMEROLE_MAXIMIZE : if(GetMainScreen())
+                                                    {
+                                                      // Toggle grow ↔ restore (same contract as UI_System / WindowChromes).
+                                                      if(GetMainScreen()->IsClientSizeAtMaximum())
+                                                            GetMainScreen()->Maximize(false);
+                                                       else GetMainScreen()->Maximize(true);
+                                                    }
                                                   return true;
 
             case UI_ELEMENT_CHROMEROLE_CLOSE    : SetExitType(APPFLOWBASE_EXITTYPE_BY_USER);
@@ -1997,9 +2077,12 @@ void XTRACEMONITOR::HandleEvent_Graphics(GRPXEVENT* event)
       case GRPXEVENT_TYPE_SCREEN_CHANGESIZE       : { GRPSCREEN* screen = event->GetScreen();
                                                       if(!screen) break;
 
+                                                      // Geometry only. UpdateSize posts CHANGESIZE AFTER wiping
+                                                      // the canvas but BEFORE Layout_PutBackground + compose —
+                                                      // a full Update here captured chrome FormBackdrop/AnimBackdrop
+                                                      // on pure black (app icon black plate after maximize/restore).
+                                                      // UpdateSize finishes with PutBackground + SetToRedraw + Update.
                                                       Layout_ApplyFlexibleResize();
-                                                      GEN_USERINTERFACE.Elements_RebuildDrawAreas();
-                                                      GEN_USERINTERFACE.Update();
                                                     }
                                                     break;
     }

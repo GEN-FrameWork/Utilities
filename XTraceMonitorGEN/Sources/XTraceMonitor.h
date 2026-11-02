@@ -82,17 +82,20 @@ enum XTRACEMONITOR_BUTTONS
 #define APPLICATION_YEAROFCREATION                2026
 
 #define XTRACEMONITOR_WINDOW_WIDTH                1200   // minimum client width (also design size)
-#define XTRACEMONITOR_WINDOW_HEIGHT               738    // minimum client height (also design size)
+#define XTRACEMONITOR_WINDOW_HEIGHT               699    // minimum client height (also design size)
 
 // Flexible resize layout (only these grow/shrink; everything else stays fixed at design coords).
 #define XTRACEMONITOR_LAYOUT_MARGIN               6.0
 #define XTRACEMONITOR_LAYOUT_GAP                  6.0
 #define XTRACEMONITOR_LAYOUT_PANELS_X             222.0  // tree 6+210 + gap 6
-#define XTRACEMONITOR_LAYOUT_VALOR_TOP            146.0
-#define XTRACEMONITOR_LAYOUT_VALOR_H              184.0
+#define XTRACEMONITOR_LAYOUT_CAPTION_H            46.0
+#define XTRACEMONITOR_LAYOUT_CHROME_GAP           2.0    // air under custom caption before content
+#define XTRACEMONITOR_LAYOUT_VALOR_TOP            133.0  // packed under toolbar legends
+#define XTRACEMONITOR_LAYOUT_VALOR_H              158.0  // header 26 + 6 rows×22 (exact 6 lines)
 #define XTRACEMONITOR_LAYOUT_FOOT_H               22.0
-#define XTRACEMONITOR_LAYOUT_BRAND_W              107.0
-#define XTRACEMONITOR_LAYOUT_BRAND_H              107.0
+#define XTRACEMONITOR_LAYOUT_BRAND_W              82.0
+#define XTRACEMONITOR_LAYOUT_BRAND_H              82.0
+#define XTRACEMONITOR_LAYOUT_BRAND_GAP_VALOR      3.0    // brand bottom above valor top
 #define XTRACEMONITOR_LAYOUT_OPSTATUS_TEXT_PAD_X  8.0
 
 #define XTRACEMONITOR_OPSTATUS_MAXLINES           20
@@ -156,6 +159,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            Tree_UpdateInput                        ();
 
     bool                            BrandMonitor_Resolve                    ();
+    bool                            BrandMonitor_RepaintAfterChrome         ();
 
     bool                            OpStatus_Resolve                        ();
     bool                            OpStatus_Log                            (XCHAR* message);
