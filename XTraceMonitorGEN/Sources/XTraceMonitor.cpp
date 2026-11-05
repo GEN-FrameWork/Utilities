@@ -60,6 +60,8 @@
 #include "UI_XEvent.h"
 #include "UI_Manager.h"
 #include "UI_Layout.h"
+#include "UI_Background.h"
+#include "UI_Color.h"
 #include "UI_Element.h"
 #include "UI_Element_Text.h"
 #include "UI_Element_TextBox.h"
@@ -68,6 +70,7 @@
 #include "UI_Element_PropertyList.h"
 #include "UI_Element_Tree.h"
 #include "UI_Element_Image.h"
+#include "UI_Element_Option.h"
 #include "UI_Skin.h"
 #include "UI_SkinCanvas.h"
 #include "UI_BoundaryLine.h"
@@ -622,12 +625,17 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
 {
   if(!on)
     {
-      consoleelement  = NULL;
-      valorelement    = NULL;
-      treeelement     = NULL;
-      opstatus_form   = NULL;
-      opstatus_text   = NULL;
-      brand_monitor   = NULL;
+      consoleelement            = NULL;
+      valorelement              = NULL;
+      treeelement               = NULL;
+      opstatus_form             = NULL;
+      opstatus_text             = NULL;
+      brand_monitor             = NULL;
+      config_modal              = NULL;
+      config_modal_title        = NULL;
+      config_modal_btn_accept   = NULL;
+      config_modal_btn_cancel   = NULL;
+      config_modal_btn_default  = NULL;
 
       if(opstatus_click_timer)
         {
@@ -721,6 +729,11 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
     }
 
   if(!OpStatus_Resolve())
+    {
+      return false;
+    }
+
+  if(!ConfigModal_Resolve())
     {
       return false;
     }
@@ -819,11 +832,12 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize()
   GRPSCREEN* screen = GetMainScreen();
   if(!screen) return false;
 
+  // Use the LIVE canvas size only. Clamping W/H up to the design minimum while GetWidth() was still
+  // a few pixels short (startup client/canvas desync) parked brand_monitor and right-edge panels past
+  // the present edge. Window min size is enforced by the viewport / WM_GETMINMAXINFO path instead.
   double W = (double)screen->GetWidth();
   double H = (double)screen->GetHeight();
-
-  if(W < (double)XTRACEMONITOR_WINDOW_WIDTH)  W = (double)XTRACEMONITOR_WINDOW_WIDTH;
-  if(H < (double)XTRACEMONITOR_WINDOW_HEIGHT) H = (double)XTRACEMONITOR_WINDOW_HEIGHT;
+  if((W < 1.0) || (H < 1.0)) return false;
 
   const double margin   = XTRACEMONITOR_LAYOUT_MARGIN;
   const double gap      = XTRACEMONITOR_LAYOUT_GAP;
@@ -931,6 +945,11 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize()
 
   layout_applied_w = (int)W;
   layout_applied_h = (int)H;
+
+  if(ConfigModal_IsVisible())
+    {
+      ConfigModal_ApplyGeometry();
+    }
 
   // Canvas was recreated empty on UpdateSize: wipe background and dirty EVERY layout element so tree /
   // toolbar / flex panels all repaint at the new geometry (partial dirty left stale design-size AABBs).
@@ -1699,6 +1718,268 @@ bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool XTRACEMONITOR::ConfigModal_Resolve()
+* @brief      Resolves config modal form and its title/buttons from the loaded layout.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::ConfigModal_Resolve()
+{
+  config_modal = (UI_ELEMENT_FORM*)GEN_USERINTERFACE.Element_Get(NL("config_modal"), UI_ELEMENT_TYPE_FORM);
+  if(!config_modal) return false;
+
+  config_modal_title       = GEN_USERINTERFACE.Element_Get(NL("config_modal_title")      , UI_ELEMENT_TYPE_TEXT);
+  config_modal_btn_accept  = GEN_USERINTERFACE.Element_Get(NL("config_modal_btn_accept") , UI_ELEMENT_TYPE_MULTIOPTION);
+  config_modal_btn_cancel  = GEN_USERINTERFACE.Element_Get(NL("config_modal_btn_cancel") , UI_ELEMENT_TYPE_MULTIOPTION);
+  config_modal_btn_default = GEN_USERINTERFACE.Element_Get(NL("config_modal_btn_default"), UI_ELEMENT_TYPE_MULTIOPTION);
+
+  if(!config_modal_title || !config_modal_btn_accept || !config_modal_btn_cancel || !config_modal_btn_default)
+    {
+      return false;
+    }
+
+  // Secondary layout inherits the skin page fill; keep it invalid so Layout_PutBackground
+  // never canvas-Clears through this layout (would erase the main form under the dialog).
+  UI_LAYOUT* modal_layout = GEN_USERINTERFACE.Layouts_Get(NL("config_modal"));
+  if(modal_layout && modal_layout->GetBackground() && modal_layout->GetBackground()->GetColor())
+    {
+      modal_layout->GetBackground()->GetColor()->SetValid(false);
+    }
+
+  config_modal->SetVisible(false);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::ConfigModal_ApplyGeometry()
+* @brief      Keeps the config modal at its fixed design size (75% of min client) and centers it.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::ConfigModal_ApplyGeometry()
+{
+  if(!config_modal) return false;
+
+  GRPSCREEN* screen = GetMainScreen();
+  if(!screen) return false;
+
+  double screen_w = (double)screen->GetWidth();
+  double screen_h = (double)screen->GetHeight();
+  if((screen_w < 1.0) || (screen_h < 1.0)) return false;
+
+  // Fixed box: same as at minimum window size (1200×699 → 900×524). Does not grow with resize.
+  const double modal_w = XTRACEMONITOR_CONFIGMODAL_W;
+  const double modal_h = XTRACEMONITOR_CONFIGMODAL_H;
+
+  // GEN canvas is Y-down: element ypos is the BOTTOM edge (EdgeTop = y - height).
+  // Centered form → bottom edge at (screen_h + modal_h) / 2.
+  double modal_x = (screen_w - modal_w) * 0.5;
+  double modal_y = (screen_h + modal_h) * 0.5;
+
+  config_modal->SetXPosition(modal_x);
+  config_modal->SetYPosition(modal_y);
+  config_modal->GetBoundaryLine()->x      = modal_x;
+  config_modal->GetBoundaryLine()->y      = modal_y;
+  config_modal->GetBoundaryLine()->width  = modal_w;
+  config_modal->GetBoundaryLine()->height = modal_h;
+  config_modal->SetIntrinsicWidth(modal_w);
+  config_modal->SetIntrinsicHeight(modal_h);
+
+  UI_BOUNDARYLINE* vis = config_modal->GetVisibleRect();
+  if(vis)
+    {
+      vis->x      = modal_x;
+      vis->y      = modal_y;
+      vis->width  = modal_w;
+      vis->height = modal_h;
+    }
+
+  const double btn_w = XTRACEMONITOR_CONFIGMODAL_BTN_W;
+  const double btn_h = XTRACEMONITOR_CONFIGMODAL_BTN_H;
+  const double gap   = XTRACEMONITOR_CONFIGMODAL_BTN_GAP;
+  const double row_w = (btn_w * 3.0) + (gap * 2.0);
+  // Horizontal only: center the 3-button row in the modal (keep current gap). Vertical stays bottom-padded.
+  const double btn_x = (modal_w - row_w) * 0.5;
+  // Local y = gap from form bottom edge to the button's bottom edge (~16px).
+  const double btn_local_y = XTRACEMONITOR_CONFIGMODAL_BTN_BOTTOM_PAD;
+
+  // Children: CalculePosition uses abs_x = father_x + local_x, abs_y = father_y - local_y.
+  auto place_child = [](UI_ELEMENT* el, double local_x, double local_y, double w, double h)
+    {
+      if(!el || !el->GetBoundaryLine()) return;
+      el->GetBoundaryLine()->x      = local_x;
+      el->GetBoundaryLine()->y      = local_y;
+      el->GetBoundaryLine()->width  = w;
+      el->GetBoundaryLine()->height = h;
+      el->SetIntrinsicWidth(w);
+      el->SetIntrinsicHeight(h);
+
+      UI_ELEMENT* father = el->GetFather();
+      double      abs_x  = local_x;
+      double      abs_y  = local_y;
+      if(father)
+        {
+          abs_x = father->GetXPosition() + local_x;
+          abs_y = father->GetYPosition() - local_y;
+        }
+      el->SetXPosition(abs_x);
+      el->SetYPosition(abs_y);
+    };
+
+  if(config_modal_title)
+    {
+      const double title_pad = XTRACEMONITOR_CONFIGMODAL_TITLE_PAD;
+      const double title_h   = XTRACEMONITOR_CONFIGMODAL_TITLE_H;
+      // Keep the title box fully inside: top pad + title height from the form top.
+      const double title_local_y = modal_h - title_pad - title_h;
+      place_child(config_modal_title, title_pad, title_local_y, modal_w - (title_pad * 2.0), title_h);
+    }
+
+  place_child(config_modal_btn_default, btn_x,                       btn_local_y, btn_w, btn_h);
+  place_child(config_modal_btn_accept , btn_x + btn_w + gap,         btn_local_y, btn_w, btn_h);
+  place_child(config_modal_btn_cancel , btn_x + (btn_w + gap) * 2.0, btn_local_y, btn_w, btn_h);
+
+  // Re-layout each multioption subtree (button → animation/text → image) against the new
+  // absolute box. Without this, only the multioption AABB moves and the PNG stays at load-time
+  // coords — PreDraw clips it so only a fragment of the button art is visible.
+  // Safe on MULTIOPTION (no AddPositionSubElements); do NOT run AllElements on the modal form.
+  UI_LAYOUT* layout = GEN_USERINTERFACE.Element_GetLayout(config_modal);
+  UI_SKIN*   skin   = layout ? layout->GetSkin() : NULL;
+  if(skin)
+    {
+      if(config_modal_btn_default) skin->CalculeBoundaryLine_AllElements(config_modal_btn_default, true);
+      if(config_modal_btn_accept)  skin->CalculeBoundaryLine_AllElements(config_modal_btn_accept , true);
+      if(config_modal_btn_cancel)  skin->CalculeBoundaryLine_AllElements(config_modal_btn_cancel , true);
+    }
+
+  // Caption vs button image: true geometric center (V+H). If that would collide with the
+  // baked-in icon, nudge right so left edge stays at icon_right + gap. Right pad keeps the
+  // glyph inside the pill cap. Optical Y nudge compensates vector-font metrics (AABB center
+  // reads slightly low against the glossy art).
+  auto center_btn_captions = [](UI_ELEMENT* multi)
+    {
+      if(!multi || !multi->GetComposeElements()) return;
+
+      const double btn_w      = XTRACEMONITOR_CONFIGMODAL_BTN_W;
+      const double btn_h      = XTRACEMONITOR_CONFIGMODAL_BTN_H;
+      const double icon_clear = XTRACEMONITOR_CONFIGMODAL_BTN_ICON_RIGHT + XTRACEMONITOR_CONFIGMODAL_BTN_ICON_GAP;
+      const double pad_r      = XTRACEMONITOR_CONFIGMODAL_BTN_TEXT_PAD_R;
+      const double optical_y  = 2.0;   // small lift only: +5 looked a bit high vs the pill/icon center
+
+      for(XDWORD c=0; c<multi->GetComposeElements()->GetSize(); c++)
+        {
+          UI_ELEMENT* face = multi->GetComposeElements()->Get(c);
+          if(!face || (face->GetType() != UI_ELEMENT_TYPE_BUTTON && face->GetType() != UI_ELEMENT_TYPE_OPTION)) continue;
+
+          UI_ELEMENT_OPTION* opt  = (UI_ELEMENT_OPTION*)face;
+          UI_ELEMENT_TEXT*   text = opt->Get_UIText();
+          if(!text || !text->GetBoundaryLine()) continue;
+
+          double tw = text->GetBoundaryLine()->width;
+          double th = text->GetBoundaryLine()->height;
+          if(tw < 1.0) tw = 1.0;
+          if(th < 1.0) th = 1.0;
+
+          double local_x = (btn_w - tw) * 0.5;
+          if(local_x < icon_clear) local_x = icon_clear;
+          if((local_x + tw) > (btn_w - pad_r)) local_x = btn_w - pad_r - tw;
+          if(local_x < icon_clear) local_x = icon_clear;
+
+          // GEN Y-down: element ypos is the BOTTOM edge. Larger local_y → higher on screen.
+          double local_y = (btn_h - th) * 0.5 + optical_y;
+
+          text->SetXPosition(face->GetXPosition() + local_x);
+          text->SetYPosition(face->GetYPosition() - local_y);
+          text->GetBoundaryLine()->x = local_x;
+          text->GetBoundaryLine()->y = local_y;
+          text->SetMustReDraw(true);
+        }
+    };
+
+  center_btn_captions(config_modal_btn_default);
+  center_btn_captions(config_modal_btn_accept);
+  center_btn_captions(config_modal_btn_cancel);
+
+  config_modal->SetMustReDraw(true);
+  if(config_modal_title)       config_modal_title->SetMustReDraw(true);
+  if(config_modal_btn_accept)  config_modal_btn_accept->SetMustReDraw(true);
+  if(config_modal_btn_cancel)  config_modal_btn_cancel->SetMustReDraw(true);
+  if(config_modal_btn_default) config_modal_btn_default->SetMustReDraw(true);
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::ConfigModal_IsVisible()
+* @brief      True when the config modal form is currently shown.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if visible; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::ConfigModal_IsVisible()
+{
+  return (config_modal && config_modal->IsVisible());
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::ConfigModal_Show(bool show)
+* @brief      Shows or hides the config modal as a GEN modal layer (blocks content underneath).
+* @ingroup    UTILITIES
+*
+* @param[in]  show : true to open; false to close.
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::ConfigModal_Show(bool show)
+{
+  if(!config_modal) return false;
+
+  if(show)
+    {
+      if(!ConfigModal_ApplyGeometry()) return false;
+
+      GEN_USERINTERFACE.SetPreselectElement();
+      config_modal->SetVisible(true);
+      GEN_USERINTERFACE.Element_SetModal(config_modal);
+      GEN_USERINTERFACE.ModalLayer_Invalidate();
+
+      // Do not Layout_PutBackground() here: wiping the canvas then failing to repaint
+      // intersecting toolbar chrome made the main buttons vanish under the modal.
+      // Element_DrawModalOnTop() paints the dialog last; content stays visible around it.
+      GEN_USERINTERFACE.Elements_SetToRedraw();
+
+      OpStatus_Log(NL("Config modal open."));
+    }
+   else
+    {
+      GEN_USERINTERFACE.Element_SetModal(NULL);
+      GEN_USERINTERFACE.ModalLayer_Invalidate();
+      config_modal->SetVisible(false);
+
+      GEN_USERINTERFACE.Layout_PutBackground();
+      GEN_USERINTERFACE.Elements_SetToRedraw();
+
+      OpStatus_Log(NL("Config modal closed."));
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool XTRACEMONITOR::Toolbar_SetWorkingMode(bool on)
 * @brief      Sets workingmode and refreshes the shared Stop/Run toolbar slot (+ legend).
 * @ingroup    UTILITIES
@@ -1892,7 +2173,27 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
 
   if(!name->Compare(NL("config-btn"), true))
     {
-      OpStatus_Log(NL("Config (TODO)."));
+      ConfigModal_Show(true);
+      return true;
+    }
+
+  if(!name->Compare(NL("config_modal_btn_accept"), true))
+    {
+      OpStatus_Log(NL("Config: Aceptar."));
+      ConfigModal_Show(false);
+      return true;
+    }
+
+  if(!name->Compare(NL("config_modal_btn_cancel"), true))
+    {
+      OpStatus_Log(NL("Config: Cancelar."));
+      ConfigModal_Show(false);
+      return true;
+    }
+
+  if(!name->Compare(NL("config_modal_btn_default"), true))
+    {
+      OpStatus_Log(NL("Config: Predeterminado (TODO)."));
       return true;
     }
 
@@ -2148,15 +2449,20 @@ void XTRACEMONITOR::Clean()
   opstatus_foot_y        = 0.0f;
   opstatus_last_baseline = 0.0f;
   opstatus_line_h        = 0.0f;
-  brand_monitor          = NULL;
-  layout_applied_w       = 0;
-  layout_applied_h       = 0;
-  opstatus_expanded      = false;
-  opstatus_prevpressed   = false;
-  opstatus_click_armed   = false;
-  opstatus_click_timer   = NULL;
-  workingmode            = true;
-  exitapp                = false;
+  brand_monitor             = NULL;
+  config_modal              = NULL;
+  config_modal_title        = NULL;
+  config_modal_btn_accept   = NULL;
+  config_modal_btn_cancel   = NULL;
+  config_modal_btn_default  = NULL;
+  layout_applied_w          = 0;
+  layout_applied_h          = 0;
+  opstatus_expanded         = false;
+  opstatus_prevpressed      = false;
+  opstatus_click_armed      = false;
+  opstatus_click_timer      = NULL;
+  workingmode               = true;
+  exitapp                   = false;
 
   for(int c=0; c<XTRACEMONITOR_BUTTON_MAX; c++)
     {

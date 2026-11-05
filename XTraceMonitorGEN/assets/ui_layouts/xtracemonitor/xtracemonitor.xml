@@ -6,10 +6,10 @@
   grow/shrink (chrome buttons track horizontally).
   Outer margins 6px: left→tree, right→valor/console/opstatus/brand_monitor, bottom→opstatus foot.
   Gaps tree↔panels / valor↔console / console↔foot = 6.
-  Content packed under caption (46)+2px: icons top 48, legends, then valor top 133.
+  Content packed under caption (46)+2px: icons top 40 (72px), legends under icons, then valor top 137.
   Valor: header + 6 rows (h=158). Brand 82×82 transparent, 6px right, 3px above valor.
 
-  Caption height 46. Icons 59x59 (tight-cropped).
+  Caption height 46. Icons 72x72 (from 220 masters, +10% again).
   Legends: forms centered under each button (text xpos=center).
 
   opstatus: foot form (same width as console). Collapsed = 1 line; double-click expands
@@ -17,7 +17,20 @@
 -->
 <layouts>
 
+  <!-- Same pattern as UI_System/dashboard.xml: vectorfont = default; catalog + languagefonts
+       switch in Noto SC as glyph fallback when XTranslation actual language is Chinese. -->
   <skin name="" drawmode="canvas" rasterfont="verdana18" vectorfont="Nunito-SemiBold.ttf" backgroundcolor="24,28,36"></skin>
+
+  <!-- GEN XML: start tags without attributes need a space before '>'. -->
+  <fonts >
+    <font name="default" file="Nunito-SemiBold.ttf"></font>
+    <font name="cjk" file="NotoSansSC-Regular.otf"></font>
+  </fonts>
+
+  <!-- Language face AFTER default: ASCII stays on Nunito; Noto SC paints missing CJK glyphs. -->
+  <languagefonts >
+    <map language="chi" font="cjk"></map>
+  </languagefonts>
 
   <color name="frame_line">70,80,95,255</color>
   <color name="console_back">12,14,18,255</color>
@@ -26,158 +39,158 @@
   <layout name="xtracemonitor" backgroundcolor="24,28,36">
 
     <!-- Brand art (lupa/huellas): transparent PNG 82×82. Top flush under chrome+2 (48), bottom 3px
-         above valor (ypos 130). Right margin 6px (1200−6−82=1112). Re-blit after chrome. -->
-    <element name="brand_monitor" type="image" xpos="1112" ypos="130" width="82" height="82">brand_monitor.png</element>
+         above valor (ypos 134). Right margin 6px (1200−6−82=1112). Re-blit after chrome. -->
+    <element name="brand_monitor" type="image" xpos="1112" ypos="134" width="82" height="82">brand_monitor.png</element>
 
     <!-- Left brand: 10px from app left, 95% opacity. Gap icon→first button ≈ 2× inter-button gap. -->
-    <element name="brand_toolbar" type="image" xpos="10" ypos="127" width="105" height="79" alpha="95">brand_toolbar.png</element>
+    <element name="brand_toolbar" type="image" xpos="10" ypos="130" width="105" height="79" alpha="95">brand_toolbar.png</element>
 
-    <element name="stop-btn" type="multioption" xpos="155" ypos="107" width="59" height="59">
+    <element name="stop-btn" type="multioption" xpos="155" ypos="112" width="72" height="72">
       <element type="button" name="stop-btn" selectablestatus="active">
-        <element type="animation"><image width="59" height="59">Stop_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Stop_Active.png</image></element>
       </element>
       <element type="button" name="stop-btn" selectablestatus="preselect">
-        <element type="animation"><image width="59" height="59">Stop_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Stop_Preselected.png</image></element>
       </element>
       <element type="button" name="stop-btn" selectablestatus="selected">
-        <element type="animation"><image width="59" height="59">Stop_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Stop_Pressed.png</image></element>
       </element>
       <element type="button" name="stop-btn" selectablestatus="deactive">
-        <element type="animation"><image width="59" height="59">Stop_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Stop_Disabled.png</image></element>
       </element>
     </element>
 
-    <element name="run-btn" type="multioption" xpos="155" ypos="107" width="59" height="59" visible="false">
+    <element name="run-btn" type="multioption" xpos="155" ypos="112" width="72" height="72" visible="false">
       <element type="button" name="run-btn" selectablestatus="active">
-        <element type="animation"><image width="59" height="59">Run_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Run_Active.png</image></element>
       </element>
       <element type="button" name="run-btn" selectablestatus="preselect">
-        <element type="animation"><image width="59" height="59">Run_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Run_Preselected.png</image></element>
       </element>
       <element type="button" name="run-btn" selectablestatus="selected">
-        <element type="animation"><image width="59" height="59">Run_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Run_Pressed.png</image></element>
       </element>
       <element type="button" name="run-btn" selectablestatus="deactive">
-        <element type="animation"><image width="59" height="59">Run_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Run_Disabled.png</image></element>
       </element>
     </element>
     <!-- Shared legend after both icons: stays visible; caption swaps with workingmode (avoids Parar loss).
          text-align centers both captions in the load-time box (no C++ remasure / Y drift).
          Transparent like the other toolbar legends — GEN page-wipes compact legend forms. -->
-    <element name="runstop-lbl" type="form" xpos="148" ypos="121" width="73" height="14" backgroundcolor="0,0,0,0" border-width="0">
+    <element name="runstop-lbl" type="form" xpos="148" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0" border-width="0">
       <element name="runstop-txt" type="text" xpos="center" ypos="center" text-align="center" sizefont="11" color="label_ink">#[BTN_STOP]</element>
     </element>
 
-    <element name="clear-btn" type="multioption" xpos="236" ypos="107" width="59" height="59">
+    <element name="clear-btn" type="multioption" xpos="253" ypos="112" width="72" height="72">
       <element type="button" name="clear-btn" selectablestatus="active">
-        <element type="animation"><image width="59" height="59">Clear_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Clear_Active.png</image></element>
       </element>
       <element type="button" name="clear-btn" selectablestatus="preselect">
-        <element type="animation"><image width="59" height="59">Clear_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Clear_Preselected.png</image></element>
       </element>
       <element type="button" name="clear-btn" selectablestatus="selected">
-        <element type="animation"><image width="59" height="59">Clear_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Clear_Pressed.png</image></element>
       </element>
       <element type="button" name="clear-btn" selectablestatus="deactive">
-        <element type="animation"><image width="59" height="59">Clear_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Clear_Disabled.png</image></element>
       </element>
     </element>
-    <element name="clear-lbl" type="form" xpos="229" ypos="121" width="73" height="14" backgroundcolor="0,0,0,0">
+    <element name="clear-lbl" type="form" xpos="246" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_CLEAR]</element>
     </element>
 
-    <element name="delstatus-btn" type="multioption" xpos="317" ypos="107" width="59" height="59">
+    <element name="delstatus-btn" type="multioption" xpos="351" ypos="112" width="72" height="72">
       <element type="button" name="delstatus-btn" selectablestatus="active">
-        <element type="animation"><image width="59" height="59">Del_Status_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Del_Status_Active.png</image></element>
       </element>
       <element type="button" name="delstatus-btn" selectablestatus="preselect">
-        <element type="animation"><image width="59" height="59">Del_Status_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Del_Status_Preselected.png</image></element>
       </element>
       <element type="button" name="delstatus-btn" selectablestatus="selected">
-        <element type="animation"><image width="59" height="59">Del_Status_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Del_Status_Pressed.png</image></element>
       </element>
       <element type="button" name="delstatus-btn" selectablestatus="deactive">
-        <element type="animation"><image width="59" height="59">Del_Status_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Del_Status_Disabled.png</image></element>
       </element>
     </element>
-    <element name="delstatus-lbl" type="form" xpos="310" ypos="121" width="73" height="14" backgroundcolor="0,0,0,0">
+    <element name="delstatus-lbl" type="form" xpos="344" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_DELSTATUS]</element>
     </element>
 
-    <!-- After Del status: Filtro, then DynDNS, Save, Configuracion (pitch 81). -->
-    <element name="filter-btn" type="multioption" xpos="398" ypos="107" width="59" height="59">
+    <!-- After Del status: Filtro, then DynDNS, Save, Configuracion (pitch 98). -->
+    <element name="filter-btn" type="multioption" xpos="449" ypos="112" width="72" height="72">
       <element type="button" name="filter-btn" selectablestatus="active">
-        <element type="animation"><image width="59" height="59">Filtros_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Filtros_Active.png</image></element>
       </element>
       <element type="button" name="filter-btn" selectablestatus="preselect">
-        <element type="animation"><image width="59" height="59">Filtros_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Filtros_Preselected.png</image></element>
       </element>
       <element type="button" name="filter-btn" selectablestatus="selected">
-        <element type="animation"><image width="59" height="59">Filtros_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Filtros_Pressed.png</image></element>
       </element>
       <element type="button" name="filter-btn" selectablestatus="deactive">
-        <element type="animation"><image width="59" height="59">Filtros_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Filtros_Disabled.png</image></element>
       </element>
     </element>
-    <element name="filter-lbl" type="form" xpos="391" ypos="121" width="73" height="14" backgroundcolor="0,0,0,0">
+    <element name="filter-lbl" type="form" xpos="442" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_FILTER]</element>
     </element>
 
-    <element name="dyndns-btn" type="multioption" xpos="479" ypos="107" width="59" height="59">
+    <element name="dyndns-btn" type="multioption" xpos="547" ypos="112" width="72" height="72">
       <element type="button" name="dyndns-btn" selectablestatus="active">
-        <element type="animation"><image width="59" height="59">DynDNS_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">DynDNS_Active.png</image></element>
       </element>
       <element type="button" name="dyndns-btn" selectablestatus="preselect">
-        <element type="animation"><image width="59" height="59">DynDNS_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">DynDNS_Preselected.png</image></element>
       </element>
       <element type="button" name="dyndns-btn" selectablestatus="selected">
-        <element type="animation"><image width="59" height="59">DynDNS_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">DynDNS_Pressed.png</image></element>
       </element>
       <element type="button" name="dyndns-btn" selectablestatus="deactive">
-        <element type="animation"><image width="59" height="59">DynDNS_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">DynDNS_Disabled.png</image></element>
       </element>
     </element>
-    <element name="dyndns-lbl" type="form" xpos="472" ypos="121" width="73" height="14" backgroundcolor="0,0,0,0">
+    <element name="dyndns-lbl" type="form" xpos="540" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_DYNDNS]</element>
     </element>
 
-    <element name="save-btn" type="multioption" xpos="560" ypos="107" width="59" height="59">
+    <element name="save-btn" type="multioption" xpos="645" ypos="112" width="72" height="72">
       <element type="button" name="save-btn" selectablestatus="active">
-        <element type="animation"><image width="59" height="59">Save_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Save_Active.png</image></element>
       </element>
       <element type="button" name="save-btn" selectablestatus="preselect">
-        <element type="animation"><image width="59" height="59">Save_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Save_Preselected.png</image></element>
       </element>
       <element type="button" name="save-btn" selectablestatus="selected">
-        <element type="animation"><image width="59" height="59">Save_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Save_Pressed.png</image></element>
       </element>
       <element type="button" name="save-btn" selectablestatus="deactive">
-        <element type="animation"><image width="59" height="59">Save_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Save_Disabled.png</image></element>
       </element>
     </element>
-    <element name="save-lbl" type="form" xpos="553" ypos="121" width="73" height="14" backgroundcolor="0,0,0,0">
+    <element name="save-lbl" type="form" xpos="638" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_SAVE]</element>
     </element>
 
-    <element name="config-btn" type="multioption" xpos="641" ypos="107" width="59" height="59">
+    <element name="config-btn" type="multioption" xpos="743" ypos="112" width="72" height="72">
       <element type="button" name="config-btn" selectablestatus="active">
-        <element type="animation"><image width="59" height="59">Configuracion_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Configuracion_Active.png</image></element>
       </element>
       <element type="button" name="config-btn" selectablestatus="preselect">
-        <element type="animation"><image width="59" height="59">Configuracion_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Configuracion_Preselected.png</image></element>
       </element>
       <element type="button" name="config-btn" selectablestatus="selected">
-        <element type="animation"><image width="59" height="59">Configuracion_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Configuracion_Pressed.png</image></element>
       </element>
       <element type="button" name="config-btn" selectablestatus="deactive">
-        <element type="animation"><image width="59" height="59">Configuracion_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Configuracion_Disabled.png</image></element>
       </element>
     </element>
-    <element name="config-lbl" type="form" xpos="634" ypos="121" width="73" height="14" backgroundcolor="0,0,0,0">
+    <element name="config-lbl" type="form" xpos="736" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_CONFIG]</element>
     </element>
 
-    <!-- valor: width 972; height 158 (header 26 + 6×22); top aligned with tree (133). -->
+    <!-- valor: width 972; height 158 (header 26 + 6×22); top aligned with tree (137). -->
     <element name="valor" type="propertylist" xpos="222" ypos="291" width="972" height="158"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              color="label_ink" sizefont="12" namecolumnwidth="220" overflow-y="auto"></element>
@@ -199,7 +212,79 @@
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              overflow-y="hidden" overflow-x="hidden">
       <element name="opstatus_text" type="textbox" xpos="8" ypos="18" width="956" height="16"
-               sizefont="12" color="label_ink" linespacing="4" overflow-y="hidden" overflow-x="hidden"></element>
+               text-align="left" sizefont="12" color="label_ink" linespacing="4"
+               overflow-y="hidden" overflow-x="hidden"></element>
+    </element>
+
+  </layout>
+
+  <!-- Config dialog on its own layout (same XML / shared skin+canvas). Fixed 900×524 = 75% of
+       min client 1200×699; C++ only recenters on resize. No layout backgroundcolor: skin fill
+       invalidated in ConfigModal_Resolve. -->
+  <layout name="config_modal">
+
+    <element name="config_modal" type="form" xpos="150" ypos="611" width="900" height="524" visible="0"
+             roundrect="8" border-width="1" border-color="frame_line" bckgrdcolor="24,28,36"
+             overflow-y="hidden" overflow-x="hidden">
+      <element name="config_modal_title" type="text" xpos="16" ypos="508" width="400" height="22"
+               sizefont="18" color="label_ink">Configuracion</element>
+
+      <element name="config_modal_btn_default" type="multioption" xpos="262" ypos="16" width="160" height="53">
+        <element type="button" name="config_modal_btn_default" selectablestatus="active" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Active.png</image></element>
+        </element>
+        <element type="button" name="config_modal_btn_default" selectablestatus="preselect" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Preselected.png</image></element>
+        </element>
+        <element type="button" name="config_modal_btn_default" selectablestatus="selected" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Pressed.png</image></element>
+        </element>
+        <element type="button" name="config_modal_btn_default" selectablestatus="deactive" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Disabled.png</image></element>
+        </element>
+      </element>
+
+      <element name="config_modal_btn_accept" type="multioption" xpos="438" ypos="16" width="160" height="53">
+        <element type="button" name="config_modal_btn_accept" selectablestatus="active" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Active.png</image></element>
+        </element>
+        <element type="button" name="config_modal_btn_accept" selectablestatus="preselect" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Preselected.png</image></element>
+        </element>
+        <element type="button" name="config_modal_btn_accept" selectablestatus="selected" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Pressed.png</image></element>
+        </element>
+        <element type="button" name="config_modal_btn_accept" selectablestatus="deactive" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Disabled.png</image></element>
+        </element>
+      </element>
+
+      <element name="config_modal_btn_cancel" type="multioption" xpos="614" ypos="16" width="160" height="53">
+        <element type="button" name="config_modal_btn_cancel" selectablestatus="active" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Active.png</image></element>
+        </element>
+        <element type="button" name="config_modal_btn_cancel" selectablestatus="preselect" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Preselected.png</image></element>
+        </element>
+        <element type="button" name="config_modal_btn_cancel" selectablestatus="selected" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Pressed.png</image></element>
+        </element>
+        <element type="button" name="config_modal_btn_cancel" selectablestatus="deactive" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Disabled.png</image></element>
+        </element>
+      </element>
     </element>
 
   </layout>

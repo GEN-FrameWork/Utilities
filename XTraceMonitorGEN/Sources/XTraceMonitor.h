@@ -90,7 +90,7 @@ enum XTRACEMONITOR_BUTTONS
 #define XTRACEMONITOR_LAYOUT_PANELS_X             222.0  // tree 6+210 + gap 6
 #define XTRACEMONITOR_LAYOUT_CAPTION_H            46.0
 #define XTRACEMONITOR_LAYOUT_CHROME_GAP           2.0    // air under custom caption before content
-#define XTRACEMONITOR_LAYOUT_VALOR_TOP            133.0  // packed under toolbar legends
+#define XTRACEMONITOR_LAYOUT_VALOR_TOP            137.0  // packed under toolbar legends
 #define XTRACEMONITOR_LAYOUT_VALOR_H              158.0  // header 26 + 6 rows×22 (exact 6 lines)
 #define XTRACEMONITOR_LAYOUT_FOOT_H               22.0
 #define XTRACEMONITOR_LAYOUT_BRAND_W              82.0
@@ -102,6 +102,21 @@ enum XTRACEMONITOR_BUTTONS
 #define XTRACEMONITOR_OPSTATUS_LINEHEIGHT         18.0f
 #define XTRACEMONITOR_OPSTATUS_PAD                4.0f
 #define XTRACEMONITOR_OPSTATUS_DBLCLICK_MS        700
+
+// Config modal: fixed size = 75% of the app minimum client (1200×699), always; only recentered.
+#define XTRACEMONITOR_CONFIGMODAL_W               900.0  // 1200 * 0.75
+#define XTRACEMONITOR_CONFIGMODAL_H               524.0  // 699  * 0.75 (rounded)
+#define XTRACEMONITOR_CONFIGMODAL_BTN_W           160.0  // 120×40 + 1/3
+#define XTRACEMONITOR_CONFIGMODAL_BTN_H           53.0
+#define XTRACEMONITOR_CONFIGMODAL_BTN_GAP         16.0
+#define XTRACEMONITOR_CONFIGMODAL_BTN_BOTTOM_PAD  16.0  // gap from modal bottom to button bottom
+// PNG icon ends ~x=40; caption is centered in the remaining slot with a gap after the icon.
+#define XTRACEMONITOR_CONFIGMODAL_BTN_ICON_RIGHT  40.0
+#define XTRACEMONITOR_CONFIGMODAL_BTN_ICON_GAP     8.0
+#define XTRACEMONITOR_CONFIGMODAL_BTN_TEXT_PAD_R  16.0
+#define XTRACEMONITOR_CONFIGMODAL_PAD             24.0
+#define XTRACEMONITOR_CONFIGMODAL_TITLE_PAD       16.0
+#define XTRACEMONITOR_CONFIGMODAL_TITLE_H         22.0
 
 
 
@@ -176,6 +191,11 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            Toolbar_ApplyRunStopVisibility          ();
     bool                            Toolbar_SlotSetVisible                  (UI_ELEMENT* element, bool visible);
 
+    bool                            ConfigModal_Resolve                     ();
+    bool                            ConfigModal_ApplyGeometry               ();
+    bool                            ConfigModal_Show                        (bool show);
+    bool                            ConfigModal_IsVisible                   ();
+
     bool                            UserInterface_ElementSelected           (UI_ELEMENT* element);
     bool                            UserInterface_ChangeLiteralText         (UI_ELEMENT_TEXT* element_text, XSTRING* maskvalue, XSTRING* maskresult);
     bool                            UserInterface_CFGChromes                (GRPSCREEN* screen);
@@ -211,6 +231,12 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     XTIMER*                         opstatus_click_timer;
 
     UI_ELEMENT_IMAGE*               brand_monitor;
+
+    UI_ELEMENT_FORM*                config_modal;
+    UI_ELEMENT*                     config_modal_title;
+    UI_ELEMENT*                     config_modal_btn_accept;
+    UI_ELEMENT*                     config_modal_btn_cancel;
+    UI_ELEMENT*                     config_modal_btn_default;
 
     int                             layout_applied_w;
     int                             layout_applied_h;
