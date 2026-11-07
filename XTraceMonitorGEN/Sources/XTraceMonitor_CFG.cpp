@@ -121,6 +121,12 @@ bool XTRACEMONITOR_CFG::DoVariableMapping()
       return false;
     }
 
+  AddRemark(XTRACEMONITOR_CFG_SECTION_APPLICATION, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
+  AddRemark(XTRACEMONITOR_CFG_SECTION_APPLICATION, NL(" Application section of configuration"), 0, 2);
+
+  AddValue(XFILECFG_VALUETYPE_INT, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_COLORTHEME, &colortheme,
+           NL("Color theme (0=invalid, 1=Dark, 2=Light)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+
   return true;
 }
 
@@ -168,7 +174,81 @@ bool XTRACEMONITOR_CFG::DoDefault()
 
   //------------------------------------------------------------------------------
 
+  colortheme                            = XTRACEMONITOR_CFG_COLORTHEME_DEFAULT;
+
+  //------------------------------------------------------------------------------
+
   return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         int XTRACEMONITOR_CFG::GetColorTheme()
+* @brief      Returns the persisted color theme integer (may be INVALID).
+* @ingroup    UTILITIES
+*
+* @return     int : Color theme value.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+int XTRACEMONITOR_CFG::GetColorTheme()
+{
+  return colortheme;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetColorTheme(int colortheme)
+* @brief      Stores the color theme integer (persisted on Save).
+* @ingroup    UTILITIES
+*
+* @param[in]  colortheme : Color theme value.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetColorTheme(int colortheme)
+{
+  this->colortheme = colortheme;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::IsColorThemeValid(int colortheme)
+* @brief      True when colortheme is a known non-invalid theme id.
+* @ingroup    UTILITIES
+*
+* @param[in]  colortheme : Color theme value.
+*
+* @return     bool : true if valid; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::IsColorThemeValid(int colortheme)
+{
+  switch(colortheme)
+    {
+      case XTRACEMONITOR_CFG_COLORTHEME_DARK  :
+      case XTRACEMONITOR_CFG_COLORTHEME_LIGHT : return true;
+                                      default : return false;
+    }
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         int XTRACEMONITOR_CFG::ResolveColorTheme(int colortheme)
+* @brief      Maps INVALID / unknown values to the factory default theme.
+* @ingroup    UTILITIES
+*
+* @param[in]  colortheme : Color theme value.
+*
+* @return     int : Valid color theme value.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+int XTRACEMONITOR_CFG::ResolveColorTheme(int colortheme)
+{
+  if(IsColorThemeValid(colortheme)) return colortheme;
+  return XTRACEMONITOR_CFG_COLORTHEME_DEFAULT;
 }
 
 
@@ -222,5 +302,5 @@ XTRACEMONITOR_CFG::~XTRACEMONITOR_CFG()
 *---------------------------------------------------------------------------------------------------------------------*/
 void XTRACEMONITOR_CFG::Clean()
 {
-
+  colortheme = XTRACEMONITOR_CFG_COLORTHEME_INVALID;
 }

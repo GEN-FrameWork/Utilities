@@ -34,8 +34,15 @@
 
 /*---- DEFINES & ENUMS  ----------------------------------------------------------------------------------------------*/
 
-#define XTRACEMONITORCFG_SECTIONGENERAL    NL("general")
+#define XTRACEMONITOR_CFG_SECTION_APPLICATION           NL("application")
+#define XTRACEMONITOR_CFG_COLORTHEME                    NL("colortheme")
 
+// Persisted integer values for [application] colortheme (extensible: add 3, 4, … later).
+#define XTRACEMONITOR_CFG_COLORTHEME_INVALID            0
+#define XTRACEMONITOR_CFG_COLORTHEME_DARK               1
+#define XTRACEMONITOR_CFG_COLORTHEME_LIGHT              2
+
+#define XTRACEMONITOR_CFG_COLORTHEME_DEFAULT            XTRACEMONITOR_CFG_COLORTHEME_DARK
 
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
 
@@ -50,6 +57,11 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
     bool                            DoVariableMapping                       ();
     bool                            DoDefault                               ();
 
+    int                             GetColorTheme                           ();
+    void                            SetColorTheme                           (int colortheme);
+    bool                            IsColorThemeValid                       (int colortheme);
+    int                             ResolveColorTheme                       (int colortheme);
+
   private:
 
                                     XTRACEMONITOR_CFG                       (XCHAR* namefile);
@@ -61,6 +73,8 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
     void                            Clean                                   ();
 
     static XTRACEMONITOR_CFG*       instance;
+
+    int                             colortheme;
 };
 
 

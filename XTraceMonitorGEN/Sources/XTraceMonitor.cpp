@@ -66,6 +66,8 @@
 #include "UI_Element_Text.h"
 #include "UI_Element_TextBox.h"
 #include "UI_Element_Form.h"
+#include "UI_Element_RadioGroup.h"
+#include "UI_Element_RadioButton.h"
 #include "UI_Element_Console.h"
 #include "UI_Element_PropertyList.h"
 #include "UI_Element_Tree.h"
@@ -74,6 +76,9 @@
 #include "UI_Skin.h"
 #include "UI_SkinCanvas.h"
 #include "UI_BoundaryLine.h"
+#include "UI_Colors.h"
+#include "UI_Style.h"
+#include "UI_StyleSheet.h"
 #include "GRP2DColor.h"
 
 #include "APPFlowLog.h"
@@ -481,7 +486,15 @@ bool XTRACEMONITOR::UpdateInput()
           int click_x = now_cursor_x;
           int click_y = now_cursor_y;
 
-          if(OpStatus_HitTest(click_x, click_y))
+          // While a GEN modal form is up, do not route clicks to foot/opstatus under it.
+          if(GEN_USERINTERFACE.Element_IsModalActive())
+            {
+              if(!bar_owned)
+                {
+                  GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_SELECCTION, click_x, click_y);
+                }
+            }
+           else if(OpStatus_HitTest(click_x, click_y))
             {
               OpStatus_OnClick();
             }
@@ -631,11 +644,6 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       opstatus_form             = NULL;
       opstatus_text             = NULL;
       brand_monitor             = NULL;
-      config_modal              = NULL;
-      config_modal_title        = NULL;
-      config_modal_btn_accept   = NULL;
-      config_modal_btn_cancel   = NULL;
-      config_modal_btn_default  = NULL;
 
       if(opstatus_click_timer)
         {
@@ -733,10 +741,14 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       return false;
     }
 
-  if(!ConfigModal_Resolve())
+  form_cfg.SetOwner(this);
+  if(!form_cfg.Resolve())
     {
       return false;
     }
+
+  // Remap app tokens + chrome title/caption for the persisted theme before the first frame.
+  ApplyColorTheme(XTRACEMONITOR_CFG::GetInstance(false).GetColorTheme());
 
   // Default: workingmode on → Stop visible / Run hidden. Apply once after first Layout_PutBackground
   // so ConvertToBoolean-fixed XML visibility is enforced without painting into an empty canvas.
@@ -792,19 +804,54 @@ bool XTRACEMONITOR::DrawFrame()
   // the live client size diverges from the last geometry we laid out, then force a full redraw.
   int live_w = (int)screen->GetWidth();
   int live_h = (int)screen->GetHeight();
+  bool size_relaid = false;
   if((live_w != layout_applied_w) || (live_h != layout_applied_h))
     {
-      Layout_ApplyFlexibleResize();
+      Layout_ApplyFlexibleResize(true);
+      size_relaid = true;
+      resize_recover_frames = 3;
+      // Fresh buffer: drop any canvas-level rebuild snapshots before ReleaseDrawFramerate/Rebuild.
+      canvas->DeleteAllRebuildAreas();
+      canvas->SetClipBox(0.0, 0.0, (double)(live_w > 0 ? live_w - 1 : 0), (double)(live_h > 0 ? live_h - 1 : 0));
+    }
+  else if(resize_recover_frames > 0)
+    {
+      // UpdateSize compose can lose to GLES surface recreate / Overlay dirt clear on the first
+      // frames after maximize/extend — force a few full page wipe + redraw passes.
+      GEN_USERINTERFACE.Layout_PutBackground();
+      GEN_USERINTERFACE.Elements_SetToRedraw();
+      size_relaid = true;
+      resize_recover_frames--;
+    }
+
+  // Chrome layout may appear only after the first canvas/LoadCFGChromesLayout — finish Light/Dark
+  // caption title ink + cache invalidate once it exists.
+  if(chrome_theme_dirty)
+    {
+      XTRACEMONITOR_CFG& cfgtheme = XTRACEMONITOR_CFG::GetInstance(false);
+      const bool light = (cfgtheme.ResolveColorTheme(cfgtheme.GetColorTheme()) == XTRACEMONITOR_CFG_COLORTHEME_LIGHT);
+      if(ApplyColorTheme_RefreshChrome(light))
+        {
+          if(GEN_USERINTERFACE.Layouts_Get(NL("chrome")))
+            {
+              UI_LAYOUT* chrome = GEN_USERINTERFACE.Layouts_Get(NL("chrome"));
+              if(chrome && chrome->GetSkin() && chrome->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
+                ((UI_SKINCANVAS*)chrome->GetSkin())->InvalidateCompositionCaches();
+              chrome->Elements_SetToRedraw();
+            }
+          chrome_theme_dirty = false;
+        }
     }
 
   canvas->ReleaseDrawFramerate();
 
-  canvas->RebuildAllAreas();
+  if(!size_relaid) canvas->RebuildAllAreas();
 
   // Bottom-left: 5px from left and bottom (DrawFramerate y is the text baseline; +2 is box bottom).
   canvas->DrawFramerate(screen, 5.0, (double)(screen->GetHeight() - 7));
 
   GEN_USERINTERFACE.Elements_RebuildDrawAreas();
+  if(size_relaid) GEN_USERINTERFACE.Elements_SetToRedraw();
   GEN_USERINTERFACE.Update();
 
   // Chrome paints after content and its right-side button rebuild can wipe the brand top.
@@ -817,17 +864,19 @@ bool XTRACEMONITOR::DrawFrame()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
-* @fn         bool XTRACEMONITOR::Layout_ApplyFlexibleResize()
+* @fn         bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
 * @brief      Applies the flexible resize layout from the current screen size.
 *             Grows/shrinks: valor/footer width, console width+height, tree height (bottom-aligned with
 *             console; top fixed with valor), brand_monitor horizontal position. Toolbar and other chrome
 *             stay at design geometry. Custom chrome buttons track via UpdateCFGChromesButtonsPosition.
+* @param[in]  compose : When true (DrawFrame), wipe background and dirty all elements. When false
+*             (CHANGESIZE inside UpdateSize), geometry only — UpdateSize already PutBackground+Update.
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the operation is successful; otherwise false.
 *
 *---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::Layout_ApplyFlexibleResize()
+bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
 {
   GRPSCREEN* screen = GetMainScreen();
   if(!screen) return false;
@@ -838,6 +887,19 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize()
   double W = (double)screen->GetWidth();
   double H = (double)screen->GetHeight();
   if((W < 1.0) || (H < 1.0)) return false;
+
+  // Keep design size in sync for CSS @media / rem resolution. UIScale stays inactive at scale 1.0
+  // without autofit (see UI_LAYOUT::IsUIScaleActive) so flexible layout paints 1:1 on the live canvas.
+  UI_LAYOUT* content_layout = GEN_USERINTERFACE.Layouts_Get(NL("xtracemonitor"));
+  if(content_layout &&
+     ((content_layout->GetDesignWidth() != (XDWORD)W) || (content_layout->GetDesignHeight() != (XDWORD)H)))
+    {
+      content_layout->SetDesignSize((XDWORD)W, (XDWORD)H);
+      if(content_layout->GetStyleSheet())
+        {
+          content_layout->GetStyleSheet()->SetMediaViewport((int)W, (int)H);
+        }
+    }
 
   const double margin   = XTRACEMONITOR_LAYOUT_MARGIN;
   const double gap      = XTRACEMONITOR_LAYOUT_GAP;
@@ -946,13 +1008,15 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize()
   layout_applied_w = (int)W;
   layout_applied_h = (int)H;
 
-  if(ConfigModal_IsVisible())
+  if(form_cfg.IsVisible())
     {
-      ConfigModal_ApplyGeometry();
+      form_cfg.ApplyGeometry();
     }
 
-  // Canvas was recreated empty on UpdateSize: wipe background and dirty EVERY layout element so tree /
-  // toolbar / flex panels all repaint at the new geometry (partial dirty left stale design-size AABBs).
+  if(!compose) return true;
+
+  // Canvas was recreated empty on UpdateSize / live drag: wipe background and dirty EVERY layout
+  // element so tree / toolbar / flex panels all repaint at the new geometry.
   GEN_USERINTERFACE.Layout_PutBackground();
   GEN_USERINTERFACE.Elements_SetToRedraw();
 
@@ -1064,6 +1128,14 @@ bool XTRACEMONITOR::Valor_Seed()
 bool XTRACEMONITOR::Valor_UpdateSplitter()
 {
   if(!valorelement || !cursor || !button[XTRACEMONITOR_BUTTON_MOUSE]) return false;
+
+  // GEN modal: property-list splitter under the dialog must not steal the pointer.
+  if(GEN_USERINTERFACE.Element_ModalBlocksInteraction(valorelement))
+    {
+      if(valorelement->IsSplitDragging()) valorelement->Split_EndDrag();
+      valor_prevpressed = button[XTRACEMONITOR_BUTTON_MOUSE]->IsPressed();
+      return true;
+    }
 
   bool   pressed = button[XTRACEMONITOR_BUTTON_MOUSE]->IsPressed();
   int    cursor_x = (int)cursor->GetX();
@@ -1580,6 +1652,14 @@ bool XTRACEMONITOR::Tree_UpdateInput()
   // Act only on the press transition.
   if(pressed && !tree_prevpressed)
     {
+      // GEN modal form owns the pointer: content under (tree, etc.) must not select while it is up.
+      // Redraw/update of the tree may continue — only interaction is blocked.
+      if(GEN_USERINTERFACE.Element_ModalBlocksInteraction(treeelement))
+        {
+          tree_prevpressed = pressed;
+          return true;
+        }
+
       int    cursor_x = (int)cursor->GetX();
       int    cursor_y = (int)GetMainScreen()->GetHeight() - (int)cursor->GetY();
       double local_x  = 0.0f;
@@ -1694,8 +1774,15 @@ bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible)
 
               if(bottom > top)
                 {
-                  // Match layout skin backgroundcolor="24,28,36".
-                  GRP2DCOLOR_RGBA8 fill(24, 28, 36, 255);
+                  // Match active layout page background (Dark/Light Color Theme).
+                  XBYTE pr = 24, pg = 28, pb = 36, pa = 255;
+                  if(layout->GetBackground() && layout->GetBackground()->GetColor() &&
+                     layout->GetBackground()->GetColor()->IsValid())
+                    {
+                      UI_COLOR* page = layout->GetBackground()->GetColor();
+                      pr = page->GetRed(); pg = page->GetGreen(); pb = page->GetBlue(); pa = page->GetAlpha();
+                    }
+                  GRP2DCOLOR_RGBA8 fill(pr, pg, pb, pa);
                   GRP2DCOLOR_RGBA8 noline(0, 0, 0, 0);
                   canvas->SetFillColor(&fill);
                   canvas->SetLineColor(&noline);
@@ -1715,267 +1802,6 @@ bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible)
   return true;
 }
 
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::ConfigModal_Resolve()
-* @brief      Resolves config modal form and its title/buttons from the loaded layout.
-* @ingroup    UTILITIES
-*
-* @return     bool : true if the operation is successful; otherwise false.
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::ConfigModal_Resolve()
-{
-  config_modal = (UI_ELEMENT_FORM*)GEN_USERINTERFACE.Element_Get(NL("config_modal"), UI_ELEMENT_TYPE_FORM);
-  if(!config_modal) return false;
-
-  config_modal_title       = GEN_USERINTERFACE.Element_Get(NL("config_modal_title")      , UI_ELEMENT_TYPE_TEXT);
-  config_modal_btn_accept  = GEN_USERINTERFACE.Element_Get(NL("config_modal_btn_accept") , UI_ELEMENT_TYPE_MULTIOPTION);
-  config_modal_btn_cancel  = GEN_USERINTERFACE.Element_Get(NL("config_modal_btn_cancel") , UI_ELEMENT_TYPE_MULTIOPTION);
-  config_modal_btn_default = GEN_USERINTERFACE.Element_Get(NL("config_modal_btn_default"), UI_ELEMENT_TYPE_MULTIOPTION);
-
-  if(!config_modal_title || !config_modal_btn_accept || !config_modal_btn_cancel || !config_modal_btn_default)
-    {
-      return false;
-    }
-
-  // Secondary layout inherits the skin page fill; keep it invalid so Layout_PutBackground
-  // never canvas-Clears through this layout (would erase the main form under the dialog).
-  UI_LAYOUT* modal_layout = GEN_USERINTERFACE.Layouts_Get(NL("config_modal"));
-  if(modal_layout && modal_layout->GetBackground() && modal_layout->GetBackground()->GetColor())
-    {
-      modal_layout->GetBackground()->GetColor()->SetValid(false);
-    }
-
-  config_modal->SetVisible(false);
-  return true;
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::ConfigModal_ApplyGeometry()
-* @brief      Keeps the config modal at its fixed design size (75% of min client) and centers it.
-* @ingroup    UTILITIES
-*
-* @return     bool : true if the operation is successful; otherwise false.
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::ConfigModal_ApplyGeometry()
-{
-  if(!config_modal) return false;
-
-  GRPSCREEN* screen = GetMainScreen();
-  if(!screen) return false;
-
-  double screen_w = (double)screen->GetWidth();
-  double screen_h = (double)screen->GetHeight();
-  if((screen_w < 1.0) || (screen_h < 1.0)) return false;
-
-  // Fixed box: same as at minimum window size (1200×699 → 900×524). Does not grow with resize.
-  const double modal_w = XTRACEMONITOR_CONFIGMODAL_W;
-  const double modal_h = XTRACEMONITOR_CONFIGMODAL_H;
-
-  // GEN canvas is Y-down: element ypos is the BOTTOM edge (EdgeTop = y - height).
-  // Centered form → bottom edge at (screen_h + modal_h) / 2.
-  double modal_x = (screen_w - modal_w) * 0.5;
-  double modal_y = (screen_h + modal_h) * 0.5;
-
-  config_modal->SetXPosition(modal_x);
-  config_modal->SetYPosition(modal_y);
-  config_modal->GetBoundaryLine()->x      = modal_x;
-  config_modal->GetBoundaryLine()->y      = modal_y;
-  config_modal->GetBoundaryLine()->width  = modal_w;
-  config_modal->GetBoundaryLine()->height = modal_h;
-  config_modal->SetIntrinsicWidth(modal_w);
-  config_modal->SetIntrinsicHeight(modal_h);
-
-  UI_BOUNDARYLINE* vis = config_modal->GetVisibleRect();
-  if(vis)
-    {
-      vis->x      = modal_x;
-      vis->y      = modal_y;
-      vis->width  = modal_w;
-      vis->height = modal_h;
-    }
-
-  const double btn_w = XTRACEMONITOR_CONFIGMODAL_BTN_W;
-  const double btn_h = XTRACEMONITOR_CONFIGMODAL_BTN_H;
-  const double gap   = XTRACEMONITOR_CONFIGMODAL_BTN_GAP;
-  const double row_w = (btn_w * 3.0) + (gap * 2.0);
-  // Horizontal only: center the 3-button row in the modal (keep current gap). Vertical stays bottom-padded.
-  const double btn_x = (modal_w - row_w) * 0.5;
-  // Local y = gap from form bottom edge to the button's bottom edge (~16px).
-  const double btn_local_y = XTRACEMONITOR_CONFIGMODAL_BTN_BOTTOM_PAD;
-
-  // Children: CalculePosition uses abs_x = father_x + local_x, abs_y = father_y - local_y.
-  auto place_child = [](UI_ELEMENT* el, double local_x, double local_y, double w, double h)
-    {
-      if(!el || !el->GetBoundaryLine()) return;
-      el->GetBoundaryLine()->x      = local_x;
-      el->GetBoundaryLine()->y      = local_y;
-      el->GetBoundaryLine()->width  = w;
-      el->GetBoundaryLine()->height = h;
-      el->SetIntrinsicWidth(w);
-      el->SetIntrinsicHeight(h);
-
-      UI_ELEMENT* father = el->GetFather();
-      double      abs_x  = local_x;
-      double      abs_y  = local_y;
-      if(father)
-        {
-          abs_x = father->GetXPosition() + local_x;
-          abs_y = father->GetYPosition() - local_y;
-        }
-      el->SetXPosition(abs_x);
-      el->SetYPosition(abs_y);
-    };
-
-  if(config_modal_title)
-    {
-      const double title_pad = XTRACEMONITOR_CONFIGMODAL_TITLE_PAD;
-      const double title_h   = XTRACEMONITOR_CONFIGMODAL_TITLE_H;
-      // Keep the title box fully inside: top pad + title height from the form top.
-      const double title_local_y = modal_h - title_pad - title_h;
-      place_child(config_modal_title, title_pad, title_local_y, modal_w - (title_pad * 2.0), title_h);
-    }
-
-  place_child(config_modal_btn_default, btn_x,                       btn_local_y, btn_w, btn_h);
-  place_child(config_modal_btn_accept , btn_x + btn_w + gap,         btn_local_y, btn_w, btn_h);
-  place_child(config_modal_btn_cancel , btn_x + (btn_w + gap) * 2.0, btn_local_y, btn_w, btn_h);
-
-  // Re-layout each multioption subtree (button → animation/text → image) against the new
-  // absolute box. Without this, only the multioption AABB moves and the PNG stays at load-time
-  // coords — PreDraw clips it so only a fragment of the button art is visible.
-  // Safe on MULTIOPTION (no AddPositionSubElements); do NOT run AllElements on the modal form.
-  UI_LAYOUT* layout = GEN_USERINTERFACE.Element_GetLayout(config_modal);
-  UI_SKIN*   skin   = layout ? layout->GetSkin() : NULL;
-  if(skin)
-    {
-      if(config_modal_btn_default) skin->CalculeBoundaryLine_AllElements(config_modal_btn_default, true);
-      if(config_modal_btn_accept)  skin->CalculeBoundaryLine_AllElements(config_modal_btn_accept , true);
-      if(config_modal_btn_cancel)  skin->CalculeBoundaryLine_AllElements(config_modal_btn_cancel , true);
-    }
-
-  // Caption vs button image: true geometric center (V+H). If that would collide with the
-  // baked-in icon, nudge right so left edge stays at icon_right + gap. Right pad keeps the
-  // glyph inside the pill cap. Optical Y nudge compensates vector-font metrics (AABB center
-  // reads slightly low against the glossy art).
-  auto center_btn_captions = [](UI_ELEMENT* multi)
-    {
-      if(!multi || !multi->GetComposeElements()) return;
-
-      const double btn_w      = XTRACEMONITOR_CONFIGMODAL_BTN_W;
-      const double btn_h      = XTRACEMONITOR_CONFIGMODAL_BTN_H;
-      const double icon_clear = XTRACEMONITOR_CONFIGMODAL_BTN_ICON_RIGHT + XTRACEMONITOR_CONFIGMODAL_BTN_ICON_GAP;
-      const double pad_r      = XTRACEMONITOR_CONFIGMODAL_BTN_TEXT_PAD_R;
-      const double optical_y  = 2.0;   // small lift only: +5 looked a bit high vs the pill/icon center
-
-      for(XDWORD c=0; c<multi->GetComposeElements()->GetSize(); c++)
-        {
-          UI_ELEMENT* face = multi->GetComposeElements()->Get(c);
-          if(!face || (face->GetType() != UI_ELEMENT_TYPE_BUTTON && face->GetType() != UI_ELEMENT_TYPE_OPTION)) continue;
-
-          UI_ELEMENT_OPTION* opt  = (UI_ELEMENT_OPTION*)face;
-          UI_ELEMENT_TEXT*   text = opt->Get_UIText();
-          if(!text || !text->GetBoundaryLine()) continue;
-
-          double tw = text->GetBoundaryLine()->width;
-          double th = text->GetBoundaryLine()->height;
-          if(tw < 1.0) tw = 1.0;
-          if(th < 1.0) th = 1.0;
-
-          double local_x = (btn_w - tw) * 0.5;
-          if(local_x < icon_clear) local_x = icon_clear;
-          if((local_x + tw) > (btn_w - pad_r)) local_x = btn_w - pad_r - tw;
-          if(local_x < icon_clear) local_x = icon_clear;
-
-          // GEN Y-down: element ypos is the BOTTOM edge. Larger local_y → higher on screen.
-          double local_y = (btn_h - th) * 0.5 + optical_y;
-
-          text->SetXPosition(face->GetXPosition() + local_x);
-          text->SetYPosition(face->GetYPosition() - local_y);
-          text->GetBoundaryLine()->x = local_x;
-          text->GetBoundaryLine()->y = local_y;
-          text->SetMustReDraw(true);
-        }
-    };
-
-  center_btn_captions(config_modal_btn_default);
-  center_btn_captions(config_modal_btn_accept);
-  center_btn_captions(config_modal_btn_cancel);
-
-  config_modal->SetMustReDraw(true);
-  if(config_modal_title)       config_modal_title->SetMustReDraw(true);
-  if(config_modal_btn_accept)  config_modal_btn_accept->SetMustReDraw(true);
-  if(config_modal_btn_cancel)  config_modal_btn_cancel->SetMustReDraw(true);
-  if(config_modal_btn_default) config_modal_btn_default->SetMustReDraw(true);
-
-  return true;
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::ConfigModal_IsVisible()
-* @brief      True when the config modal form is currently shown.
-* @ingroup    UTILITIES
-*
-* @return     bool : true if visible; otherwise false.
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::ConfigModal_IsVisible()
-{
-  return (config_modal && config_modal->IsVisible());
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::ConfigModal_Show(bool show)
-* @brief      Shows or hides the config modal as a GEN modal layer (blocks content underneath).
-* @ingroup    UTILITIES
-*
-* @param[in]  show : true to open; false to close.
-*
-* @return     bool : true if the operation is successful; otherwise false.
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::ConfigModal_Show(bool show)
-{
-  if(!config_modal) return false;
-
-  if(show)
-    {
-      if(!ConfigModal_ApplyGeometry()) return false;
-
-      GEN_USERINTERFACE.SetPreselectElement();
-      config_modal->SetVisible(true);
-      GEN_USERINTERFACE.Element_SetModal(config_modal);
-      GEN_USERINTERFACE.ModalLayer_Invalidate();
-
-      // Do not Layout_PutBackground() here: wiping the canvas then failing to repaint
-      // intersecting toolbar chrome made the main buttons vanish under the modal.
-      // Element_DrawModalOnTop() paints the dialog last; content stays visible around it.
-      GEN_USERINTERFACE.Elements_SetToRedraw();
-
-      OpStatus_Log(NL("Config modal open."));
-    }
-   else
-    {
-      GEN_USERINTERFACE.Element_SetModal(NULL);
-      GEN_USERINTERFACE.ModalLayer_Invalidate();
-      config_modal->SetVisible(false);
-
-      GEN_USERINTERFACE.Layout_PutBackground();
-      GEN_USERINTERFACE.Elements_SetToRedraw();
-
-      OpStatus_Log(NL("Config modal closed."));
-    }
-
-  return true;
-}
 
 
 /**-------------------------------------------------------------------------------------------------------------------
@@ -2067,6 +1893,428 @@ bool XTRACEMONITOR::Toolbar_ApplyRunStopVisibility()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
+* @brief      Applies Dark/Light chrome (page, panels, strokes, fonts) from CFG tokens / CSS :root.
+* @ingroup    UTILITIES
+*
+* @param[in]  colortheme : XTRACEMONITOR_CFG_COLORTHEME_* integer (INVALID resolves to default Dark).
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
+{
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  colortheme = cfg.ResolveColorTheme(colortheme);
+  const bool light = (colortheme == XTRACEMONITOR_CFG_COLORTHEME_LIGHT);
+
+  // Keep in sync with xtracemonitor.css :root tokens (var() is parse-time; runtime remaps below).
+  // UI_COLOR CSV 4th field is alpha PERCENT (0-100), not 0-255.
+  XCHAR* page_bg     = light ? NL("236,238,242,100") : NL("24,28,36,100");
+  XCHAR* console_bg  = light ? NL("250,250,252,100") : NL("12,14,18,100");
+  // Light frame slightly darker than page so panel edges stay visible on white washes.
+  XCHAR* frame_line  = light ? NL("140,150,165,100") : NL("70,80,95,100");
+  XCHAR* label_ink   = light ? NL("40,44,52,100")    : NL("200,208,220,100");
+
+  auto set_named = [](XCHAR* name, XCHAR* rgba) -> void
+    {
+      XSTRING* existing = GEN_UI_COLORS.Get(name);
+      if(existing) existing->Set(rgba);
+       else         GEN_UI_COLORS.Add(name, rgba);
+    };
+
+  set_named(NL("label_ink")   , label_ink);
+  set_named(NL("frame_line")  , frame_line);
+  set_named(NL("console_back"), console_bg);
+
+  // Only the app layouts. Never touch GEN custom window chrome ("chrome" from
+  // defaultwindowschromes.zip): caption fill, white title, SVG buttons and app icon.
+  XVECTOR<UI_LAYOUT*>* layouts = GEN_USERINTERFACE.Layouts_GetAll();
+  if(layouts)
+    {
+      for(XDWORD i=0; i<layouts->GetSize(); i++)
+        {
+          UI_LAYOUT* layout = layouts->Get(i);
+          if(!layout || !layout->GetNameID()) continue;
+
+          const bool is_app_layout = (!layout->GetNameID()->Compare(NL("xtracemonitor"), true) ||
+                                      !layout->GetNameID()->Compare(NL("config_modal") , true));
+          if(!is_app_layout) continue;
+
+          if(layout->GetBackground() && layout->GetBackground()->GetColor())
+            {
+              layout->GetBackground()->GetColor()->SetFromString(page_bg);
+              layout->GetBackground()->GetColor()->SetValid(true);
+            }
+
+          ApplyColorTheme_PatchStyleSheet(layout->GetStyleSheet(), light);
+
+          XVECTOR<UI_ELEMENT*>* elements = layout->Elements_Get();
+          if(!elements) continue;
+          for(XDWORD e=0; e<elements->GetSize(); e++)
+            {
+              ApplyColorTheme_Element(elements->Get(e), light);
+            }
+        }
+    }
+
+  // Drop stale Form/Anim/Option backdrops (black plates under chrome SVGs on Light) then repaint.
+  XVECTOR<UI_LAYOUT*>* all_layouts = GEN_USERINTERFACE.Layouts_GetAll();
+  if(all_layouts)
+    {
+      for(XDWORD i=0; i<all_layouts->GetSize(); i++)
+        {
+          UI_LAYOUT* layout = all_layouts->Get(i);
+          if(!layout || !layout->GetSkin()) continue;
+          if(layout->GetSkin()->GetDrawMode() != UI_SKIN_DRAWMODE_CANVAS) continue;
+          ((UI_SKINCANVAS*)layout->GetSkin())->InvalidateCompositionCaches();
+        }
+    }
+
+  // Chrome zip often loads after Ini (first canvas). Retry from DrawFrame until RefreshChrome sticks.
+  chrome_theme_dirty = true;
+  ApplyColorTheme_RefreshChrome(light);
+
+  GEN_USERINTERFACE.Layout_PutBackground();
+  GEN_USERINTERFACE.Elements_SetToRedraw();
+  BrandMonitor_RepaintAfterChrome();
+
+  OpStatus_Log(light ? NL("Color Theme: Light.") : NL("Color Theme: Dark."));
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::ApplyColorTheme_RefreshChrome(bool light)
+* @brief      Themes GEN custom window chrome caption/title for Dark/Light without touching SVG glyphs.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::ApplyColorTheme_RefreshChrome(bool light)
+{
+  UI_LAYOUT* chrome = GEN_USERINTERFACE.Layouts_Get(NL("chrome"));
+  if(!chrome) return false;
+
+  // Chrome caption bar (= Windows custom chrome toolbar) matches the app page in every scheme.
+  // Opaque page fill so SVG soft edges never composite onto a leftover black AnimBackdrop plate.
+  // UI_COLOR CSV 4th field is alpha PERCENT (0-100), not 0-255.
+  XCHAR* caption_fill = light ? NL("236,238,242,100") : NL("24,28,36,100");
+
+  auto apply_caption = [&](UI_ELEMENT* element) -> void
+    {
+      if(!element) return;
+      if(element->GetColor())
+        {
+          element->GetColor()->SetFromString(caption_fill);
+          element->GetColor()->SetValid(true);
+        }
+      if(element->GetBackgroundColor())
+        {
+          element->GetBackgroundColor()->SetFromString(caption_fill);
+          element->GetBackgroundColor()->SetValid(true);
+        }
+      element->SnapshotStyleVisual();
+      element->SetMustReDraw(true);
+    };
+
+  auto apply_title = [&](UI_ELEMENT* element) -> void
+    {
+      if(!element) return;
+      if(chrome->GetSkin() && chrome->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
+        ((UI_SKINCANVAS*)chrome->GetSkin())->PrepareTextContentChange(element);
+      if(element->GetColor())
+        {
+          // Authored #FFFFFFFF: write components (avoid CSV remap). Do not touch chrome SVG icons.
+          if(light)
+            {
+              element->GetColor()->SetRed(40);
+              element->GetColor()->SetGreen(44);
+              element->GetColor()->SetBlue(52);
+              element->GetColor()->SetAlpha(255);
+            }
+           else
+            {
+              element->GetColor()->SetRed(255);
+              element->GetColor()->SetGreen(255);
+              element->GetColor()->SetBlue(255);
+              element->GetColor()->SetAlpha(255);
+            }
+          element->GetColor()->SetValid(true);
+        }
+      element->SnapshotStyleVisual();
+      element->SetMustReDraw(true);
+    };
+
+  // Prefer role lookup (covers nested chrome title/caption), then walk as belt-and-suspenders.
+  UI_ELEMENT* caption_el = chrome->Elements_Get(UI_ELEMENT_CHROMEROLE_CAPTION);
+  UI_ELEMENT* title_el   = chrome->Elements_Get(UI_ELEMENT_CHROMEROLE_TITLE);
+  if(!caption_el && !title_el) return false;
+
+  apply_caption(caption_el);
+  apply_title(title_el);
+
+  auto walk = [&](UI_ELEMENT* element, auto&& self) -> void
+    {
+      if(!element) return;
+
+      switch(element->GetChromeRole())
+        {
+          case UI_ELEMENT_CHROMEROLE_CAPTION : apply_caption(element); break;
+          case UI_ELEMENT_CHROMEROLE_TITLE   : apply_title(element);   break;
+                                    default : element->SetMustReDraw(true); break;
+        }
+
+      if(element->GetComposeElements())
+        {
+          for(XDWORD c=0; c<element->GetComposeElements()->GetSize(); c++)
+            self(element->GetComposeElements()->Get(c), self);
+        }
+    };
+
+  XVECTOR<UI_ELEMENT*>* elements = chrome->Elements_Get();
+  if(elements)
+    {
+      for(XDWORD e=0; e<elements->GetSize(); e++)
+        walk(elements->Get(e), walk);
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::ApplyColorTheme_PatchStyleBag(UI_STYLE& style, bool light)
+* @brief      Remaps baked Dark/Light RGB strings inside a style bag (CSS declarations / :root vars).
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::ApplyColorTheme_PatchStyleBag(UI_STYLE& style, bool light)
+{
+  XVECTOR<UI_STYLEPROPERTY*>* props = style.GetProperties();
+  if(!props) return false;
+
+  for(XDWORD i=0; i<props->GetSize(); i++)
+    {
+      UI_STYLEPROPERTY* prop = props->Get(i);
+      if(!prop) continue;
+      XSTRING& value = prop->GetValue();
+      if(value.IsEmpty()) continue;
+
+      // Bidirectional so Accept can toggle either way after a previous theme.
+      if(light)
+        {
+          value.Replace(NL("24,28,36")    , NL("236,238,242"));
+          value.Replace(NL("12,14,18")    , NL("250,250,252"));
+          value.Replace(NL("70,80,95")    , NL("140,150,165"));
+          value.Replace(NL("160,170,185") , NL("140,150,165")); // prior Light token
+          value.Replace(NL("200,208,220") , NL("40,44,52"));
+        }
+       else
+        {
+          value.Replace(NL("236,238,242") , NL("24,28,36"));
+          value.Replace(NL("250,250,252") , NL("12,14,18"));
+          value.Replace(NL("140,150,165") , NL("70,80,95"));
+          value.Replace(NL("160,170,185") , NL("70,80,95"));
+          value.Replace(NL("40,44,52")    , NL("200,208,220"));
+        }
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::ApplyColorTheme_PatchStyleSheet(UI_STYLESHEET* sheet, bool light)
+* @brief      Updates :root variables and every rule declaration to the active theme palette.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::ApplyColorTheme_PatchStyleSheet(UI_STYLESHEET* sheet, bool light)
+{
+  if(!sheet) return false;
+
+  ApplyColorTheme_PatchStyleBag(sheet->Variables(), light);
+
+  if(light)
+    {
+      sheet->Variables().Set(NL("--page-bg")   , NL("236,238,242"));
+      sheet->Variables().Set(NL("--console-bg"), NL("250,250,252"));
+      sheet->Variables().Set(NL("--frame-line"), NL("140,150,165"));
+      sheet->Variables().Set(NL("--label-ink") , NL("40,44,52"));
+    }
+   else
+    {
+      sheet->Variables().Set(NL("--page-bg")   , NL("24,28,36"));
+      sheet->Variables().Set(NL("--console-bg"), NL("12,14,18"));
+      sheet->Variables().Set(NL("--frame-line"), NL("70,80,95"));
+      sheet->Variables().Set(NL("--label-ink") , NL("200,208,220"));
+    }
+
+  XVECTOR<UI_CSSRULE*>* rules = sheet->Rules_GetAll();
+  if(rules)
+    {
+      for(XDWORD r=0; r<rules->GetSize(); r++)
+        {
+          UI_CSSRULE* rule = rules->Get(r);
+          if(rule) ApplyColorTheme_PatchStyleBag(rule->GetDeclarations(), light);
+        }
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
+* @brief      Recursively applies page/console/frame/ink colors to one element subtree.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
+{
+  if(!element) return false;
+
+  // Window-chrome roles (caption / title / min / max / close / icon / language) keep their own palette.
+  if(element->GetChromeRole() != UI_ELEMENT_CHROMEROLE_NONE) return true;
+
+  const UI_ELEMENT_TYPE type = element->GetType();
+
+  // Icon faces (toolbar multioption/button + PNG/SVG brand art): never recolor or
+  // SnapshotStyleVisual — that replaced animation plates and hid the glyphs.
+  if((type == UI_ELEMENT_TYPE_IMAGE)      ||
+     (type == UI_ELEMENT_TYPE_ANIMATION)  ||
+     (type == UI_ELEMENT_TYPE_BUTTON)     ||
+     (type == UI_ELEMENT_TYPE_MULTIOPTION))
+    {
+      if(element->GetComposeElements())
+        {
+          for(XDWORD c=0; c<element->GetComposeElements()->GetSize(); c++)
+            ApplyColorTheme_Element(element->GetComposeElements()->Get(c), light);
+        }
+      return true;
+    }
+
+  // CSV 4th field is alpha PERCENT (0-100).
+  XCHAR* page_bg    = light ? NL("236,238,242,100") : NL("24,28,36,100");
+  XCHAR* console_bg = light ? NL("250,250,252,100") : NL("12,14,18,100");
+  XCHAR* frame_line = light ? NL("140,150,165,100") : NL("70,80,95,100");
+
+  auto rgb_eq = [](UI_COLOR* c, XBYTE r, XBYTE g, XBYTE b) -> bool
+    {
+      if(!c) return false;
+      return (c->GetRed() == r) && (c->GetGreen() == g) && (c->GetBlue() == b);
+    };
+
+  // Only remap colors that already belong to the Dark/Light token set. Leaves white chrome
+  // titles, black caption fills, accent inks, and non-theme button washes alone.
+  auto is_theme_ink = [&](UI_COLOR* c) -> bool
+    {
+      if(!c) return false;
+      if(rgb_eq(c, 200, 208, 220) || rgb_eq(c, 40, 44, 52)) return true;
+      // Named label_ink can drift a few LSB after style snapshots — treat near-tokens as theme ink.
+      const int r = (int)c->GetRed();
+      const int g = (int)c->GetGreen();
+      const int b = (int)c->GetBlue();
+      const int lum = r + g + b;
+      const bool neutral = (abs(r - g) <= 16) && (abs(g - b) <= 16);
+      return neutral && ((lum >= 560 && lum <= 680) || (lum >= 100 && lum <= 180));
+    };
+  auto is_theme_frame = [&](UI_COLOR* c) -> bool
+    {
+      return rgb_eq(c, 70, 80, 95) || rgb_eq(c, 160, 170, 185) || rgb_eq(c, 140, 150, 165);
+    };
+  auto is_theme_page = [&](UI_COLOR* c) -> bool
+    {
+      return rgb_eq(c, 24, 28, 36) || rgb_eq(c, 236, 238, 242);
+    };
+  auto is_theme_console = [&](UI_COLOR* c) -> bool
+    {
+      return rgb_eq(c, 12, 14, 18) || rgb_eq(c, 250, 250, 252);
+    };
+
+  bool changed = false;
+
+  // Toolbar legends + other label_ink texts: write components (PNG/SVG faces are never touched above).
+  if(element->IsColorSet() && element->GetColor() && is_theme_ink(element->GetColor()))
+    {
+      UI_COLOR* ink = element->GetColor();
+      if(type == UI_ELEMENT_TYPE_TEXT)
+        {
+          UI_LAYOUT* lay = element->GetLayout();
+          if(lay && lay->GetSkin() && lay->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
+            ((UI_SKINCANVAS*)lay->GetSkin())->PrepareTextContentChange(element);
+        }
+      if(light)
+        {
+          ink->SetRed(40); ink->SetGreen(44); ink->SetBlue(52); ink->SetAlpha(255);
+        }
+       else
+        {
+          ink->SetRed(200); ink->SetGreen(208); ink->SetBlue(220); ink->SetAlpha(255);
+        }
+      ink->SetValid(true);
+      changed = true;
+    }
+
+  if(element->IsBorderColorSet() && element->GetBorderColor() && is_theme_frame(element->GetBorderColor()))
+    {
+      element->GetBorderColor()->SetFromString(frame_line);
+      element->GetBorderColor()->SetValid(true);
+      changed = true;
+    }
+
+  if(element->IsBackgroundColorSet() && element->GetBackgroundColor() &&
+     (element->GetBackgroundColor()->GetAlpha() > 0))
+    {
+      UI_COLOR* bg = element->GetBackgroundColor();
+      const bool panel = ((type == UI_ELEMENT_TYPE_CONSOLE) ||
+                          (type == UI_ELEMENT_TYPE_TREE) ||
+                          (type == UI_ELEMENT_TYPE_PROPERTYLIST));
+
+      if(panel || is_theme_console(bg))
+        {
+          bg->SetFromString(console_bg);
+          bg->SetValid(true);
+          changed = true;
+        }
+       else if(is_theme_page(bg))
+        {
+          bg->SetFromString(page_bg);
+          bg->SetValid(true);
+          changed = true;
+        }
+    }
+
+  if(element->GetComputedStyle())
+    {
+      ApplyColorTheme_PatchStyleBag(*element->GetComputedStyle(), light);
+    }
+
+  if(changed)
+    {
+      // Pseudo-class restyles restore from this snapshot — only refresh when we actually wrote colors.
+      element->SnapshotStyleVisual();
+      element->SetMustReDraw(true);
+    }
+
+  if(element->GetComposeElements())
+    {
+      for(XDWORD c=0; c<element->GetComposeElements()->GetSize(); c++)
+        {
+          ApplyColorTheme_Element(element->GetComposeElements()->Get(c), light);
+        }
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
 * @brief      Processes the selected user interface element.
 * @ingroup    UTILITIES
@@ -2126,6 +2374,9 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
   XSTRING* name = element->GetName();
   if(!name) return false;
 
+  // Config modal (Color Theme draft / Accept / Cancel / Predeterminado).
+  if(form_cfg.HandleElementSelected(element)) return true;
+
   if(!name->Compare(NL("stop-btn"), true))
     {
       Toolbar_SetWorkingMode(false);
@@ -2168,32 +2419,6 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
   if(!name->Compare(NL("save-btn"), true))
     {
       OpStatus_Log(NL("Save (TODO)."));
-      return true;
-    }
-
-  if(!name->Compare(NL("config-btn"), true))
-    {
-      ConfigModal_Show(true);
-      return true;
-    }
-
-  if(!name->Compare(NL("config_modal_btn_accept"), true))
-    {
-      OpStatus_Log(NL("Config: Aceptar."));
-      ConfigModal_Show(false);
-      return true;
-    }
-
-  if(!name->Compare(NL("config_modal_btn_cancel"), true))
-    {
-      OpStatus_Log(NL("Config: Cancelar."));
-      ConfigModal_Show(false);
-      return true;
-    }
-
-  if(!name->Compare(NL("config_modal_btn_default"), true))
-    {
-      OpStatus_Log(NL("Config: Predeterminado (TODO)."));
       return true;
     }
 
@@ -2378,12 +2603,12 @@ void XTRACEMONITOR::HandleEvent_Graphics(GRPXEVENT* event)
       case GRPXEVENT_TYPE_SCREEN_CHANGESIZE       : { GRPSCREEN* screen = event->GetScreen();
                                                       if(!screen) break;
 
-                                                      // Geometry only. UpdateSize posts CHANGESIZE AFTER wiping
-                                                      // the canvas but BEFORE Layout_PutBackground + compose —
-                                                      // a full Update here captured chrome FormBackdrop/AnimBackdrop
-                                                      // on pure black (app icon black plate after maximize/restore).
-                                                      // UpdateSize finishes with PutBackground + SetToRedraw + Update.
-                                                      Layout_ApplyFlexibleResize();
+                                                      // Geometry only. UpdateSize already PutBackground and will
+                                                      // SetToRedraw + Update after this observer returns. A compose
+                                                      // wipe here raced Overlay_ClearSuppressedContentDirt and left
+                                                      // toolbar/panels blank after maximize/extend.
+                                                      Layout_ApplyFlexibleResize(false);
+                                                      resize_recover_frames = 3;
                                                     }
                                                     break;
     }
@@ -2450,18 +2675,15 @@ void XTRACEMONITOR::Clean()
   opstatus_last_baseline = 0.0f;
   opstatus_line_h        = 0.0f;
   brand_monitor             = NULL;
-  config_modal              = NULL;
-  config_modal_title        = NULL;
-  config_modal_btn_accept   = NULL;
-  config_modal_btn_cancel   = NULL;
-  config_modal_btn_default  = NULL;
   layout_applied_w          = 0;
   layout_applied_h          = 0;
+  resize_recover_frames     = 0;
   opstatus_expanded         = false;
   opstatus_prevpressed      = false;
   opstatus_click_armed      = false;
   opstatus_click_timer      = NULL;
   workingmode               = true;
+  chrome_theme_dirty        = false;
   exitapp                   = false;
 
   for(int c=0; c<XTRACEMONITOR_BUTTON_MAX; c++)

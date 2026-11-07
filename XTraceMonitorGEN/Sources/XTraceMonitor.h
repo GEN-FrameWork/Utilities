@@ -36,6 +36,8 @@
 
 #include "APPFlowGraphics.h"
 
+#include "XTraceMonitor_Form_CFG.h"
+
 
 
 /*---- DEFINES & ENUMS  ----------------------------------------------------------------------------------------------*/
@@ -90,7 +92,7 @@ enum XTRACEMONITOR_BUTTONS
 #define XTRACEMONITOR_LAYOUT_PANELS_X             222.0  // tree 6+210 + gap 6
 #define XTRACEMONITOR_LAYOUT_CAPTION_H            46.0
 #define XTRACEMONITOR_LAYOUT_CHROME_GAP           2.0    // air under custom caption before content
-#define XTRACEMONITOR_LAYOUT_VALOR_TOP            137.0  // packed under toolbar legends
+#define XTRACEMONITOR_LAYOUT_VALOR_TOP            148.0  // clears legends (y=134) + compact legend wipe
 #define XTRACEMONITOR_LAYOUT_VALOR_H              158.0  // header 26 + 6 rows×22 (exact 6 lines)
 #define XTRACEMONITOR_LAYOUT_FOOT_H               22.0
 #define XTRACEMONITOR_LAYOUT_BRAND_W              82.0
@@ -129,13 +131,14 @@ class UI_XEVENT;
 class UI_ELEMENT;
 class UI_ELEMENT_TEXT;
 class UI_ELEMENT_TEXTBOX;
-class UI_ELEMENT_FORM;
 class UI_ELEMENT_CONSOLE;
 class UI_ELEMENT_PROPERTYLIST;
 class UI_ELEMENT_TREE;
 class UI_ELEMENT_IMAGE;
 class GRPXEVENT;
 class XTRACEMONITOR_CFG;
+class UI_STYLE;
+class UI_STYLESHEET;
 
 class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
 {
@@ -152,6 +155,8 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
 
   private:
 
+    friend class                    XTRACEMONITOR_FORM_CFG;
+
     bool                            UpdateInput                             ();
 
     bool                            Ini_Graphics                            (GRPSCREEN* screen);
@@ -160,7 +165,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
 
     bool                            DrawFrame                               ();
 
-    bool                            Layout_ApplyFlexibleResize              ();
+    bool                            Layout_ApplyFlexibleResize              (bool compose = true);
 
     bool                            Console_Resolve                         ();
     bool                            Console_SeedStartupLines                ();
@@ -191,10 +196,11 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            Toolbar_ApplyRunStopVisibility          ();
     bool                            Toolbar_SlotSetVisible                  (UI_ELEMENT* element, bool visible);
 
-    bool                            ConfigModal_Resolve                     ();
-    bool                            ConfigModal_ApplyGeometry               ();
-    bool                            ConfigModal_Show                        (bool show);
-    bool                            ConfigModal_IsVisible                   ();
+    bool                            ApplyColorTheme                         (int colortheme);
+    bool                            ApplyColorTheme_Element                 (UI_ELEMENT* element, bool light);
+    bool                            ApplyColorTheme_PatchStyleBag          (UI_STYLE& style, bool light);
+    bool                            ApplyColorTheme_PatchStyleSheet         (UI_STYLESHEET* sheet, bool light);
+    bool                            ApplyColorTheme_RefreshChrome           (bool light);
 
     bool                            UserInterface_ElementSelected           (UI_ELEMENT* element);
     bool                            UserInterface_ChangeLiteralText         (UI_ELEMENT_TEXT* element_text, XSTRING* maskvalue, XSTRING* maskresult);
@@ -232,16 +238,14 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
 
     UI_ELEMENT_IMAGE*               brand_monitor;
 
-    UI_ELEMENT_FORM*                config_modal;
-    UI_ELEMENT*                     config_modal_title;
-    UI_ELEMENT*                     config_modal_btn_accept;
-    UI_ELEMENT*                     config_modal_btn_cancel;
-    UI_ELEMENT*                     config_modal_btn_default;
+    XTRACEMONITOR_FORM_CFG          form_cfg;
 
     int                             layout_applied_w;
     int                             layout_applied_h;
+    int                             resize_recover_frames; // full wipe+redraw after maximize/extend
 
     bool                            workingmode;   // true = working (Stop visible); false = paused (Run visible)
+    bool                            chrome_theme_dirty; // RefreshChrome pending until chrome layout exists
     bool                            exitapp;
 };
 
