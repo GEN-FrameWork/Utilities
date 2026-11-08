@@ -3,7 +3,7 @@
 * @file       XTraceMonitor_Form_CFG.h
 *
 * @class      XTRACEMONITOR_FORM_CFG
-* @brief      Configuracion modal: draft state, radios, Accept / Cancel / Predeterminado
+* @brief      Configuracion modal: draft state, radios/checks, Accept / Cancel / Predeterminado
 * @ingroup    UTILITIES
 *
 * @copyright  EndoraSoft. All rights reserved.
@@ -30,6 +30,8 @@
 
 /*---- INCLUDES ------------------------------------------------------------------------------------------------------*/
 
+#include "XString.h"
+
 /*---- DEFINES & ENUMS  ----------------------------------------------------------------------------------------------*/
 
 enum XTRACEMONITOR_FORM_CFG_COLORTHEME
@@ -47,6 +49,7 @@ class UI_ELEMENT;
 class UI_ELEMENT_FORM;
 class UI_ELEMENT_RADIOGROUP;
 class UI_ELEMENT_RADIOBUTTON;
+class UI_ELEMENT_CHECKBOX;
 
 class XTRACEMONITOR_FORM_CFG
 {
@@ -70,7 +73,9 @@ class XTRACEMONITOR_FORM_CFG
 
     bool                            LoadCommittedFromCFG                    ();
     bool                            SyncRadiosFromDraft                     ();
+    bool                            SyncChecksFromDraft                     ();
     int                             ReadDraftFromRadios                     ();
+    bool                            ReadDraftFromChecks                     ();
     bool                            SetDraftColorTheme                      (int colortheme);
     bool                            OnAccept                                ();
     bool                            OnCancel                                ();
@@ -88,9 +93,21 @@ class XTRACEMONITOR_FORM_CFG
     UI_ELEMENT_RADIOGROUP*          color_theme_group;
     UI_ELEMENT_RADIOBUTTON*         theme_light;
     UI_ELEMENT_RADIOBUTTON*         theme_dark;
+    UI_ELEMENT_CHECKBOX*            chk_savescreenposition;
+    UI_ELEMENT_CHECKBOX*            chk_savescreensize;
 
     int                             colortheme_committed;
     int                             colortheme_draft;
+
+    bool                            savescreenposition_committed;
+    bool                            savescreenposition_draft;
+    bool                            savescreensize_committed;
+    bool                            savescreensize_draft;
+
+    XSTRING                         savedscreenposition_committed;
+    XSTRING                         savedscreenposition_draft;
+    XSTRING                         savedscreensize_committed;
+    XSTRING                         savedscreensize_draft;
 };
 
 

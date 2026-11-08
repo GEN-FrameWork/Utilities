@@ -42,6 +42,8 @@
 #include "UI_Element_Text.h"
 #include "UI_Element_RadioGroup.h"
 #include "UI_Element_RadioButton.h"
+#include "UI_Element_CheckBox.h"
+#include "UI_Element_Animation.h"
 #include "UI_Layout.h"
 #include "UI_Skin.h"
 #include "UI_Manager.h"
@@ -122,6 +124,8 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
   color_theme_group        = (UI_ELEMENT_RADIOGROUP*)GEN_USERINTERFACE.Element_Get(NL("color_theme_group"), UI_ELEMENT_TYPE_RADIOGROUP);
   theme_light              = (UI_ELEMENT_RADIOBUTTON*)GEN_USERINTERFACE.Element_Get(NL("theme_light"), UI_ELEMENT_TYPE_RADIOBUTTON);
   theme_dark               = (UI_ELEMENT_RADIOBUTTON*)GEN_USERINTERFACE.Element_Get(NL("theme_dark") , UI_ELEMENT_TYPE_RADIOBUTTON);
+  chk_savescreenposition   = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_savescreenposition"), UI_ELEMENT_TYPE_CHECKBOX);
+  chk_savescreensize       = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_savescreensize")    , UI_ELEMENT_TYPE_CHECKBOX);
 
   if(!config_modal_title || !config_modal_btn_accept || !config_modal_btn_cancel || !config_modal_btn_default)
     {
@@ -129,6 +133,11 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
     }
 
   if(!color_theme_group || !theme_light || !theme_dark)
+    {
+      return false;
+    }
+
+  if(!chk_savescreenposition || !chk_savescreensize)
     {
       return false;
     }
@@ -143,6 +152,7 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
 
   if(!LoadCommittedFromCFG()) return false;
   if(!SyncRadiosFromDraft()) return false;
+  if(!SyncChecksFromDraft()) return false;
 
   config_modal->SetVisible(false);
   return true;
@@ -234,6 +244,13 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   place_child(config_modal_btn_accept , btn_x + btn_w + gap,         btn_local_y, btn_w, btn_h);
   place_child(config_modal_btn_cancel , btn_x + (btn_w + gap) * 2.0, btn_local_y, btn_w, btn_h);
 
+  // Window save checks — under Color Theme (group bottom local y ~338).
+  const double chk_x = XTRACEMONITOR_CONFIGMODAL_PAD;
+  const double chk_w = modal_w - (XTRACEMONITOR_CONFIGMODAL_PAD * 2.0);
+  const double chk_h = 28.0;
+  place_child((UI_ELEMENT*)chk_savescreenposition, chk_x, 280.0, chk_w, chk_h);
+  place_child((UI_ELEMENT*)chk_savescreensize    , chk_x, 244.0, chk_w, chk_h);
+
   UI_LAYOUT* layout = GEN_USERINTERFACE.Element_GetLayout(config_modal);
   UI_SKIN*   skin   = layout ? layout->GetSkin() : NULL;
   if(skin)
@@ -242,7 +259,72 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
       if(config_modal_btn_accept)  skin->CalculeBoundaryLine_AllElements(config_modal_btn_accept , true);
       if(config_modal_btn_cancel)  skin->CalculeBoundaryLine_AllElements(config_modal_btn_cancel , true);
       if(color_theme_group)        skin->CalculeBoundaryLine_AllElements(color_theme_group, true);
+      if(chk_savescreenposition)   skin->CalculeBoundaryLine_AllElements(chk_savescreenposition, true);
+      if(chk_savescreensize)       skin->CalculeBoundaryLine_AllElements(chk_savescreensize, true);
     }
+
+  // AllElements recurses into anim/text and undoes the skin glyph pack — pin again here.
+  auto pack_check_row = [](UI_ELEMENT_CHECKBOX* chk)
+    {
+      if(!chk || !chk->GetBoundaryLine()) return;
+
+      UI_ELEMENT_ANIMATION* anim = chk->Get_UIAnimation();
+      UI_ELEMENT_TEXT*      text = chk->Get_UIText();
+      if(!anim || !text || !anim->GetBoundaryLine() || !text->GetBoundaryLine()) return;
+
+      const double glyph   = 16.0;
+      const double gap_x   = 8.0;
+      const double row_h   = chk->GetBoundaryLine()->height;
+      double       sf      = (double)text->GetSizeFont();
+      if(sf < 1.0) sf = 12.0;
+      const double optical = sf * 0.22;
+
+      double anim_y = (row_h - glyph) * 0.5;
+      if(anim_y < 0.0) anim_y = 0.0;
+      double text_y = anim_y + (glyph * 0.5) - optical;
+      if(text_y < 0.0) text_y = 0.0;
+
+      anim->GetBoundaryLine()->x      = 0.0;
+      anim->GetBoundaryLine()->y      = anim_y;
+      anim->GetBoundaryLine()->width  = glyph;
+      anim->GetBoundaryLine()->height = glyph;
+
+      text->GetBoundaryLine()->x      = glyph + gap_x;
+      text->GetBoundaryLine()->y      = text_y;
+      text->GetBoundaryLine()->width  = chk->GetBoundaryLine()->width - glyph - gap_x;
+      if(text->GetBoundaryLine()->width < 1.0) text->GetBoundaryLine()->width = 1.0;
+      text->GetBoundaryLine()->height = sf;
+
+      const double fx = chk->GetXPosition();
+      const double fy = chk->GetYPosition();
+      anim->SetXPosition(fx);
+      anim->SetYPosition(fy - anim_y);
+      text->SetXPosition(fx + glyph + gap_x);
+      text->SetYPosition(fy - text_y);
+
+      if(anim->GetComposeElements())
+        {
+          for(XDWORD c=0; c<anim->GetComposeElements()->GetSize(); c++)
+            {
+              UI_ELEMENT* img = anim->GetComposeElements()->Get(c);
+              if(!img || !img->GetBoundaryLine()) continue;
+              img->GetBoundaryLine()->x      = 0.0;
+              img->GetBoundaryLine()->y      = 0.0;
+              img->GetBoundaryLine()->width  = glyph;
+              img->GetBoundaryLine()->height = glyph;
+              img->SetXPosition(anim->GetXPosition());
+              img->SetYPosition(anim->GetYPosition());
+              img->SetMustReDraw(true);
+            }
+        }
+
+      anim->SetMustReDraw(true);
+      text->SetMustReDraw(true);
+      chk->SetMustReDraw(true);
+    };
+
+  pack_check_row(chk_savescreenposition);
+  pack_check_row(chk_savescreensize);
 
   auto center_btn_captions = [](UI_ELEMENT* multi)
     {
@@ -293,6 +375,8 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   if(config_modal_btn_cancel)  config_modal_btn_cancel->SetMustReDraw(true);
   if(config_modal_btn_default) config_modal_btn_default->SetMustReDraw(true);
   if(color_theme_group)        color_theme_group->SetMustReDraw(true);
+  if(chk_savescreenposition)   chk_savescreenposition->SetMustReDraw(true);
+  if(chk_savescreensize)       chk_savescreensize->SetMustReDraw(true);
 
   return true;
 }
@@ -330,11 +414,22 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
 
   if(show)
     {
+      // One app modal at a time (same Element_SetModal slot as Filters).
+      if(owner->form_filters.IsVisible())
+        {
+          owner->form_filters.Show(false);
+        }
+
       if(!ApplyGeometry()) return false;
 
-      // Draft starts from the last committed CFG value (radios only — no runtime theme apply yet).
-      colortheme_draft = colortheme_committed;
+      // Draft starts from the last committed CFG values (no runtime apply until Accept).
+      colortheme_draft               = colortheme_committed;
+      savescreenposition_draft       = savescreenposition_committed;
+      savescreensize_draft           = savescreensize_committed;
+      savedscreenposition_draft      = savedscreenposition_committed;
+      savedscreensize_draft          = savedscreensize_committed;
       if(!SyncRadiosFromDraft()) return false;
+      if(!SyncChecksFromDraft()) return false;
 
       GEN_USERINTERFACE.SetPreselectElement();
       config_modal->SetVisible(true);
@@ -385,6 +480,21 @@ bool XTRACEMONITOR_FORM_CFG::HandleElementSelected(UI_ELEMENT* element)
       if(theme_dark && (element == (UI_ELEMENT*)theme_dark))
         {
           return SetDraftColorTheme(XTRACEMONITOR_FORM_CFG_COLORTHEME_DARK);
+        }
+    }
+
+  // Manager already toggled checkbox status before this callback.
+  if(element->GetType() == UI_ELEMENT_TYPE_CHECKBOX)
+    {
+      if(chk_savescreenposition && (element == (UI_ELEMENT*)chk_savescreenposition))
+        {
+          savescreenposition_draft = chk_savescreenposition->GetStatus();
+          return true;
+        }
+      if(chk_savescreensize && (element == (UI_ELEMENT*)chk_savescreensize))
+        {
+          savescreensize_draft = chk_savescreensize->GetStatus();
+          return true;
         }
     }
 
@@ -460,6 +570,20 @@ bool XTRACEMONITOR_FORM_CFG::LoadCommittedFromCFG()
 
   colortheme_committed = cfg.ResolveColorTheme(cfg.GetColorTheme());
   colortheme_draft     = colortheme_committed;
+
+  savescreenposition_committed = cfg.GetSaveScreenPosition();
+  savescreenposition_draft     = savescreenposition_committed;
+  savescreensize_committed     = cfg.GetSaveScreenSize();
+  savescreensize_draft         = savescreensize_committed;
+
+  if(cfg.GetSavedScreenPosition()) savedscreenposition_committed = (*cfg.GetSavedScreenPosition());
+                              else savedscreenposition_committed.Empty();
+  savedscreenposition_draft = savedscreenposition_committed;
+
+  if(cfg.GetSavedScreenSize()) savedscreensize_committed = (*cfg.GetSavedScreenSize());
+                          else savedscreensize_committed.Empty();
+  savedscreensize_draft = savedscreensize_committed;
+
   return true;
 }
 
@@ -531,6 +655,44 @@ bool XTRACEMONITOR_FORM_CFG::SetDraftColorTheme(int colortheme)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool XTRACEMONITOR_FORM_CFG::SyncChecksFromDraft()
+* @brief      Applies draft window-save checkbox states to the UI.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::SyncChecksFromDraft()
+{
+  if(!chk_savescreenposition || !chk_savescreensize) return false;
+
+  chk_savescreenposition->SetStatus(savescreenposition_draft);
+  chk_savescreensize->SetStatus(savescreensize_draft);
+  GEN_USERINTERFACE.Elements_SetToRedraw(chk_savescreenposition);
+  GEN_USERINTERFACE.Elements_SetToRedraw(chk_savescreensize);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::ReadDraftFromChecks()
+* @brief      Reads draft window-save flags from the checkbox widgets.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::ReadDraftFromChecks()
+{
+  if(chk_savescreenposition) savescreenposition_draft = chk_savescreenposition->GetStatus();
+  if(chk_savescreensize)     savescreensize_draft     = chk_savescreensize->GetStatus();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool XTRACEMONITOR_FORM_CFG::OnAccept()
 * @brief      Commits draft to CFG, saves the INI file, closes the modal.
 * @ingroup    UTILITIES
@@ -544,9 +706,14 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
 
   colortheme_draft = ReadDraftFromRadios();
   colortheme_draft = XTRACEMONITOR_CFG::GetInstance(false).ResolveColorTheme(colortheme_draft);
+  ReadDraftFromChecks();
 
   XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
   cfg.SetColorTheme(colortheme_draft);
+  cfg.SetSaveScreenPosition(savescreenposition_draft);
+  cfg.SetSaveScreenSize(savescreensize_draft);
+  cfg.SetSavedScreenPosition(savedscreenposition_draft.Get());
+  cfg.SetSavedScreenSize(savedscreensize_draft.Get());
 
   if(!cfg.Save())
     {
@@ -554,13 +721,20 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
       return false;
     }
 
-  colortheme_committed = colortheme_draft;
+  colortheme_committed          = colortheme_draft;
+  savescreenposition_committed  = savescreenposition_draft;
+  savescreensize_committed      = savescreensize_draft;
+  savedscreenposition_committed = savedscreenposition_draft;
+  savedscreensize_committed     = savedscreensize_draft;
 
   if(!owner->ApplyColorTheme(colortheme_committed))
     {
       owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado; error al aplicar tema."));
       return Show(false);
     }
+
+  // Predeterminado can reset draft geometry to (0,0) / design minimum; apply after commit.
+  owner->ApplySavedScreenGeometry();
 
   owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado y tema aplicado."));
   return Show(false);
@@ -580,8 +754,13 @@ bool XTRACEMONITOR_FORM_CFG::OnCancel()
 {
   if(!owner) return false;
 
-  colortheme_draft = colortheme_committed;
+  colortheme_draft               = colortheme_committed;
+  savescreenposition_draft       = savescreenposition_committed;
+  savescreensize_draft           = savescreensize_committed;
+  savedscreenposition_draft      = savedscreenposition_committed;
+  savedscreensize_draft          = savedscreensize_committed;
   SyncRadiosFromDraft();
+  SyncChecksFromDraft();
 
   owner->OpStatus_Log(NL("Config: Cancelar."));
   return Show(false);
@@ -601,9 +780,15 @@ bool XTRACEMONITOR_FORM_CFG::OnDefault()
 {
   if(!owner) return false;
 
-  // Factory default for colortheme only (does not rewrite the whole CFG file).
-  colortheme_draft = XTRACEMONITOR_CFG_COLORTHEME_DEFAULT;
+  // Factory defaults (does not rewrite the CFG file until Accept).
+  colortheme_draft         = XTRACEMONITOR_CFG_COLORTHEME_DEFAULT;
+  savescreenposition_draft = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
+  savescreensize_draft     = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
+  savedscreenposition_draft.Format(NL("%d, %d"), 0, 0);
+  savedscreensize_draft.Format(NL("%d, %d"), XTRACEMONITOR_WINDOW_WIDTH, XTRACEMONITOR_WINDOW_HEIGHT);
+
   SyncRadiosFromDraft();
+  SyncChecksFromDraft();
 
   owner->OpStatus_Log(NL("Config: Predeterminado."));
   return true;
@@ -629,6 +814,16 @@ void XTRACEMONITOR_FORM_CFG::Clean()
   color_theme_group         = NULL;
   theme_light               = NULL;
   theme_dark                = NULL;
+  chk_savescreenposition    = NULL;
+  chk_savescreensize        = NULL;
   colortheme_committed      = XTRACEMONITOR_FORM_CFG_COLORTHEME_DARK;
   colortheme_draft          = XTRACEMONITOR_FORM_CFG_COLORTHEME_DARK;
+  savescreenposition_committed = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
+  savescreenposition_draft     = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
+  savescreensize_committed     = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
+  savescreensize_draft         = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
+  savedscreenposition_committed.Empty();
+  savedscreenposition_draft.Empty();
+  savedscreensize_committed.Empty();
+  savedscreensize_draft.Empty();
 }

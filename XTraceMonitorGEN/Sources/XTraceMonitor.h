@@ -37,6 +37,7 @@
 #include "APPFlowGraphics.h"
 
 #include "XTraceMonitor_Form_CFG.h"
+#include "XTraceMonitor_Form_Filters.h"
 
 
 
@@ -156,6 +157,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
   private:
 
     friend class                    XTRACEMONITOR_FORM_CFG;
+    friend class                    XTRACEMONITOR_FORM_FILTERS;
 
     bool                            UpdateInput                             ();
 
@@ -196,6 +198,9 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            Toolbar_ApplyRunStopVisibility          ();
     bool                            Toolbar_SlotSetVisible                  (UI_ELEMENT* element, bool visible);
 
+    bool                            ApplySavedScreenGeometry                ();
+    bool                            PersistScreenGeometryToCFG              ();
+    void                            PersistScreenGeometryIfExiting          ();
     bool                            ApplyColorTheme                         (int colortheme);
     bool                            ApplyColorTheme_Element                 (UI_ELEMENT* element, bool light);
     bool                            ApplyColorTheme_PatchStyleBag          (UI_STYLE& style, bool light);
@@ -239,6 +244,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     UI_ELEMENT_IMAGE*               brand_monitor;
 
     XTRACEMONITOR_FORM_CFG          form_cfg;
+    XTRACEMONITOR_FORM_FILTERS      form_filters;
 
     int                             layout_applied_w;
     int                             layout_applied_h;
@@ -247,6 +253,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            workingmode;   // true = working (Stop visible); false = paused (Run visible)
     bool                            chrome_theme_dirty; // RefreshChrome pending until chrome layout exists
     bool                            exitapp;
+    bool                            screen_geometry_persisted; // one-shot save before mainscreen is destroyed
 };
 
 

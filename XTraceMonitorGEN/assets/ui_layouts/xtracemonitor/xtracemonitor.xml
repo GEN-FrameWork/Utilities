@@ -37,7 +37,7 @@
   <color name="console_back">12,14,18,255</color>
   <color name="label_ink">200,208,220,255</color>
 
-  <!-- CSS Lite for config-modal / radio controls (class-scoped; main chrome stays absolute XML). -->
+  <!-- CSS Lite for config/filters modals + radio controls (class-scoped; main chrome stays absolute XML). -->
   <stylesheet >xtracemonitor.css</stylesheet>
 
   <layout name="xtracemonitor" backgroundcolor="24,28,36">
@@ -254,6 +254,24 @@
         </element>
       </element>
 
+      <!-- Window geometry persistence (draft until Accept). Defaults ON. -->
+      <element name="chk_savescreenposition" type="checkbox" class="config-check" xpos="24" ypos="280" width="420" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_savescreenposition_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_savescreenposition_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Guardar posicion de la ventana</element>
+      </element>
+      <element name="chk_savescreensize" type="checkbox" class="config-check" xpos="24" ypos="244" width="420" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_savescreensize_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_savescreensize_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Guardar tamano de la ventana</element>
+      </element>
+
       <element name="config_modal_btn_default" type="multioption" xpos="262" ypos="16" width="160" height="53">
         <element type="button" name="config_modal_btn_default" selectablestatus="active" width="160" height="53">
           <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
@@ -306,6 +324,76 @@
           <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Pressed.png</image></element>
         </element>
         <element type="button" name="config_modal_btn_cancel" selectablestatus="deactive" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Disabled.png</image></element>
+        </element>
+      </element>
+    </element>
+
+  </layout>
+
+  <!-- Filters dialog: same fixed 900×524 chrome as config_modal; C++ recenters on resize.
+       Options TBD — footer buttons only for now. -->
+  <layout name="filters_modal">
+
+    <element name="filters_modal" type="form" class="filters-modal" xpos="150" ypos="611" width="900" height="524" visible="0"
+             roundrect="8" border-width="1" border-color="frame_line" bckgrdcolor="24,28,36"
+             overflow-y="hidden" overflow-x="hidden">
+      <element name="filters_modal_title" type="text" xpos="16" ypos="508" width="400" height="22"
+               sizefont="18" color="label_ink">Filtros</element>
+
+      <element name="filters_modal_btn_default" type="multioption" xpos="262" ypos="16" width="160" height="53">
+        <element type="button" name="filters_modal_btn_default" selectablestatus="active" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Active.png</image></element>
+        </element>
+        <element type="button" name="filters_modal_btn_default" selectablestatus="preselect" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Preselected.png</image></element>
+        </element>
+        <element type="button" name="filters_modal_btn_default" selectablestatus="selected" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Pressed.png</image></element>
+        </element>
+        <element type="button" name="filters_modal_btn_default" selectablestatus="deactive" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Disabled.png</image></element>
+        </element>
+      </element>
+
+      <element name="filters_modal_btn_accept" type="multioption" xpos="438" ypos="16" width="160" height="53">
+        <element type="button" name="filters_modal_btn_accept" selectablestatus="active" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Active.png</image></element>
+        </element>
+        <element type="button" name="filters_modal_btn_accept" selectablestatus="preselect" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Preselected.png</image></element>
+        </element>
+        <element type="button" name="filters_modal_btn_accept" selectablestatus="selected" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Pressed.png</image></element>
+        </element>
+        <element type="button" name="filters_modal_btn_accept" selectablestatus="deactive" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Disabled.png</image></element>
+        </element>
+      </element>
+
+      <element name="filters_modal_btn_cancel" type="multioption" xpos="614" ypos="16" width="160" height="53">
+        <element type="button" name="filters_modal_btn_cancel" selectablestatus="active" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Active.png</image></element>
+        </element>
+        <element type="button" name="filters_modal_btn_cancel" selectablestatus="preselect" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Preselected.png</image></element>
+        </element>
+        <element type="button" name="filters_modal_btn_cancel" selectablestatus="selected" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Pressed.png</image></element>
+        </element>
+        <element type="button" name="filters_modal_btn_cancel" selectablestatus="deactive" width="160" height="53">
           <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
           <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Disabled.png</image></element>
         </element>

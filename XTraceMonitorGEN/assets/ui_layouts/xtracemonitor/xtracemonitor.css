@@ -16,8 +16,9 @@
   --root-font-size: 16;
 }
 
-/* Config dialog panel (XML still owns size / visibility; CSS owns chrome tokens). */
-form.config-modal {
+/* Config / Filters dialog panels (XML still owns size / visibility; CSS owns chrome tokens). */
+form.config-modal,
+form.filters-modal {
   background-color: var(--page-bg);
   border-width:     1;
   border-color:     var(--frame-line);
@@ -44,6 +45,14 @@ radiogroup.radio-group {
    bottom) and Latin ink sits low in the em box. Skin packs ring mid to the optical mid
    (~0.22×sizefont above baseline) so Light/Dark captions share the same offset. */
 radiobutton.radio-button {
+  background-color: 0,0,0,0;
+  border-width:     0;
+  color:            var(--label-ink);
+  font-size:        12;
+}
+
+/* Config modal window-geometry checks (box + caption). */
+checkbox.config-check {
   background-color: 0,0,0,0;
   border-width:     0;
   color:            var(--label-ink);

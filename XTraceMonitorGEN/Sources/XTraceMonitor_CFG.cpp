@@ -127,6 +127,19 @@ bool XTRACEMONITOR_CFG::DoVariableMapping()
   AddValue(XFILECFG_VALUETYPE_INT, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_COLORTHEME, &colortheme,
            NL("Color theme (0=invalid, 1=Dark, 2=Light)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
 
+  AddValue(XFILECFG_VALUETYPE_BOOLEAN, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_SAVESCREENPOSITION, &savescreenposition,
+           NL("Save main window position on exit"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_BOOLEAN, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_SAVESCREENSIZE, &savescreensize,
+           NL("Save main window size on exit"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_SAVEDSCREENPOSITION, &savedscreenposition,
+           NL("Last main window position (x, y)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_SAVEDSCREENSIZE, &savedscreensize,
+           NL("Last main window size (width, height)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+
+  // Filters options (XTraceMonitor_Form_Filters) — keys added here as the modal gains controls.
+  AddRemark(XTRACEMONITOR_CFG_SECTION_FILTERS, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
+  AddRemark(XTRACEMONITOR_CFG_SECTION_FILTERS, NL(" Filters section of configuration"), 0, 2);
+
   return true;
 }
 
@@ -175,6 +188,10 @@ bool XTRACEMONITOR_CFG::DoDefault()
   //------------------------------------------------------------------------------
 
   colortheme                            = XTRACEMONITOR_CFG_COLORTHEME_DEFAULT;
+  savescreenposition                    = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
+  savescreensize                        = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
+  SetSavedScreenPosition(0, 0);
+  SetSavedScreenSize(XTRACEMONITOR_WINDOW_WIDTH, XTRACEMONITOR_WINDOW_HEIGHT);
 
   //------------------------------------------------------------------------------
 
@@ -254,6 +271,243 @@ int XTRACEMONITOR_CFG::ResolveColorTheme(int colortheme)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool XTRACEMONITOR_CFG::GetSaveScreenPosition()
+* @brief      True when the main window position should be persisted on exit.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if save-on-exit is enabled.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::GetSaveScreenPosition()
+{
+  return savescreenposition;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetSaveScreenPosition(bool enable)
+* @brief      Enables or disables persisting the main window position on exit.
+* @ingroup    UTILITIES
+*
+* @param[in]  enable : true to save position on exit.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetSaveScreenPosition(bool enable)
+{
+  savescreenposition = enable;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::GetSaveScreenSize()
+* @brief      True when the main window size should be persisted on exit.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if save-on-exit is enabled.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::GetSaveScreenSize()
+{
+  return savescreensize;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetSaveScreenSize(bool enable)
+* @brief      Enables or disables persisting the main window size on exit.
+* @ingroup    UTILITIES
+*
+* @param[in]  enable : true to save size on exit.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetSaveScreenSize(bool enable)
+{
+  savescreensize = enable;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XSTRING* XTRACEMONITOR_CFG::GetSavedScreenPosition()
+* @brief      Raw "x, y" string for the last saved main window position.
+* @ingroup    UTILITIES
+*
+* @return     XSTRING* : Saved position string.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XSTRING* XTRACEMONITOR_CFG::GetSavedScreenPosition()
+{
+  return &savedscreenposition;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetSavedScreenPosition(int x, int y)
+* @brief      Stores the main window position as "x, y".
+* @ingroup    UTILITIES
+*
+* @param[in]  x : Desktop X.
+* @param[in]  y : Desktop Y.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetSavedScreenPosition(int x, int y)
+{
+  savedscreenposition.Format(NL("%d, %d"), x, y);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetSavedScreenPosition(XCHAR* value)
+* @brief      Stores the raw saved-position string.
+* @ingroup    UTILITIES
+*
+* @param[in]  value : "x, y" text.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetSavedScreenPosition(XCHAR* value)
+{
+  if(value) savedscreenposition = value;
+       else savedscreenposition.Empty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::ParseSavedScreenPosition(int& x, int& y)
+* @brief      Parses savedscreenposition into integers when the value is valid.
+* @ingroup    UTILITIES
+*
+* @param[out] x : Desktop X.
+* @param[out] y : Desktop Y.
+*
+* @return     bool : true if parsed successfully.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::ParseSavedScreenPosition(int& x, int& y)
+{
+  return ParseIntPair(&savedscreenposition, x, y);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XSTRING* XTRACEMONITOR_CFG::GetSavedScreenSize()
+* @brief      Raw "width, height" string for the last saved main window size.
+* @ingroup    UTILITIES
+*
+* @return     XSTRING* : Saved size string.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XSTRING* XTRACEMONITOR_CFG::GetSavedScreenSize()
+{
+  return &savedscreensize;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetSavedScreenSize(int width, int height)
+* @brief      Stores the main window size as "width, height".
+* @ingroup    UTILITIES
+*
+* @param[in]  width  : Client width.
+* @param[in]  height : Client height.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetSavedScreenSize(int width, int height)
+{
+  savedscreensize.Format(NL("%d, %d"), width, height);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetSavedScreenSize(XCHAR* value)
+* @brief      Stores the raw saved-size string.
+* @ingroup    UTILITIES
+*
+* @param[in]  value : "width, height" text.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetSavedScreenSize(XCHAR* value)
+{
+  if(value) savedscreensize = value;
+       else savedscreensize.Empty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::ParseSavedScreenSize(int& width, int& height)
+* @brief      Parses savedscreensize into integers when the value is valid (>= design minimum).
+* @ingroup    UTILITIES
+*
+* @param[out] width  : Client width.
+* @param[out] height : Client height.
+*
+* @return     bool : true if parsed successfully and size is usable.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::ParseSavedScreenSize(int& width, int& height)
+{
+  if(!ParseIntPair(&savedscreensize, width, height)) return false;
+  if(width  < XTRACEMONITOR_WINDOW_WIDTH)  return false;
+  if(height < XTRACEMONITOR_WINDOW_HEIGHT) return false;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::ParseIntPair(XSTRING* value, int& a, int& b)
+* @brief      Parses a "a, b" integer pair from a CFG string.
+* @note       INTERNAL
+* @ingroup    UTILITIES
+*
+* @param[in]  value : Source string.
+* @param[out] a : First integer.
+* @param[out] b : Second integer.
+*
+* @return     bool : true if both integers were parsed.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::ParseIntPair(XSTRING* value, int& a, int& b)
+{
+  if(!value || value->IsEmpty()) return false;
+
+  int comma = value->FindCharacter((XCHAR)',', 0);
+  if(comma < 0) return false;
+
+  XSTRING left;
+  XSTRING right;
+  value->Copy(0, comma, left);
+  value->Copy(comma + 1, value->GetSize(), right);
+
+  left.DeleteCharacter((XCHAR)' ' , XSTRINGCONTEXT_ALLSTRING);
+  left.DeleteCharacter((XCHAR)'\t', XSTRINGCONTEXT_ALLSTRING);
+  right.DeleteCharacter((XCHAR)' ' , XSTRINGCONTEXT_ALLSTRING);
+  right.DeleteCharacter((XCHAR)'\t', XSTRINGCONTEXT_ALLSTRING);
+  if(left.IsEmpty() || right.IsEmpty()) return false;
+
+  // ConvertToInt validates against integer characters (optional leading '-').
+  XSTRING digitchars;
+  digitchars = XSTRING_VALIDCHARSINT;
+  if(!left.AreValidCharacters(digitchars.Get()))  return false;
+  if(!right.AreValidCharacters(digitchars.Get())) return false;
+
+  a = left.ConvertToInt(0, NULL, false);
+  b = right.ConvertToInt(0, NULL, false);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         XTRACEMONITOR_CFG::XTRACEMONITOR_CFG(XCHAR* namefile)
 * @brief      Constructor.
 * @ingroup    UTILITIES
@@ -302,5 +556,9 @@ XTRACEMONITOR_CFG::~XTRACEMONITOR_CFG()
 *---------------------------------------------------------------------------------------------------------------------*/
 void XTRACEMONITOR_CFG::Clean()
 {
-  colortheme = XTRACEMONITOR_CFG_COLORTHEME_INVALID;
+  colortheme           = XTRACEMONITOR_CFG_COLORTHEME_INVALID;
+  savescreenposition   = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
+  savescreensize       = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
+  savedscreenposition.Empty();
+  savedscreensize.Empty();
 }

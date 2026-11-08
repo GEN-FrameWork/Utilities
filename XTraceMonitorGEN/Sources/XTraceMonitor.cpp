@@ -284,6 +284,10 @@ bool XTRACEMONITOR::AppProc_FirstUpdate()
       return false;
     }
 
+  // Apply saved desktop geometry after the native window exists (Create/Show can ignore
+  // pre-Create SetPosition on some hosts; size is usually already applied via SetWidth/Height).
+  ApplySavedScreenGeometry();
+
   //--------------------------------------------------------------------------------------
 
   if(xtimer) xtimer->Reset();
@@ -305,6 +309,9 @@ bool XTRACEMONITOR::AppProc_FirstUpdate()
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::AppProc_Update()
 {
+  // WM_QUIT sets exit before this call; persist while mainscreen is still alive.
+  PersistScreenGeometryIfExiting();
+
   if(GetEvent()==XTRACEMONITOR_XFSMEVENT_NONE)
     {
       switch(GetCurrentState())
@@ -317,6 +324,8 @@ bool XTRACEMONITOR::AppProc_Update()
 
                                                 if(exitapp)
                                                   {
+                                                    PersistScreenGeometryToCFG();
+                                                    screen_geometry_persisted = true;
                                                     SetExitType(APPFLOWBASE_EXITTYPE_BY_USER);
                                                     exitapp = false;
                                                   }
@@ -344,6 +353,9 @@ bool XTRACEMONITOR::AppProc_Update()
         }
     }
 
+  // CLOSE/ESC set exit during UpdateInput; persist before APPFLOWGRAPHICS::End deletes the screen.
+  PersistScreenGeometryIfExiting();
+
   return true;
 }
 
@@ -362,6 +374,11 @@ bool XTRACEMONITOR::AppProc_End()
   //--------------------------------------------------------------------------------------
 
   SetCurrentState(XTRACEMONITOR_XFSMSTATE_END);
+
+  //--------------------------------------------------------------------------------------
+
+  // Geometry must already be persisted in AppProc_Update: APPFLOWGRAPHICS::End deletes
+  // mainscreen before AppProc_End runs.
 
   //--------------------------------------------------------------------------------------
 
@@ -540,6 +557,8 @@ bool XTRACEMONITOR::UpdateInput()
     {
       if(button[XTRACEMONITOR_BUTTON_ESC]->IsPressedWithRelease())
         {
+          PersistScreenGeometryToCFG();
+          screen_geometry_persisted = true;
           SetExitType(APPFLOWBASE_EXITTYPE_BY_USER);
         }
     }
@@ -578,14 +597,161 @@ bool XTRACEMONITOR::Ini_Graphics(GRPSCREEN* screen)
 
   screen->SetDesktopScreenSelected(GRPSCREENTYPE_DESKTOP_MAIN);
 
-  screen->SetPosition(100, 100);
-  screen->SetWidth(XTRACEMONITOR_WINDOW_WIDTH);
-  screen->SetHeight(XTRACEMONITOR_WINDOW_HEIGHT);
+  // Seed Create() geometry from CFG when valid; ApplySavedScreenGeometry() re-applies after Show.
+  int pos_x = 0;
+  int pos_y = 0;
+  int size_w = XTRACEMONITOR_WINDOW_WIDTH;
+  int size_h = XTRACEMONITOR_WINDOW_HEIGHT;
+
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  int saved_x = 0;
+  int saved_y = 0;
+  if(cfg.ParseSavedScreenPosition(saved_x, saved_y))
+    {
+      pos_x = saved_x;
+      pos_y = saved_y;
+    }
+
+  int saved_w = 0;
+  int saved_h = 0;
+  if(cfg.ParseSavedScreenSize(saved_w, saved_h))
+    {
+      size_w = saved_w;
+      size_h = saved_h;
+    }
+
+  screen->SetPosition(pos_x, pos_y);
+  screen->SetWidth((XDWORD)size_w);
+  screen->SetHeight((XDWORD)size_h);
 
   // Custom chrome (borderless GEN caption). Must run before the native window is created.
   UserInterface_CFGChromes(screen);
 
   return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::ApplySavedScreenGeometry()
+* @brief      Moves/resizes the live main window from CFG savedscreenposition / savedscreensize.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if any geometry was applied; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::ApplySavedScreenGeometry()
+{
+  GRPSCREEN* screen = GetMainScreen();
+  if(!screen) return false;
+
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  bool applied = false;
+
+  int saved_x = 0;
+  int saved_y = 0;
+  if(cfg.ParseSavedScreenPosition(saved_x, saved_y))
+    {
+      if(screen->Set_Position(saved_x, saved_y))
+        {
+          applied = true;
+        }
+    }
+
+  int saved_w = 0;
+  int saved_h = 0;
+  if(cfg.ParseSavedScreenSize(saved_w, saved_h))
+    {
+      int cur_w = (int)screen->GetWidth();
+      int cur_h = (int)screen->GetHeight();
+      if((cur_w != saved_w) || (cur_h != saved_h))
+        {
+          if(screen->Resize(saved_w, saved_h))
+            {
+              applied = true;
+              Layout_ApplyFlexibleResize(true);
+            }
+        }
+    }
+
+  return applied;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::PersistScreenGeometryToCFG()
+* @brief      Writes live main-window position/size into CFG when the matching save flags are on.
+* @note       Must run while GetMainScreen() is still valid. APPFLOWGRAPHICS::End deletes it before AppProc_End.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if CFG was saved; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::PersistScreenGeometryToCFG()
+{
+  GRPSCREEN* screen = GetMainScreen();
+  if(!screen) return false;
+
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  bool dirty = false;
+
+  if(cfg.GetSaveScreenPosition())
+    {
+      // Prefer cached WM_MOVE position: Get_Position()/GetWindowRect can return garbage once the
+      // HWND is already tearing down (WM_CLOSE → destroy → WM_QUIT), while GetPositionX/Y still hold
+      // the last known live coordinates.
+      int x = screen->GetPositionX();
+      int y = screen->GetPositionY();
+      int live_x = 0;
+      int live_y = 0;
+      if(screen->Get_Position(live_x, live_y))
+        {
+          // Reject obviously invalid desktop coords from a dying HWND.
+          if((live_x > -30000) && (live_x < 30000) && (live_y > -30000) && (live_y < 30000))
+            {
+              x = live_x;
+              y = live_y;
+            }
+        }
+      cfg.SetSavedScreenPosition(x, y);
+      dirty = true;
+    }
+
+  if(cfg.GetSaveScreenSize())
+    {
+      int w = (int)screen->GetWidth();
+      int h = (int)screen->GetHeight();
+      int cw = 0;
+      int ch = 0;
+      if(screen->GetClientSize(cw, ch) && (cw >= XTRACEMONITOR_WINDOW_WIDTH) && (ch >= XTRACEMONITOR_WINDOW_HEIGHT))
+        {
+          w = cw;
+          h = ch;
+        }
+      cfg.SetSavedScreenSize(w, h);
+      dirty = true;
+    }
+
+  if(!dirty) return false;
+  return cfg.Save();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR::PersistScreenGeometryIfExiting()
+* @brief      One-shot persist when exit has been requested and the main screen is still alive.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR::PersistScreenGeometryIfExiting()
+{
+  if(screen_geometry_persisted) return;
+  if(GetExitType() == APPFLOWBASE_EXITTYPE_UNKNOWN) return;
+
+  PersistScreenGeometryToCFG();
+  screen_geometry_persisted = true;
 }
 
 
@@ -743,6 +909,12 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
 
   form_cfg.SetOwner(this);
   if(!form_cfg.Resolve())
+    {
+      return false;
+    }
+
+  form_filters.SetOwner(this);
+  if(!form_filters.Resolve())
     {
       return false;
     }
@@ -1011,6 +1183,11 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
   if(form_cfg.IsVisible())
     {
       form_cfg.ApplyGeometry();
+    }
+
+  if(form_filters.IsVisible())
+    {
+      form_filters.ApplyGeometry();
     }
 
   if(!compose) return true;
@@ -1938,7 +2115,8 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
           if(!layout || !layout->GetNameID()) continue;
 
           const bool is_app_layout = (!layout->GetNameID()->Compare(NL("xtracemonitor"), true) ||
-                                      !layout->GetNameID()->Compare(NL("config_modal") , true));
+                                      !layout->GetNameID()->Compare(NL("config_modal") , true) ||
+                                      !layout->GetNameID()->Compare(NL("filters_modal"), true));
           if(!is_app_layout) continue;
 
           if(layout->GetBackground() && layout->GetBackground()->GetColor())
@@ -2360,7 +2538,9 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
                                                     }
                                                   return true;
 
-            case UI_ELEMENT_CHROMEROLE_CLOSE    : SetExitType(APPFLOWBASE_EXITTYPE_BY_USER);
+            case UI_ELEMENT_CHROMEROLE_CLOSE    : PersistScreenGeometryToCFG();
+                                                  screen_geometry_persisted = true;
+                                                  SetExitType(APPFLOWBASE_EXITTYPE_BY_USER);
                                                   return true;
 
             case UI_ELEMENT_CHROMEROLE_NONE     : chrome_el = chrome_el->GetFather();
@@ -2374,8 +2554,9 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
   XSTRING* name = element->GetName();
   if(!name) return false;
 
-  // Config modal (Color Theme draft / Accept / Cancel / Predeterminado).
+  // Config / Filters modals (Accept / Cancel / Predeterminado).
   if(form_cfg.HandleElementSelected(element)) return true;
+  if(form_filters.HandleElementSelected(element)) return true;
 
   if(!name->Compare(NL("stop-btn"), true))
     {
@@ -2401,12 +2582,6 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
   if(!name->Compare(NL("delstatus-btn"), true))
     {
       OpStatus_Log(NL("Del status (TODO)."));
-      return true;
-    }
-
-  if(!name->Compare(NL("filter-btn"), true))
-    {
-      OpStatus_Log(NL("Filter (TODO)."));
       return true;
     }
 
@@ -2685,6 +2860,7 @@ void XTRACEMONITOR::Clean()
   workingmode               = true;
   chrome_theme_dirty        = false;
   exitapp                   = false;
+  screen_geometry_persisted = false;
 
   for(int c=0; c<XTRACEMONITOR_BUTTON_MAX; c++)
     {
