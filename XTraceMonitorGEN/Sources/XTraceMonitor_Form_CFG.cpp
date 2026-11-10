@@ -43,10 +43,16 @@
 #include "UI_Element_RadioGroup.h"
 #include "UI_Element_RadioButton.h"
 #include "UI_Element_CheckBox.h"
+#include "UI_Element_EditText.h"
+#include "UI_Element_MultiOption.h"
 #include "UI_Element_Animation.h"
 #include "UI_Layout.h"
 #include "UI_Skin.h"
 #include "UI_Manager.h"
+
+#include "CipherAES.h"
+#include "CipherKeySymmetrical.h"
+#include "XBuffer.h"
 
 #include "XTraceMonitor.h"
 #include "XTraceMonitor_CFG.h"
@@ -126,6 +132,20 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
   theme_dark               = (UI_ELEMENT_RADIOBUTTON*)GEN_USERINTERFACE.Element_Get(NL("theme_dark") , UI_ELEMENT_TYPE_RADIOBUTTON);
   chk_savescreenposition   = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_savescreenposition"), UI_ELEMENT_TYPE_CHECKBOX);
   chk_savescreensize       = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_savescreensize")    , UI_ELEMENT_TYPE_CHECKBOX);
+  chk_adddatetimeconsole   = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_adddatetimeconsole"), UI_ELEMENT_TYPE_CHECKBOX);
+  chk_addipconsole         = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_addipconsole")      , UI_ELEMENT_TYPE_CHECKBOX);
+  chk_texttracking         = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_texttracking")      , UI_ELEMENT_TYPE_CHECKBOX);
+  lbl_udplistenport        = GEN_USERINTERFACE.Element_Get(NL("lbl_udplistenport"), UI_ELEMENT_TYPE_TEXT);
+  edit_udplistenport       = (UI_ELEMENT_EDITTEXT*)GEN_USERINTERFACE.Element_Get(NL("edit_udplistenport"), UI_ELEMENT_TYPE_EDITTEXT);
+  lbl_uartport             = GEN_USERINTERFACE.Element_Get(NL("lbl_uartport"), UI_ELEMENT_TYPE_TEXT);
+  edit_uartport            = (UI_ELEMENT_EDITTEXT*)GEN_USERINTERFACE.Element_Get(NL("edit_uartport"), UI_ELEMENT_TYPE_EDITTEXT);
+  dyndns_group             = (UI_ELEMENT_RADIOGROUP*)GEN_USERINTERFACE.Element_Get(NL("dyndns_group"), UI_ELEMENT_TYPE_RADIOGROUP);
+  chk_dyndns_active        = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_dyndns_active"), UI_ELEMENT_TYPE_CHECKBOX);
+  lbl_dyndns_login         = GEN_USERINTERFACE.Element_Get(NL("lbl_dyndns_login"), UI_ELEMENT_TYPE_TEXT);
+  edit_dyndns_login        = (UI_ELEMENT_EDITTEXT*)GEN_USERINTERFACE.Element_Get(NL("edit_dyndns_login"), UI_ELEMENT_TYPE_EDITTEXT);
+  lbl_dyndns_password      = GEN_USERINTERFACE.Element_Get(NL("lbl_dyndns_password"), UI_ELEMENT_TYPE_TEXT);
+  edit_dyndns_password     = (UI_ELEMENT_EDITTEXT*)GEN_USERINTERFACE.Element_Get(NL("edit_dyndns_password"), UI_ELEMENT_TYPE_EDITTEXT);
+  dyndns_btn               = (UI_ELEMENT_MULTIOPTION*)GEN_USERINTERFACE.Element_Get(NL("dyndns-btn"), UI_ELEMENT_TYPE_MULTIOPTION);
 
   if(!config_modal_title || !config_modal_btn_accept || !config_modal_btn_cancel || !config_modal_btn_default)
     {
@@ -137,7 +157,23 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
       return false;
     }
 
-  if(!chk_savescreenposition || !chk_savescreensize)
+  if(!chk_savescreenposition || !chk_savescreensize || !chk_adddatetimeconsole || !chk_addipconsole || !chk_texttracking)
+    {
+      return false;
+    }
+
+  if(!lbl_udplistenport || !edit_udplistenport)
+    {
+      return false;
+    }
+
+  if(!lbl_uartport || !edit_uartport)
+    {
+      return false;
+    }
+
+  if(!dyndns_group || !chk_dyndns_active || !lbl_dyndns_login || !edit_dyndns_login ||
+     !lbl_dyndns_password || !edit_dyndns_password || !dyndns_btn)
     {
       return false;
     }
@@ -153,6 +189,11 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
   if(!LoadCommittedFromCFG()) return false;
   if(!SyncRadiosFromDraft()) return false;
   if(!SyncChecksFromDraft()) return false;
+  if(!SyncPortFromDraft()) return false;
+  if(!SyncUARTFromDraft()) return false;
+  if(!SyncDynDNSFromDraft()) return false;
+  if(!ApplyDynDNSFieldsEnabled()) return false;
+  if(!ApplyDynDNSToolbarButton(dyndns_active_committed)) return false;
 
   config_modal->SetVisible(false);
   return true;
@@ -208,7 +249,8 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   const double gap   = XTRACEMONITOR_CONFIGMODAL_BTN_GAP;
   const double row_w = (btn_w * 3.0) + (gap * 2.0);
   const double btn_x = (modal_w - row_w) * 0.5;
-  const double btn_local_y = XTRACEMONITOR_CONFIGMODAL_BTN_BOTTOM_PAD;
+  // Trimmed from modal bottom; keep content locked to top.
+  const double btn_local_y = XTRACEMONITOR_CONFIGMODAL_BTN_BOTTOM_PAD + 10.0;
 
   auto place_child = [](UI_ELEMENT* el, double local_x, double local_y, double w, double h)
     {
@@ -244,12 +286,93 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   place_child(config_modal_btn_accept , btn_x + btn_w + gap,         btn_local_y, btn_w, btn_h);
   place_child(config_modal_btn_cancel , btn_x + (btn_w + gap) * 2.0, btn_local_y, btn_w, btn_h);
 
-  // Window save checks — under Color Theme (group bottom local y ~338).
-  const double chk_x = XTRACEMONITOR_CONFIGMODAL_PAD;
-  const double chk_w = modal_w - (XTRACEMONITOR_CONFIGMODAL_PAD * 2.0);
-  const double chk_h = 28.0;
-  place_child((UI_ELEMENT*)chk_savescreenposition, chk_x, 280.0, chk_w, chk_h);
-  place_child((UI_ELEMENT*)chk_savescreensize    , chk_x, 244.0, chk_w, chk_h);
+  // Color Theme — left; DynDNS — right; same top edge + space-evenly gap rhythm.
+  const double theme_x = XTRACEMONITOR_CONFIGMODAL_PAD;
+  const double theme_y = 316.0; // bottom trim; top/title fixed
+  const double theme_w = 180.0;
+  const double theme_h = 96.0;
+  const double theme_row_h = 24.0;                       // radiobutton row height (XML)
+  const double theme_gap = (theme_h - (theme_row_h * 2.0)) / 3.0;  // space-evenly gap = 16
+  place_child((UI_ELEMENT*)color_theme_group, theme_x, theme_y, theme_w, theme_h);
+
+  const double chk_h        = 28.0;
+  const double port_label_h = 18.0;
+  const double port_edit_h  = 28.0;
+  const double port_lbl_gap = 6.0;
+  const double uart_edit_w  = 320.0;
+  const double port_edit_w  = uart_edit_w; // UDP edit same width as Puerto COM / UART
+  const double left_x       = XTRACEMONITOR_CONFIGMODAL_PAD;
+
+  // DynDNS column (Login/Password left edge) — UART aligns here too.
+  const double dyn_pad     = 16.0;
+  const double dyn_edit_w  = uart_edit_w;
+  const double dyn_w       = dyn_pad + dyn_edit_w + dyn_pad;
+  const double dyn_x       = modal_w - XTRACEMONITOR_CONFIGMODAL_PAD - dyn_w;
+  const double dyn_field_x = dyn_x + dyn_pad;
+
+  // DynDNS — same top as Color Theme; peer gaps == Color Theme space-evenly gap.
+  const double dyn_lbl_gap = port_lbl_gap;
+  const double dyn_chk_h   = theme_row_h;
+  const double dyn_block_h = port_label_h + dyn_lbl_gap + port_edit_h;
+  const double dyn_gap     = theme_gap;
+  const double dyn_content = dyn_chk_h + dyn_block_h + dyn_block_h;
+  const double dyn_h       = dyn_content + (dyn_gap * 4.0); // 3 peers → 4 equal gaps
+  const double theme_top   = theme_y + theme_h;
+  const double dyn_y       = theme_top - dyn_h;           // TopY matches Color Theme
+
+  place_child((UI_ELEMENT*)dyndns_group, dyn_x, dyn_y, dyn_w, dyn_h);
+
+  auto place_dyn = [&](UI_ELEMENT* el, double from_top_pos, double h)
+    {
+      place_child(el, dyn_x + dyn_pad, dyn_y + (dyn_h - from_top_pos - h), dyn_edit_w, h);
+    };
+
+  const double dyn_fields_raise = 6.0; // Login/Password (+edits) nudged up toward Activar
+  double from_top = dyn_gap;
+  place_dyn((UI_ELEMENT*)chk_dyndns_active, from_top, dyn_chk_h);
+  from_top += dyn_chk_h + dyn_gap;
+  place_dyn(lbl_dyndns_login, from_top - dyn_fields_raise, port_label_h);
+  place_dyn((UI_ELEMENT*)edit_dyndns_login, from_top - dyn_fields_raise + port_label_h + dyn_lbl_gap, port_edit_h);
+  from_top += dyn_block_h + dyn_gap;
+  place_dyn(lbl_dyndns_password, from_top - dyn_fields_raise, port_label_h);
+  place_dyn((UI_ELEMENT*)edit_dyndns_password, from_top - dyn_fields_raise + port_label_h + dyn_lbl_gap, port_edit_h);
+
+  // Guardar checks — center column between Color Theme and DynDNS, top-aligned with Color Theme.
+  const double save_chk_w = 280.0;
+  const double theme_right = theme_x + theme_w;
+  const double save_slot   = dyn_x - theme_right;
+  double       save_chk_x  = theme_right + (save_slot - save_chk_w) * 0.5 + 20.0;
+  if(save_chk_x < theme_right + 8.0) save_chk_x = theme_right + 8.0;
+  // Color Theme / DynDNS title sits on EdgeTop (baseline ≈ EdgeTop + 0.35*sf). Nudge Guardar
+  // so the first caption reads level with that title notch (not the frame interior).
+  const double theme_title_raise = 8.0;
+  const double save_gap          = 8.0;
+  double       save_y            = theme_top - chk_h + theme_title_raise;
+  place_child((UI_ELEMENT*)chk_savescreenposition, save_chk_x, save_y, save_chk_w, chk_h);
+  save_y -= (chk_h + save_gap);
+  place_child((UI_ELEMENT*)chk_savescreensize, save_chk_x, save_y, save_chk_w, chk_h);
+
+  // Añadir + seguimiento — left column under Color Theme (prior layout restored).
+  const double add_chk_w  = 320.0;
+  const double add_margin = 8.0 + 16.0 - 6.0; // raise block ~6px
+  const double add_gap    = 8.0;
+  double       add_y      = theme_y - add_margin - chk_h;
+  place_child((UI_ELEMENT*)chk_adddatetimeconsole, left_x, add_y, add_chk_w, chk_h);
+  add_y -= (chk_h + add_gap);
+  place_child((UI_ELEMENT*)chk_addipconsole, left_x, add_y, add_chk_w, chk_h);
+  add_y -= (chk_h + add_gap);
+  place_child((UI_ELEMENT*)chk_texttracking, left_x, add_y, add_chk_w, chk_h);
+  const double add_bottom = add_y;
+
+  // Ports — under Añadir + DynDNS; UDP/UART share the same Y (vertical align).
+  const double ports_gap    = 16.0;
+  const double ports_ceil   = (add_bottom < dyn_y) ? add_bottom : dyn_y;
+  const double port_label_y = ports_ceil - ports_gap - port_label_h;
+  const double port_edit_y  = port_label_y - port_lbl_gap - port_edit_h;
+  place_child(lbl_udplistenport,               left_x,      port_label_y, port_edit_w, port_label_h);
+  place_child((UI_ELEMENT*)edit_udplistenport, left_x,      port_edit_y,  port_edit_w, port_edit_h);
+  place_child(lbl_uartport,                    dyn_field_x, port_label_y, uart_edit_w, port_label_h);
+  place_child((UI_ELEMENT*)edit_uartport,      dyn_field_x, port_edit_y,  uart_edit_w, port_edit_h);
 
   UI_LAYOUT* layout = GEN_USERINTERFACE.Element_GetLayout(config_modal);
   UI_SKIN*   skin   = layout ? layout->GetSkin() : NULL;
@@ -261,6 +384,19 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
       if(color_theme_group)        skin->CalculeBoundaryLine_AllElements(color_theme_group, true);
       if(chk_savescreenposition)   skin->CalculeBoundaryLine_AllElements(chk_savescreenposition, true);
       if(chk_savescreensize)       skin->CalculeBoundaryLine_AllElements(chk_savescreensize, true);
+      if(chk_adddatetimeconsole)   skin->CalculeBoundaryLine_AllElements(chk_adddatetimeconsole, true);
+      if(chk_addipconsole)         skin->CalculeBoundaryLine_AllElements(chk_addipconsole, true);
+      if(chk_texttracking)         skin->CalculeBoundaryLine_AllElements(chk_texttracking, true);
+      if(lbl_udplistenport)        skin->CalculeBoundaryLine_AllElements(lbl_udplistenport, true);
+      if(edit_udplistenport)       skin->CalculeBoundaryLine_AllElements(edit_udplistenport, true);
+      if(lbl_uartport)             skin->CalculeBoundaryLine_AllElements(lbl_uartport, true);
+      if(edit_uartport)            skin->CalculeBoundaryLine_AllElements(edit_uartport, true);
+      if(dyndns_group)             skin->CalculeBoundaryLine_AllElements(dyndns_group, true);
+      if(chk_dyndns_active)        skin->CalculeBoundaryLine_AllElements(chk_dyndns_active, true);
+      if(lbl_dyndns_login)         skin->CalculeBoundaryLine_AllElements(lbl_dyndns_login, true);
+      if(edit_dyndns_login)        skin->CalculeBoundaryLine_AllElements(edit_dyndns_login, true);
+      if(lbl_dyndns_password)      skin->CalculeBoundaryLine_AllElements(lbl_dyndns_password, true);
+      if(edit_dyndns_password)     skin->CalculeBoundaryLine_AllElements(edit_dyndns_password, true);
     }
 
   // AllElements recurses into anim/text and undoes the skin glyph pack — pin again here.
@@ -325,6 +461,47 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
 
   pack_check_row(chk_savescreenposition);
   pack_check_row(chk_savescreensize);
+  pack_check_row(chk_adddatetimeconsole);
+  pack_check_row(chk_addipconsole);
+  pack_check_row(chk_texttracking);
+
+  // Re-pin frames + checks + ports after AllElements (radiogroup shrink-wrap must not undo size/top align).
+  place_child((UI_ELEMENT*)color_theme_group, theme_x, theme_y, theme_w, theme_h);
+  place_child((UI_ELEMENT*)dyndns_group, dyn_x, dyn_y, dyn_w, dyn_h);
+  {
+    double sy = theme_top - chk_h + theme_title_raise;
+    place_child((UI_ELEMENT*)chk_savescreenposition, save_chk_x, sy, save_chk_w, chk_h);
+    sy -= (chk_h + save_gap);
+    place_child((UI_ELEMENT*)chk_savescreensize, save_chk_x, sy, save_chk_w, chk_h);
+
+    double ay = theme_y - add_margin - chk_h;
+    place_child((UI_ELEMENT*)chk_adddatetimeconsole, left_x, ay, add_chk_w, chk_h);
+    ay -= (chk_h + add_gap);
+    place_child((UI_ELEMENT*)chk_addipconsole, left_x, ay, add_chk_w, chk_h);
+    ay -= (chk_h + add_gap);
+    place_child((UI_ELEMENT*)chk_texttracking, left_x, ay, add_chk_w, chk_h);
+  }
+  // Re-pack after re-pin so anim/text hit-tests track the final checkbox Y.
+  pack_check_row(chk_savescreenposition);
+  pack_check_row(chk_savescreensize);
+  pack_check_row(chk_adddatetimeconsole);
+  pack_check_row(chk_addipconsole);
+  pack_check_row(chk_texttracking);
+  place_child(lbl_udplistenport,               left_x,      port_label_y, port_edit_w, port_label_h);
+  place_child((UI_ELEMENT*)edit_udplistenport, left_x,      port_edit_y,  port_edit_w, port_edit_h);
+  place_child(lbl_uartport,                    dyn_field_x, port_label_y, uart_edit_w, port_label_h);
+  place_child((UI_ELEMENT*)edit_uartport,      dyn_field_x, port_edit_y,  uart_edit_w, port_edit_h);
+  {
+    double ft = dyn_gap;
+    place_dyn((UI_ELEMENT*)chk_dyndns_active, ft, dyn_chk_h);
+    ft += dyn_chk_h + dyn_gap;
+    place_dyn(lbl_dyndns_login, ft - dyn_fields_raise, port_label_h);
+    place_dyn((UI_ELEMENT*)edit_dyndns_login, ft - dyn_fields_raise + port_label_h + dyn_lbl_gap, port_edit_h);
+    ft += dyn_block_h + dyn_gap;
+    place_dyn(lbl_dyndns_password, ft - dyn_fields_raise, port_label_h);
+    place_dyn((UI_ELEMENT*)edit_dyndns_password, ft - dyn_fields_raise + port_label_h + dyn_lbl_gap, port_edit_h);
+  }
+  pack_check_row(chk_dyndns_active);
 
   auto center_btn_captions = [](UI_ELEMENT* multi)
     {
@@ -334,7 +511,6 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
       const double btn_h      = XTRACEMONITOR_CONFIGMODAL_BTN_H;
       const double icon_clear = XTRACEMONITOR_CONFIGMODAL_BTN_ICON_RIGHT + XTRACEMONITOR_CONFIGMODAL_BTN_ICON_GAP;
       const double pad_r      = XTRACEMONITOR_CONFIGMODAL_BTN_TEXT_PAD_R;
-      const double optical_y  = 2.0;
 
       for(XDWORD c=0; c<multi->GetComposeElements()->GetSize(); c++)
         {
@@ -346,21 +522,28 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
           if(!text || !text->GetBoundaryLine()) continue;
 
           double tw = text->GetBoundaryLine()->width;
-          double th = text->GetBoundaryLine()->height;
+          double sf = (double)text->GetSizeFont();
           if(tw < 1.0) tw = 1.0;
-          if(th < 1.0) th = 1.0;
+          if(sf < 1.0) sf = text->GetBoundaryLine()->height;
+          if(sf < 1.0) sf = 11.0;
 
           double local_x = (btn_w - tw) * 0.5;
           if(local_x < icon_clear) local_x = icon_clear;
           if((local_x + tw) > (btn_w - pad_r)) local_x = btn_w - pad_r - tw;
           if(local_x < icon_clear) local_x = icon_clear;
 
-          double local_y = (btn_h - th) * 0.5 + optical_y;
+          // VectorFont Y = baseline; ink fills the em box toward EdgeTop. Center the em box
+          // on the circular icon mid in the 160×53 PNG (~y=24 from top) so mixed-case Latin
+          // reads level with the glyph (0.22·sf was leaving captions optically high).
+          const double icon_mid_from_top = 24.0;
+          double       local_y           = btn_h - icon_mid_from_top - (sf * 0.5);
+          if(local_y < 0.0) local_y = 0.0;
 
           text->SetXPosition(face->GetXPosition() + local_x);
           text->SetYPosition(face->GetYPosition() - local_y);
-          text->GetBoundaryLine()->x = local_x;
-          text->GetBoundaryLine()->y = local_y;
+          text->GetBoundaryLine()->x      = local_x;
+          text->GetBoundaryLine()->y      = local_y;
+          text->GetBoundaryLine()->height = sf;
           text->SetMustReDraw(true);
         }
     };
@@ -377,6 +560,19 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   if(color_theme_group)        color_theme_group->SetMustReDraw(true);
   if(chk_savescreenposition)   chk_savescreenposition->SetMustReDraw(true);
   if(chk_savescreensize)       chk_savescreensize->SetMustReDraw(true);
+  if(chk_adddatetimeconsole)   chk_adddatetimeconsole->SetMustReDraw(true);
+  if(chk_addipconsole)         chk_addipconsole->SetMustReDraw(true);
+  if(chk_texttracking)         chk_texttracking->SetMustReDraw(true);
+  if(lbl_udplistenport)        lbl_udplistenport->SetMustReDraw(true);
+  if(edit_udplistenport)       edit_udplistenport->SetMustReDraw(true);
+  if(lbl_uartport)             lbl_uartport->SetMustReDraw(true);
+  if(edit_uartport)            edit_uartport->SetMustReDraw(true);
+  if(dyndns_group)             dyndns_group->SetMustReDraw(true);
+  if(chk_dyndns_active)        chk_dyndns_active->SetMustReDraw(true);
+  if(lbl_dyndns_login)         lbl_dyndns_login->SetMustReDraw(true);
+  if(edit_dyndns_login)        edit_dyndns_login->SetMustReDraw(true);
+  if(lbl_dyndns_password)      lbl_dyndns_password->SetMustReDraw(true);
+  if(edit_dyndns_password)     edit_dyndns_password->SetMustReDraw(true);
 
   return true;
 }
@@ -426,10 +622,22 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
       colortheme_draft               = colortheme_committed;
       savescreenposition_draft       = savescreenposition_committed;
       savescreensize_draft           = savescreensize_committed;
+      adddatetimeconsole_draft       = adddatetimeconsole_committed;
+      addipconsole_draft             = addipconsole_committed;
+      texttracking_draft             = texttracking_committed;
       savedscreenposition_draft      = savedscreenposition_committed;
       savedscreensize_draft          = savedscreensize_committed;
+      udplistenport_draft            = udplistenport_committed;
+      uartport_draft                 = uartport_committed;
+      dyndns_active_draft            = dyndns_active_committed;
+      dyndns_login_draft             = dyndns_login_committed;
+      dyndns_password_draft          = dyndns_password_committed;
       if(!SyncRadiosFromDraft()) return false;
       if(!SyncChecksFromDraft()) return false;
+      if(!SyncPortFromDraft()) return false;
+      if(!SyncUARTFromDraft()) return false;
+      if(!SyncDynDNSFromDraft()) return false;
+      if(!ApplyDynDNSFieldsEnabled()) return false;
 
       GEN_USERINTERFACE.SetPreselectElement();
       config_modal->SetVisible(true);
@@ -496,6 +704,28 @@ bool XTRACEMONITOR_FORM_CFG::HandleElementSelected(UI_ELEMENT* element)
           savescreensize_draft = chk_savescreensize->GetStatus();
           return true;
         }
+      if(chk_adddatetimeconsole && (element == (UI_ELEMENT*)chk_adddatetimeconsole))
+        {
+          adddatetimeconsole_draft = chk_adddatetimeconsole->GetStatus();
+          return true;
+        }
+      if(chk_addipconsole && (element == (UI_ELEMENT*)chk_addipconsole))
+        {
+          addipconsole_draft = chk_addipconsole->GetStatus();
+          return true;
+        }
+      if(chk_texttracking && (element == (UI_ELEMENT*)chk_texttracking))
+        {
+          texttracking_draft = chk_texttracking->GetStatus();
+          return true;
+        }
+      if(chk_dyndns_active && (element == (UI_ELEMENT*)chk_dyndns_active))
+        {
+          dyndns_active_draft = chk_dyndns_active->GetStatus();
+          ApplyDynDNSFieldsEnabled();
+          ApplyDynDNSToolbarButton(dyndns_active_draft);
+          return true;
+        }
     }
 
   XSTRING* name = element->GetName();
@@ -519,6 +749,45 @@ bool XTRACEMONITOR_FORM_CFG::HandleElementSelected(UI_ELEMENT* element)
   if(!name->Compare(NL("config_modal_btn_default"), true))
     {
       return OnDefault();
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::HandleElementChangeContents(UI_ELEMENT* element)
+* @brief      Keeps the UDP port draft in sync with edittext / spin changes.
+* @ingroup    UTILITIES
+*
+* @param[in]  element : Element whose contents changed.
+*
+* @return     bool : true if consumed by this form; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::HandleElementChangeContents(UI_ELEMENT* element)
+{
+  if(!element) return false;
+
+  if(edit_udplistenport && (element == (UI_ELEMENT*)edit_udplistenport))
+    {
+      return ReadDraftFromPort();
+    }
+
+  if(edit_uartport && (element == (UI_ELEMENT*)edit_uartport))
+    {
+      return ReadDraftFromUART();
+    }
+
+  if(edit_dyndns_login && (element == (UI_ELEMENT*)edit_dyndns_login))
+    {
+      return ReadDraftFromDynDNS();
+    }
+
+  if(edit_dyndns_password && (element == (UI_ELEMENT*)edit_dyndns_password))
+    {
+      return ReadDraftFromDynDNS();
     }
 
   return false;
@@ -575,6 +844,12 @@ bool XTRACEMONITOR_FORM_CFG::LoadCommittedFromCFG()
   savescreenposition_draft     = savescreenposition_committed;
   savescreensize_committed     = cfg.GetSaveScreenSize();
   savescreensize_draft         = savescreensize_committed;
+  adddatetimeconsole_committed = cfg.GetAddDateTimeConsole();
+  adddatetimeconsole_draft     = adddatetimeconsole_committed;
+  addipconsole_committed       = cfg.GetAddIPConsole();
+  addipconsole_draft           = addipconsole_committed;
+  texttracking_committed       = cfg.GetTextTracking();
+  texttracking_draft           = texttracking_committed;
 
   if(cfg.GetSavedScreenPosition()) savedscreenposition_committed = (*cfg.GetSavedScreenPosition());
                               else savedscreenposition_committed.Empty();
@@ -583,6 +858,34 @@ bool XTRACEMONITOR_FORM_CFG::LoadCommittedFromCFG()
   if(cfg.GetSavedScreenSize()) savedscreensize_committed = (*cfg.GetSavedScreenSize());
                           else savedscreensize_committed.Empty();
   savedscreensize_draft = savedscreensize_committed;
+
+  udplistenport_committed = cfg.ResolveUDPListenPort(cfg.GetUDPListenPort());
+  udplistenport_draft     = udplistenport_committed;
+
+  if(cfg.GetUARTPort()) uartport_committed = (*cfg.GetUARTPort());
+                   else uartport_committed.Empty();
+  if(uartport_committed.IsEmpty()) uartport_committed = XTRACEMONITOR_CFG_UARTPORT_DEFAULT;
+  uartport_draft = uartport_committed;
+  uartport_valid = cfg.IsUARTPortValid(uartport_committed);
+
+  dyndns_active_committed = cfg.GetDynDNSActive();
+  dyndns_active_draft     = dyndns_active_committed;
+
+  if(cfg.GetDynDNSLogin()) dyndns_login_committed = (*cfg.GetDynDNSLogin());
+                      else dyndns_login_committed.Empty();
+  dyndns_login_draft = dyndns_login_committed;
+
+  // INI password is AES+Base64 when active; decrypt into plaintext draft/committed.
+  dyndns_password_committed.Empty();
+  if(cfg.GetDynDNSPassword() && !cfg.GetDynDNSPassword()->IsEmpty())
+    {
+      XSTRING cipher = (*cfg.GetDynDNSPassword());
+      if(!DecryptDynDNSPassword(cipher, dyndns_password_committed))
+        {
+          dyndns_password_committed.Empty();
+        }
+    }
+  dyndns_password_draft = dyndns_password_committed;
 
   return true;
 }
@@ -664,12 +967,18 @@ bool XTRACEMONITOR_FORM_CFG::SetDraftColorTheme(int colortheme)
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_FORM_CFG::SyncChecksFromDraft()
 {
-  if(!chk_savescreenposition || !chk_savescreensize) return false;
+  if(!chk_savescreenposition || !chk_savescreensize || !chk_adddatetimeconsole || !chk_addipconsole || !chk_texttracking) return false;
 
   chk_savescreenposition->SetStatus(savescreenposition_draft);
   chk_savescreensize->SetStatus(savescreensize_draft);
+  chk_adddatetimeconsole->SetStatus(adddatetimeconsole_draft);
+  chk_addipconsole->SetStatus(addipconsole_draft);
+  chk_texttracking->SetStatus(texttracking_draft);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_savescreenposition);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_savescreensize);
+  GEN_USERINTERFACE.Elements_SetToRedraw(chk_adddatetimeconsole);
+  GEN_USERINTERFACE.Elements_SetToRedraw(chk_addipconsole);
+  GEN_USERINTERFACE.Elements_SetToRedraw(chk_texttracking);
   return true;
 }
 
@@ -687,6 +996,428 @@ bool XTRACEMONITOR_FORM_CFG::ReadDraftFromChecks()
 {
   if(chk_savescreenposition) savescreenposition_draft = chk_savescreenposition->GetStatus();
   if(chk_savescreensize)     savescreensize_draft     = chk_savescreensize->GetStatus();
+  if(chk_adddatetimeconsole) adddatetimeconsole_draft = chk_adddatetimeconsole->GetStatus();
+  if(chk_addipconsole)       addipconsole_draft       = chk_addipconsole->GetStatus();
+  if(chk_texttracking)       texttracking_draft       = chk_texttracking->GetStatus();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::SyncPortFromDraft()
+* @brief      Applies draft UDP listen port to the numeric edittext.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::SyncPortFromDraft()
+{
+  if(!edit_udplistenport) return false;
+
+  udplistenport_draft = XTRACEMONITOR_CFG::GetInstance(false).ResolveUDPListenPort(udplistenport_draft);
+  edit_udplistenport->SetNumericValue(udplistenport_draft);
+  GEN_USERINTERFACE.Elements_SetToRedraw(edit_udplistenport);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::SyncUARTFromDraft()
+* @brief      Applies draft UART serial-line string to the edittext.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::SyncUARTFromDraft()
+{
+  if(!edit_uartport || !edit_uartport->GetText()) return false;
+
+  XTRACEMONITOR_CFG::GetInstance(false).ResolveUARTPort(uartport_draft);
+  edit_uartport->GetText()->Set(uartport_draft.Get());
+  edit_uartport->Cursor_SetPosition(edit_uartport->GetText()->GetSize());
+  ApplyUARTFieldVisual();
+  GEN_USERINTERFACE.Elements_SetToRedraw(edit_uartport);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::ReadDraftFromPort()
+* @brief      Reads and clamps the UDP listen port from the edittext.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::ReadDraftFromPort()
+{
+  if(!edit_udplistenport) return false;
+
+  // While hardware-editing, keep raw digits in the field (do not clamp-rewrite each keystroke).
+  // Accept / focus-loss SanitizeTextToMode clamp the visible text.
+  if(GEN_USERINTERFACE.EditText_GetFocus() == (UI_ELEMENT*)edit_udplistenport)
+    {
+      if(edit_udplistenport->GetText() && !edit_udplistenport->GetText()->IsEmpty())
+        {
+          udplistenport_draft = XTRACEMONITOR_CFG::GetInstance(false).ResolveUDPListenPort(edit_udplistenport->GetNumericValue());
+        }
+      return true;
+    }
+
+  udplistenport_draft = XTRACEMONITOR_CFG::GetInstance(false).ResolveUDPListenPort(edit_udplistenport->GetNumericValue());
+  edit_udplistenport->SetNumericValue(udplistenport_draft);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::ReadDraftFromUART()
+* @brief      Reads the UART serial-line string from the edittext (validation later).
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::ReadDraftFromUART()
+{
+  if(!edit_uartport || !edit_uartport->GetText()) return false;
+
+  uartport_draft = (*edit_uartport->GetText());
+
+  // While editing: keep raw text; Draw_EditText paints the normal focus fill.
+  if(GEN_USERINTERFACE.EditText_GetFocus() == (UI_ELEMENT*)edit_uartport)
+    {
+      return true;
+    }
+
+  // Focus lost: empty → default; otherwise keep text and mark valid/invalid (red idle).
+  if(uartport_draft.IsEmpty())
+    {
+      XTRACEMONITOR_CFG::GetInstance(false).ResolveUARTPort(uartport_draft);
+      edit_uartport->GetText()->Set(uartport_draft.Get());
+    }
+
+  ApplyUARTFieldVisual();
+  GEN_USERINTERFACE.Elements_SetToRedraw(edit_uartport);
+  if(GEN_USERINTERFACE.Element_IsModalActive()) GEN_USERINTERFACE.ModalLayer_Invalidate();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::ApplyUARTFieldVisual()
+* @brief      Idle fill: gray when UART string is valid, red when invalid (editing fill is drawn by skin).
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the visual was applied.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::ApplyUARTFieldVisual()
+{
+  if(!edit_uartport || !edit_uartport->GetBackgroundColor()) return false;
+
+  uartport_valid = XTRACEMONITOR_CFG::GetInstance(false).IsUARTPortValid(uartport_draft);
+
+  // Idle follows committed --edit-idle-bg; error red is shared by Dark and Light.
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  const bool light = (cfg.ResolveColorTheme(cfg.GetColorTheme()) == XTRACEMONITOR_CFG_COLORTHEME_LIGHT);
+
+  UI_COLOR* bg = edit_uartport->GetBackgroundColor();
+  UI_COLOR* ink = edit_uartport->GetColor();
+  if(uartport_valid)
+    {
+      if(light)
+        {
+          bg->SetRed(210);
+          bg->SetGreen(214);
+          bg->SetBlue(220);
+          if(ink) { ink->SetRed(40); ink->SetGreen(44); ink->SetBlue(52); ink->SetAlpha(255); }
+        }
+       else
+        {
+          bg->SetRed(64);
+          bg->SetGreen(72);
+          bg->SetBlue(84);
+          if(ink) { ink->SetRed(200); ink->SetGreen(208); ink->SetBlue(220); ink->SetAlpha(255); }
+        }
+      bg->SetAlpha(255);
+    }
+   else
+    {
+      // Same error red for both themes; white glyphs for contrast on red.
+      bg->SetRed(160);
+      bg->SetGreen(36);
+      bg->SetBlue(36);
+      bg->SetAlpha(255);
+      if(ink) { ink->SetRed(255); ink->SetGreen(255); ink->SetBlue(255); ink->SetAlpha(255); }
+    }
+
+  edit_uartport->SetBackgroundColorSet(true);
+  if(ink) edit_uartport->SetColorSet(true);
+  // Snapshot so :hover/:preselect ReapplyStyleVisual restores error red + white ink (or idle), not load-time.
+  edit_uartport->SnapshotStyleVisual();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::SyncDynDNSFromDraft()
+* @brief      Pushes DynDNS draft into check + login/password edittexts.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::SyncDynDNSFromDraft()
+{
+  if(!chk_dyndns_active || !edit_dyndns_login || !edit_dyndns_password) return false;
+  if(!edit_dyndns_login->GetText() || !edit_dyndns_password->GetText()) return false;
+
+  chk_dyndns_active->SetStatus(dyndns_active_draft);
+  edit_dyndns_login->GetText()->Set(dyndns_login_draft.Get());
+  edit_dyndns_password->GetText()->Set(dyndns_password_draft.Get());
+  edit_dyndns_login->Cursor_SetPosition(edit_dyndns_login->GetText()->GetSize());
+  edit_dyndns_password->Cursor_SetPosition(edit_dyndns_password->GetText()->GetSize());
+
+  GEN_USERINTERFACE.Elements_SetToRedraw(chk_dyndns_active);
+  GEN_USERINTERFACE.Elements_SetToRedraw(edit_dyndns_login);
+  GEN_USERINTERFACE.Elements_SetToRedraw(edit_dyndns_password);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::ReadDraftFromDynDNS()
+* @brief      Reads DynDNS login/password draft from the edittexts.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::ReadDraftFromDynDNS()
+{
+  if(!edit_dyndns_login || !edit_dyndns_password) return false;
+  if(!edit_dyndns_login->GetText() || !edit_dyndns_password->GetText()) return false;
+
+  dyndns_login_draft    = (*edit_dyndns_login->GetText());
+  dyndns_password_draft = (*edit_dyndns_password->GetText());
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::ApplyDynDNSFieldsEnabled()
+* @brief      Enables/disables DynDNS login+password edits from the active draft flag.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::ApplyDynDNSFieldsEnabled()
+{
+  if(!edit_dyndns_login || !edit_dyndns_password) return false;
+
+  const bool on = dyndns_active_draft;
+  edit_dyndns_login->SetActive(on);
+  edit_dyndns_password->SetActive(on);
+  if(lbl_dyndns_login)    lbl_dyndns_login->SetActive(on);
+  if(lbl_dyndns_password) lbl_dyndns_password->SetActive(on);
+
+  // Mute label + field chrome when off (SetActive alone does not change paint colors).
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  const bool light = (cfg.ResolveColorTheme(cfg.GetColorTheme()) == XTRACEMONITOR_CFG_COLORTHEME_LIGHT);
+
+  auto paint_label = [&](UI_ELEMENT* lbl)
+    {
+      if(!lbl || !lbl->GetColor()) return;
+      UI_COLOR* ink = lbl->GetColor();
+      if(on)
+        {
+          if(light) { ink->SetRed(40);  ink->SetGreen(44);  ink->SetBlue(52);  ink->SetAlpha(255); }
+               else { ink->SetRed(200); ink->SetGreen(208); ink->SetBlue(220); ink->SetAlpha(255); }
+        }
+       else
+        {
+          // Clearly deactivated vs active label_ink (CSS reapply is defeated by Snapshot).
+          if(light) { ink->SetRed(155); ink->SetGreen(160); ink->SetBlue(170); ink->SetAlpha(120); }
+               else { ink->SetRed(90);  ink->SetGreen(98);  ink->SetBlue(110); ink->SetAlpha(110); }
+        }
+      lbl->SetColorSet(true);
+      lbl->SnapshotStyleVisual();
+    };
+
+  auto paint_edit = [&](UI_ELEMENT_EDITTEXT* edit)
+    {
+      if(!edit || !edit->GetBackgroundColor()) return;
+      UI_COLOR* bg  = edit->GetBackgroundColor();
+      UI_COLOR* ink = edit->GetColor();
+      if(on)
+        {
+          if(light)
+            {
+              bg->SetRed(210); bg->SetGreen(214); bg->SetBlue(220); bg->SetAlpha(255);
+              if(ink) { ink->SetRed(40); ink->SetGreen(44); ink->SetBlue(52); ink->SetAlpha(255); }
+            }
+           else
+            {
+              bg->SetRed(64); bg->SetGreen(72); bg->SetBlue(84); bg->SetAlpha(255);
+              if(ink) { ink->SetRed(200); ink->SetGreen(208); ink->SetBlue(220); ink->SetAlpha(255); }
+            }
+        }
+       else
+        {
+          if(light)
+            {
+              bg->SetRed(186); bg->SetGreen(190); bg->SetBlue(198); bg->SetAlpha(140);
+              if(ink) { ink->SetRed(155); ink->SetGreen(160); ink->SetBlue(170); ink->SetAlpha(120); }
+            }
+           else
+            {
+              bg->SetRed(36); bg->SetGreen(40); bg->SetBlue(48); bg->SetAlpha(140);
+              if(ink) { ink->SetRed(90); ink->SetGreen(98); ink->SetBlue(110); ink->SetAlpha(110); }
+            }
+        }
+      edit->SetBackgroundColorSet(true);
+      if(ink) edit->SetColorSet(true);
+      edit->SnapshotStyleVisual();
+    };
+
+  paint_label(lbl_dyndns_login);
+  paint_label(lbl_dyndns_password);
+  paint_edit(edit_dyndns_login);
+  paint_edit(edit_dyndns_password);
+
+  GEN_USERINTERFACE.Elements_SetToRedraw(edit_dyndns_login);
+  GEN_USERINTERFACE.Elements_SetToRedraw(edit_dyndns_password);
+  if(lbl_dyndns_login)    GEN_USERINTERFACE.Elements_SetToRedraw(lbl_dyndns_login);
+  if(lbl_dyndns_password) GEN_USERINTERFACE.Elements_SetToRedraw(lbl_dyndns_password);
+  if(GEN_USERINTERFACE.Element_IsModalActive()) GEN_USERINTERFACE.ModalLayer_Invalidate();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::ApplyDynDNSToolbarButton(bool active)
+* @brief      Enables/disables the main-screen DynDNS multioption button.
+* @ingroup    UTILITIES
+*
+* @param[in]  active : Desired enabled state.
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::ApplyDynDNSToolbarButton(bool active)
+{
+  if(!dyndns_btn) return false;
+
+  dyndns_btn->SetActive(active);
+  GEN_USERINTERFACE.Elements_SetToRedraw(dyndns_btn);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::EncryptDynDNSPassword(XSTRING& plain, XSTRING& out_b64)
+* @brief      AES-CBC encrypt + Base64 using XTRACEMONITOR_DYNDNS_CIPHER_PASSWORD.
+* @ingroup    UTILITIES
+*
+* @param[in]  plain : Plaintext password.
+* @param[out] out_b64 : Base64 ciphertext.
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::EncryptDynDNSPassword(XSTRING& plain, XSTRING& out_b64)
+{
+  out_b64.Empty();
+  if(plain.IsEmpty()) return true;
+
+  XSTRING passkey;
+  passkey = XTRACEMONITOR_DYNDNS_CIPHER_PASSWORD;
+
+  XBUFFER keybuf;
+  passkey.ConvertToASCII(keybuf);
+  while(keybuf.GetSize() < 16) keybuf.Add((XBYTE)0);
+  keybuf.Resize(16);
+
+  XBUFFER ivbuf;
+  ivbuf.Add(keybuf);
+  ivbuf.Resize(16);
+
+  CIPHERAES            cipherAES;
+  CIPHERKEYSYMMETRICAL key;
+  key.Set(keybuf);
+  cipherAES.SetKey(&key);
+  cipherAES.SetChainingMode(CIPHERCHAININGMODE_CBC);
+  cipherAES.SetPaddingType(XBUFFER_PADDINGTYPE_SPACES);
+  cipherAES.SetInitVector(ivbuf);
+
+  XBUFFER charstr;
+  plain.ConvertToASCII(charstr);
+  if(!cipherAES.Cipher((XBYTE*)charstr.Get(), plain.GetSize())) return false;
+
+  return cipherAES.GetResult()->ConvertToBase64(out_b64);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::DecryptDynDNSPassword(XSTRING& in_b64, XSTRING& out_plain)
+* @brief      Base64 decode + AES-CBC decrypt using XTRACEMONITOR_DYNDNS_CIPHER_PASSWORD.
+* @ingroup    UTILITIES
+*
+* @param[in]  in_b64 : Base64 ciphertext.
+* @param[out] out_plain : Plaintext password.
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::DecryptDynDNSPassword(XSTRING& in_b64, XSTRING& out_plain)
+{
+  out_plain.Empty();
+  if(in_b64.IsEmpty()) return true;
+
+  XSTRING passkey;
+  passkey = XTRACEMONITOR_DYNDNS_CIPHER_PASSWORD;
+
+  XBUFFER keybuf;
+  passkey.ConvertToASCII(keybuf);
+  while(keybuf.GetSize() < 16) keybuf.Add((XBYTE)0);
+  keybuf.Resize(16);
+
+  XBUFFER ivbuf;
+  ivbuf.Add(keybuf);
+  ivbuf.Resize(16);
+
+  CIPHERAES            cipherAES;
+  CIPHERKEYSYMMETRICAL key;
+  key.Set(keybuf);
+  cipherAES.SetKey(&key);
+  cipherAES.SetChainingMode(CIPHERCHAININGMODE_CBC);
+  cipherAES.SetPaddingType(XBUFFER_PADDINGTYPE_SPACES);
+  cipherAES.SetInitVector(ivbuf);
+
+  XBUFFER xbuffer;
+  if(!xbuffer.ConvertFromBase64(in_b64)) return false;
+  if(!cipherAES.Uncipher(xbuffer)) return false;
+
+  for(XDWORD c=0; c<cipherAES.GetResult()->GetSize(); c++)
+    {
+      out_plain.Add((XCHAR)cipherAES.GetResult()->GetByte(c));
+    }
+  out_plain.DeleteCharacter(0x20, XSTRINGCONTEXT_TO_END);
   return true;
 }
 
@@ -707,6 +1438,21 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   colortheme_draft = ReadDraftFromRadios();
   colortheme_draft = XTRACEMONITOR_CFG::GetInstance(false).ResolveColorTheme(colortheme_draft);
   ReadDraftFromChecks();
+  ReadDraftFromPort();
+  ReadDraftFromUART();
+  ReadDraftFromDynDNS();
+  if(chk_dyndns_active) dyndns_active_draft = chk_dyndns_active->GetStatus();
+
+  // UART may be invalid: still leave the modal, but never persist a bad uartport.
+  const bool uart_ok = XTRACEMONITOR_CFG::GetInstance(false).IsUARTPortValid(uartport_draft);
+  uartport_valid = uart_ok;
+  if(!uart_ok)
+    {
+      // Keep red idle while the modal is still up; discard draft back to last good commit.
+      ApplyUARTFieldVisual();
+      GEN_USERINTERFACE.Elements_SetToRedraw(edit_uartport);
+      if(GEN_USERINTERFACE.Element_IsModalActive()) GEN_USERINTERFACE.ModalLayer_Invalidate();
+    }
 
   XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
   cfg.SetColorTheme(colortheme_draft);
@@ -714,6 +1460,30 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   cfg.SetSaveScreenSize(savescreensize_draft);
   cfg.SetSavedScreenPosition(savedscreenposition_draft.Get());
   cfg.SetSavedScreenSize(savedscreensize_draft.Get());
+  cfg.SetUDPListenPort(udplistenport_draft);
+  if(uart_ok) cfg.SetUARTPort(&uartport_draft);
+  cfg.SetAddDateTimeConsole(adddatetimeconsole_draft);
+  cfg.SetAddIPConsole(addipconsole_draft);
+  cfg.SetTextTracking(texttracking_draft);
+
+  cfg.SetDynDNSActive(dyndns_active_draft);
+  if(dyndns_active_draft)
+    {
+      cfg.SetDynDNSLogin(&dyndns_login_draft);
+      XSTRING cipher;
+      if(!EncryptDynDNSPassword(dyndns_password_draft, cipher))
+        {
+          owner->OpStatus_Log(NL("Config: Aceptar - error al cifrar password DynDNS."));
+          return false;
+        }
+      cfg.SetDynDNSPassword(&cipher);
+    }
+   else
+    {
+      // Inactive: persist empty login/password.
+      cfg.SetDynDNSLogin(NL(""));
+      cfg.SetDynDNSPassword(NL(""));
+    }
 
   if(!cfg.Save())
     {
@@ -724,8 +1494,37 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   colortheme_committed          = colortheme_draft;
   savescreenposition_committed  = savescreenposition_draft;
   savescreensize_committed      = savescreensize_draft;
+  adddatetimeconsole_committed  = adddatetimeconsole_draft;
+  addipconsole_committed        = addipconsole_draft;
+  texttracking_committed        = texttracking_draft;
   savedscreenposition_committed = savedscreenposition_draft;
   savedscreensize_committed     = savedscreensize_draft;
+  udplistenport_committed       = udplistenport_draft;
+  dyndns_active_committed       = dyndns_active_draft;
+  if(dyndns_active_committed)
+    {
+      dyndns_login_committed    = dyndns_login_draft;
+      dyndns_password_committed = dyndns_password_draft;
+    }
+   else
+    {
+      dyndns_login_committed.Empty();
+      dyndns_password_committed.Empty();
+      dyndns_login_draft.Empty();
+      dyndns_password_draft.Empty();
+    }
+  ApplyDynDNSToolbarButton(dyndns_active_committed);
+
+  if(uart_ok)
+    {
+      uartport_committed = uartport_draft;
+      owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado y tema aplicado."));
+    }
+   else
+    {
+      uartport_draft = uartport_committed;
+      owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado; UART invalida (no se guarda)."));
+    }
 
   if(!owner->ApplyColorTheme(colortheme_committed))
     {
@@ -736,7 +1535,6 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   // Predeterminado can reset draft geometry to (0,0) / design minimum; apply after commit.
   owner->ApplySavedScreenGeometry();
 
-  owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado y tema aplicado."));
   return Show(false);
 }
 
@@ -757,10 +1555,23 @@ bool XTRACEMONITOR_FORM_CFG::OnCancel()
   colortheme_draft               = colortheme_committed;
   savescreenposition_draft       = savescreenposition_committed;
   savescreensize_draft           = savescreensize_committed;
+  adddatetimeconsole_draft       = adddatetimeconsole_committed;
+  addipconsole_draft             = addipconsole_committed;
+  texttracking_draft             = texttracking_committed;
   savedscreenposition_draft      = savedscreenposition_committed;
   savedscreensize_draft          = savedscreensize_committed;
+  udplistenport_draft            = udplistenport_committed;
+  uartport_draft                 = uartport_committed;
+  dyndns_active_draft            = dyndns_active_committed;
+  dyndns_login_draft             = dyndns_login_committed;
+  dyndns_password_draft          = dyndns_password_committed;
   SyncRadiosFromDraft();
   SyncChecksFromDraft();
+  SyncPortFromDraft();
+  SyncUARTFromDraft();
+  SyncDynDNSFromDraft();
+  ApplyDynDNSFieldsEnabled();
+  ApplyDynDNSToolbarButton(dyndns_active_committed);
 
   owner->OpStatus_Log(NL("Config: Cancelar."));
   return Show(false);
@@ -784,11 +1595,24 @@ bool XTRACEMONITOR_FORM_CFG::OnDefault()
   colortheme_draft         = XTRACEMONITOR_CFG_COLORTHEME_DEFAULT;
   savescreenposition_draft = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
   savescreensize_draft     = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
+  adddatetimeconsole_draft = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
+  addipconsole_draft       = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;
+  texttracking_draft       = XTRACEMONITOR_CFG_TEXTTRACKING_DEFAULT;
   savedscreenposition_draft.Format(NL("%d, %d"), 0, 0);
   savedscreensize_draft.Format(NL("%d, %d"), XTRACEMONITOR_WINDOW_WIDTH, XTRACEMONITOR_WINDOW_HEIGHT);
+  udplistenport_draft      = XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;
+  uartport_draft           = XTRACEMONITOR_CFG_UARTPORT_DEFAULT;
+  dyndns_active_draft      = XTRACEMONITOR_CFG_DYNDNS_ACTIVE_DEFAULT;
+  dyndns_login_draft.Empty();
+  dyndns_password_draft.Empty();
 
   SyncRadiosFromDraft();
   SyncChecksFromDraft();
+  SyncPortFromDraft();
+  SyncUARTFromDraft();
+  SyncDynDNSFromDraft();
+  ApplyDynDNSFieldsEnabled();
+  ApplyDynDNSToolbarButton(dyndns_active_draft);
 
   owner->OpStatus_Log(NL("Config: Predeterminado."));
   return true;
@@ -816,14 +1640,45 @@ void XTRACEMONITOR_FORM_CFG::Clean()
   theme_dark                = NULL;
   chk_savescreenposition    = NULL;
   chk_savescreensize        = NULL;
+  chk_adddatetimeconsole    = NULL;
+  chk_addipconsole          = NULL;
+  chk_texttracking          = NULL;
+  lbl_udplistenport         = NULL;
+  edit_udplistenport        = NULL;
+  lbl_uartport              = NULL;
+  edit_uartport             = NULL;
+  dyndns_group              = NULL;
+  chk_dyndns_active         = NULL;
+  lbl_dyndns_login          = NULL;
+  edit_dyndns_login         = NULL;
+  lbl_dyndns_password       = NULL;
+  edit_dyndns_password      = NULL;
+  dyndns_btn                = NULL;
   colortheme_committed      = XTRACEMONITOR_FORM_CFG_COLORTHEME_DARK;
   colortheme_draft          = XTRACEMONITOR_FORM_CFG_COLORTHEME_DARK;
   savescreenposition_committed = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
   savescreenposition_draft     = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
   savescreensize_committed     = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
   savescreensize_draft         = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
+  adddatetimeconsole_committed = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
+  adddatetimeconsole_draft     = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
+  addipconsole_committed       = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;
+  addipconsole_draft           = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;
+  texttracking_committed       = XTRACEMONITOR_CFG_TEXTTRACKING_DEFAULT;
+  texttracking_draft           = XTRACEMONITOR_CFG_TEXTTRACKING_DEFAULT;
   savedscreenposition_committed.Empty();
   savedscreenposition_draft.Empty();
   savedscreensize_committed.Empty();
   savedscreensize_draft.Empty();
+  udplistenport_committed   = XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;
+  udplistenport_draft       = XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;
+  uartport_committed        = XTRACEMONITOR_CFG_UARTPORT_DEFAULT;
+  uartport_draft            = XTRACEMONITOR_CFG_UARTPORT_DEFAULT;
+  uartport_valid            = true;
+  dyndns_active_committed   = XTRACEMONITOR_CFG_DYNDNS_ACTIVE_DEFAULT;
+  dyndns_active_draft       = XTRACEMONITOR_CFG_DYNDNS_ACTIVE_DEFAULT;
+  dyndns_login_committed.Empty();
+  dyndns_login_draft.Empty();
+  dyndns_password_committed.Empty();
+  dyndns_password_draft.Empty();
 }

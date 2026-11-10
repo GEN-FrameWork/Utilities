@@ -36,6 +36,8 @@
 
 #include "XLog.h"
 
+#include "DIOStreamUARTConfig.h"
+
 #include "XTraceMonitor.h"
 
 
@@ -135,10 +137,32 @@ bool XTRACEMONITOR_CFG::DoVariableMapping()
            NL("Last main window position (x, y)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
   AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_SAVEDSCREENSIZE, &savedscreensize,
            NL("Last main window size (width, height)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_UDPLISTENPORT, &udplistenport,
+           NL("UDP listen port for incoming XTrace datagrams"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_UARTPORT, &uartport,
+           NL("UART serial line (Port,Baudrate,DataBits,Parity,StopBits,Flow)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
 
   // Filters options (XTraceMonitor_Form_Filters) — keys added here as the modal gains controls.
   AddRemark(XTRACEMONITOR_CFG_SECTION_FILTERS, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
   AddRemark(XTRACEMONITOR_CFG_SECTION_FILTERS, NL(" Filters section of configuration"), 0, 2);
+
+  AddRemark(XTRACEMONITOR_CFG_SECTION_CONSOLE, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
+  AddRemark(XTRACEMONITOR_CFG_SECTION_CONSOLE, NL(" Console line prefix options"), 0, 2);
+  AddValue(XFILECFG_VALUETYPE_BOOLEAN, XTRACEMONITOR_CFG_SECTION_CONSOLE, XTRACEMONITOR_CFG_ADDDATETIMECONSOLE, &adddatetimeconsole,
+           NL("Prefix each console line with date/time"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_BOOLEAN, XTRACEMONITOR_CFG_SECTION_CONSOLE, XTRACEMONITOR_CFG_ADDIPCONSOLE, &addipconsole,
+           NL("Prefix each console line with source IP"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_BOOLEAN, XTRACEMONITOR_CFG_SECTION_CONSOLE, XTRACEMONITOR_CFG_TEXTTRACKING, &texttracking,
+           NL("Follow / auto-scroll console text"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+
+  AddRemark(XTRACEMONITOR_CFG_SECTION_DYNDNS, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
+  AddRemark(XTRACEMONITOR_CFG_SECTION_DYNDNS, NL(" DynDNS access (password stored AES+Base64)"), 0, 2);
+  AddValue(XFILECFG_VALUETYPE_BOOLEAN, XTRACEMONITOR_CFG_SECTION_DYNDNS, XTRACEMONITOR_CFG_DYNDNS_ACTIVE, &dyndns_active,
+           NL("Enable DynDNS toolbar and credentials"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_DYNDNS, XTRACEMONITOR_CFG_DYNDNS_LOGIN, &dyndns_login,
+           NL("DynDNS login (empty when inactive)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_DYNDNS, XTRACEMONITOR_CFG_DYNDNS_PASSWORD, &dyndns_password,
+           NL("DynDNS password AES+Base64 (empty when inactive)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
 
   return true;
 }
@@ -192,6 +216,16 @@ bool XTRACEMONITOR_CFG::DoDefault()
   savescreensize                        = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
   SetSavedScreenPosition(0, 0);
   SetSavedScreenSize(XTRACEMONITOR_WINDOW_WIDTH, XTRACEMONITOR_WINDOW_HEIGHT);
+  udplistenport                         = XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;
+  uartport                              = XTRACEMONITOR_CFG_UARTPORT_DEFAULT;
+
+  adddatetimeconsole                    = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
+  addipconsole                          = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;
+  texttracking                          = XTRACEMONITOR_CFG_TEXTTRACKING_DEFAULT;
+
+  dyndns_active                         = XTRACEMONITOR_CFG_DYNDNS_ACTIVE_DEFAULT;
+  dyndns_login.Empty();
+  dyndns_password.Empty();
 
   //------------------------------------------------------------------------------
 
@@ -331,6 +365,96 @@ void XTRACEMONITOR_CFG::SetSaveScreenSize(bool enable)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool XTRACEMONITOR_CFG::GetAddDateTimeConsole()
+* @brief      True when console lines should be prefixed with date/time.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if date/time prefix is enabled.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::GetAddDateTimeConsole()
+{
+  return adddatetimeconsole;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetAddDateTimeConsole(bool enable)
+* @brief      Enables or disables date/time prefix on console lines.
+* @ingroup    UTILITIES
+*
+* @param[in]  enable : true to prefix date/time.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetAddDateTimeConsole(bool enable)
+{
+  adddatetimeconsole = enable;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::GetAddIPConsole()
+* @brief      True when console lines should be prefixed with source IP.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if IP prefix is enabled.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::GetAddIPConsole()
+{
+  return addipconsole;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetAddIPConsole(bool enable)
+* @brief      Enables or disables source IP prefix on console lines.
+* @ingroup    UTILITIES
+*
+* @param[in]  enable : true to prefix source IP.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetAddIPConsole(bool enable)
+{
+  addipconsole = enable;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::GetTextTracking()
+* @brief      True when console text tracking / follow is enabled.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if text tracking is enabled.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::GetTextTracking()
+{
+  return texttracking;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetTextTracking(bool enable)
+* @brief      Enables or disables console text tracking / follow.
+* @ingroup    UTILITIES
+*
+* @param[in]  enable : true to follow console text.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetTextTracking(bool enable)
+{
+  texttracking = enable;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         XSTRING* XTRACEMONITOR_CFG::GetSavedScreenPosition()
 * @brief      Raw "x, y" string for the last saved main window position.
 * @ingroup    UTILITIES
@@ -464,6 +588,299 @@ bool XTRACEMONITOR_CFG::ParseSavedScreenSize(int& width, int& height)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         int XTRACEMONITOR_CFG::GetUDPListenPort()
+* @brief      Returns the configured UDP listen port (may be out of range until Resolve).
+* @ingroup    UTILITIES
+*
+* @return     int : Port value.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+int XTRACEMONITOR_CFG::GetUDPListenPort()
+{
+  return udplistenport;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetUDPListenPort(int port)
+* @brief      Sets the UDP listen port (clamped to 1..65535).
+* @ingroup    UTILITIES
+*
+* @param[in]  port : Port value.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetUDPListenPort(int port)
+{
+  udplistenport = ResolveUDPListenPort(port);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         int XTRACEMONITOR_CFG::ResolveUDPListenPort(int port)
+* @brief      Clamps port into the valid TCP/UDP range; invalid -> default.
+* @ingroup    UTILITIES
+*
+* @param[in]  port : Candidate port.
+*
+* @return     int : Usable port.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+int XTRACEMONITOR_CFG::ResolveUDPListenPort(int port)
+{
+  if(port < XTRACEMONITOR_CFG_UDPLISTENPORT_MIN) return XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;
+  if(port > XTRACEMONITOR_CFG_UDPLISTENPORT_MAX) return XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;
+  return port;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XSTRING* XTRACEMONITOR_CFG::GetUARTPort()
+* @brief      Returns the UART serial-line configuration string.
+* @ingroup    UTILITIES
+*
+* @return     XSTRING* : Pointer to uartport; NULL if unavailable.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XSTRING* XTRACEMONITOR_CFG::GetUARTPort()
+{
+  return &uartport;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetUARTPort(XCHAR* value)
+* @brief      Sets the UART serial-line string (empty resolves to default).
+* @ingroup    UTILITIES
+*
+* @param[in]  value : UART config string.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetUARTPort(XCHAR* value)
+{
+  if(value) uartport = value;
+       else uartport.Empty();
+  ResolveUARTPort(uartport);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetUARTPort(XSTRING* value)
+* @brief      Sets the UART serial-line string (empty resolves to default).
+* @ingroup    UTILITIES
+*
+* @param[in]  value : UART config string.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetUARTPort(XSTRING* value)
+{
+  if(value) uartport = (*value);
+       else uartport.Empty();
+  ResolveUARTPort(uartport);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::ResolveUARTPort(XSTRING& value)
+* @brief      Ensures a non-empty UART line; field-level validation comes later.
+* @ingroup    UTILITIES
+*
+* @param[in,out] value : Candidate UART config string.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::ResolveUARTPort(XSTRING& value)
+{
+  // Empty only — invalid non-empty strings stay visible so the field can show error state.
+  if(value.IsEmpty()) value = XTRACEMONITOR_CFG_UARTPORT_DEFAULT;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::IsUARTPortValid(XCHAR* value)
+* @brief      True when DIOSTREAMUARTCONFIG can decode the UART config string.
+* @ingroup    UTILITIES
+*
+* @param[in]  value : Candidate UART line (Port,Baudrate,DataBits,Parity,StopBits,Flow).
+*
+* @return     bool : true if valid for DIOSTREAMUART.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::IsUARTPortValid(XCHAR* value)
+{
+  if(!value) return false;
+
+  DIOSTREAMUARTCONFIG cfg;
+  return cfg.SetFromString(value);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::IsUARTPortValid(XSTRING* value)
+* @brief      True when DIOSTREAMUARTCONFIG can decode the UART config string.
+* @ingroup    UTILITIES
+*
+* @param[in]  value : Candidate UART line.
+*
+* @return     bool : true if valid for DIOSTREAMUART.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::IsUARTPortValid(XSTRING* value)
+{
+  if(!value) return false;
+  return IsUARTPortValid(value->Get());
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::IsUARTPortValid(XSTRING& value)
+* @brief      True when DIOSTREAMUARTCONFIG can decode the UART config string.
+* @ingroup    UTILITIES
+*
+* @param[in]  value : Candidate UART line.
+*
+* @return     bool : true if valid for DIOSTREAMUART.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::IsUARTPortValid(XSTRING& value)
+{
+  return IsUARTPortValid(value.Get());
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::GetDynDNSActive()
+* @brief      DynDNS enable flag from [dyndns] active.
+* @ingroup    UTILITIES
+*
+* @return     bool : true when DynDNS is enabled.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::GetDynDNSActive()
+{
+  return dyndns_active;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetDynDNSActive(bool active)
+* @brief      Sets DynDNS enable flag.
+* @ingroup    UTILITIES
+*
+* @param[in]  active : Enable value.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetDynDNSActive(bool active)
+{
+  dyndns_active = active;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XSTRING* XTRACEMONITOR_CFG::GetDynDNSLogin()
+* @brief      DynDNS login string (empty when inactive on disk).
+* @ingroup    UTILITIES
+*
+* @return     XSTRING* : Login pointer.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XSTRING* XTRACEMONITOR_CFG::GetDynDNSLogin()
+{
+  return &dyndns_login;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetDynDNSLogin(XCHAR* value)
+* @brief      Sets DynDNS login.
+* @ingroup    UTILITIES
+*
+* @param[in]  value : Login text.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetDynDNSLogin(XCHAR* value)
+{
+  if(value) dyndns_login = value;
+       else dyndns_login.Empty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetDynDNSLogin(XSTRING* value)
+* @brief      Sets DynDNS login.
+* @ingroup    UTILITIES
+*
+* @param[in]  value : Login text.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetDynDNSLogin(XSTRING* value)
+{
+  if(value) dyndns_login = (*value);
+       else dyndns_login.Empty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XSTRING* XTRACEMONITOR_CFG::GetDynDNSPassword()
+* @brief      DynDNS password (AES+Base64 on disk; plaintext after Form decrypt).
+* @ingroup    UTILITIES
+*
+* @return     XSTRING* : Password pointer.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XSTRING* XTRACEMONITOR_CFG::GetDynDNSPassword()
+{
+  return &dyndns_password;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetDynDNSPassword(XCHAR* value)
+* @brief      Sets DynDNS password string (cipher or plain depending on caller).
+* @ingroup    UTILITIES
+*
+* @param[in]  value : Password text.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetDynDNSPassword(XCHAR* value)
+{
+  if(value) dyndns_password = value;
+       else dyndns_password.Empty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetDynDNSPassword(XSTRING* value)
+* @brief      Sets DynDNS password string (cipher or plain depending on caller).
+* @ingroup    UTILITIES
+*
+* @param[in]  value : Password text.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetDynDNSPassword(XSTRING* value)
+{
+  if(value) dyndns_password = (*value);
+       else dyndns_password.Empty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool XTRACEMONITOR_CFG::ParseIntPair(XSTRING* value, int& a, int& b)
 * @brief      Parses a "a, b" integer pair from a CFG string.
 * @note       INTERNAL
@@ -561,4 +978,12 @@ void XTRACEMONITOR_CFG::Clean()
   savescreensize       = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
   savedscreenposition.Empty();
   savedscreensize.Empty();
+  udplistenport        = XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;
+  uartport.Empty();
+  adddatetimeconsole   = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
+  addipconsole         = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;
+  texttracking         = XTRACEMONITOR_CFG_TEXTTRACKING_DEFAULT;
+  dyndns_active        = XTRACEMONITOR_CFG_DYNDNS_ACTIVE_DEFAULT;
+  dyndns_login.Empty();
+  dyndns_password.Empty();
 }

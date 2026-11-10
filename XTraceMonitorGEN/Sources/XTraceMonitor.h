@@ -108,7 +108,7 @@ enum XTRACEMONITOR_BUTTONS
 
 // Config modal: fixed size = 75% of the app minimum client (1200×699), always; only recentered.
 #define XTRACEMONITOR_CONFIGMODAL_W               900.0  // 1200 * 0.75
-#define XTRACEMONITOR_CONFIGMODAL_H               524.0  // 699  * 0.75 (rounded)
+#define XTRACEMONITOR_CONFIGMODAL_H               502.0  // trim from bottom (top/title fixed)
 #define XTRACEMONITOR_CONFIGMODAL_BTN_W           160.0  // 120×40 + 1/3
 #define XTRACEMONITOR_CONFIGMODAL_BTN_H           53.0
 #define XTRACEMONITOR_CONFIGMODAL_BTN_GAP         16.0
@@ -119,7 +119,7 @@ enum XTRACEMONITOR_BUTTONS
 #define XTRACEMONITOR_CONFIGMODAL_BTN_TEXT_PAD_R  16.0
 #define XTRACEMONITOR_CONFIGMODAL_PAD             24.0
 #define XTRACEMONITOR_CONFIGMODAL_TITLE_PAD       16.0
-#define XTRACEMONITOR_CONFIGMODAL_TITLE_H         22.0
+#define XTRACEMONITOR_CONFIGMODAL_TITLE_H         28.0
 
 
 

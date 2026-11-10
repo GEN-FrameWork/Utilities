@@ -240,7 +240,6 @@ bool XTRACEMONITOR_FORM_FILTERS::ApplyGeometry()
       const double btn_h      = XTRACEMONITOR_CONFIGMODAL_BTN_H;
       const double icon_clear = XTRACEMONITOR_CONFIGMODAL_BTN_ICON_RIGHT + XTRACEMONITOR_CONFIGMODAL_BTN_ICON_GAP;
       const double pad_r      = XTRACEMONITOR_CONFIGMODAL_BTN_TEXT_PAD_R;
-      const double optical_y  = 2.0;
 
       for(XDWORD c=0; c<multi->GetComposeElements()->GetSize(); c++)
         {
@@ -252,21 +251,28 @@ bool XTRACEMONITOR_FORM_FILTERS::ApplyGeometry()
           if(!text || !text->GetBoundaryLine()) continue;
 
           double tw = text->GetBoundaryLine()->width;
-          double th = text->GetBoundaryLine()->height;
+          double sf = (double)text->GetSizeFont();
           if(tw < 1.0) tw = 1.0;
-          if(th < 1.0) th = 1.0;
+          if(sf < 1.0) sf = text->GetBoundaryLine()->height;
+          if(sf < 1.0) sf = 11.0;
 
           double local_x = (btn_w - tw) * 0.5;
           if(local_x < icon_clear) local_x = icon_clear;
           if((local_x + tw) > (btn_w - pad_r)) local_x = btn_w - pad_r - tw;
           if(local_x < icon_clear) local_x = icon_clear;
 
-          double local_y = (btn_h - th) * 0.5 + optical_y;
+          // VectorFont Y = baseline; ink fills the em box toward EdgeTop. Center the em box
+          // on the circular icon mid in the 160×53 PNG (~y=24 from top) so mixed-case Latin
+          // reads level with the glyph (0.22·sf was leaving captions optically high).
+          const double icon_mid_from_top = 24.0;
+          double       local_y           = btn_h - icon_mid_from_top - (sf * 0.5);
+          if(local_y < 0.0) local_y = 0.0;
 
           text->SetXPosition(face->GetXPosition() + local_x);
           text->SetYPosition(face->GetYPosition() - local_y);
-          text->GetBoundaryLine()->x = local_x;
-          text->GetBoundaryLine()->y = local_y;
+          text->GetBoundaryLine()->x      = local_x;
+          text->GetBoundaryLine()->y      = local_y;
+          text->GetBoundaryLine()->height = sf;
           text->SetMustReDraw(true);
         }
     };

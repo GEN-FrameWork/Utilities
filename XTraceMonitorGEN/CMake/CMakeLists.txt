@@ -48,6 +48,13 @@ option(GRP_2D_FEATURE                                           "Graphics 2D"   
 
 option(INP_FEATURE                                              "Inputs"                                                  ON )
 
+# UART config string decode/validate (DIOSTREAMUARTCONFIG::SetFromString).
+option(DIO_STREAM_FEATURE                                       "Stream"                                                  ON )
+option(DIO_STREAMUART_FEATURE                                   "Stream UART"                                             ON )
+
+# DynDNS password at-rest (AES + Base64 in [dyndns] INI).
+option(CIPHER_SYMMETRIC_FEATURE                                 "Cipher Symmetric"                                        ON )
+option(CIPHER_SYMMETRIC_AES_FEATURE                             "Cipher Symmetric AES"                                    ON )
 
 
 # --------------------------------------------------------------------

@@ -46,8 +46,9 @@
          Right margin 6px (1200−6−82=1112). Re-blit after chrome. -->
     <element name="brand_monitor" type="image" xpos="1112" ypos="145" width="82" height="82">brand_monitor.png</element>
 
-    <!-- Left brand: 10px from app left, 95% opacity. Gap icon→first button ≈ 2× inter-button gap. -->
-    <element name="brand_toolbar" type="image" xpos="10" ypos="130" width="105" height="79" alpha="95">brand_toolbar.png</element>
+    <!-- Left brand: 10px from app left, 95% opacity. Gap icon→first button ≈ 2× inter-button gap.
+         Grown +4×4 from bottom-right (top fixed: EdgeTop=y-h stays 51 → ypos 130→134). -->
+    <element name="brand_toolbar" type="image" xpos="10" ypos="134" width="109" height="83" alpha="95">brand_toolbar.png</element>
 
     <element name="stop-btn" type="multioption" xpos="155" ypos="120" width="72" height="72">
       <element type="button" name="stop-btn" selectablestatus="active">
@@ -222,20 +223,19 @@
 
   </layout>
 
-  <!-- Config dialog on its own layout (same XML / shared skin+canvas). Fixed 900×524 = 75% of
-       min client 1200×699; C++ only recenters on resize. No layout backgroundcolor: skin fill
-       invalidated in ConfigModal_Resolve. -->
+  <!-- Config dialog on its own layout (same XML / shared skin+canvas). Fixed 900×502;
+       C++ only recenters on resize. No layout backgroundcolor: skin fill invalidated in Resolve. -->
   <layout name="config_modal">
 
-    <element name="config_modal" type="form" class="config-modal" xpos="150" ypos="611" width="900" height="524" visible="0"
+    <element name="config_modal" type="form" class="config-modal" xpos="150" ypos="589" width="900" height="502" visible="0"
              roundrect="8" border-width="1" border-color="frame_line" bckgrdcolor="24,28,36"
              overflow-y="hidden" overflow-x="hidden">
-      <element name="config_modal_title" type="text" xpos="16" ypos="508" width="400" height="22"
+      <element name="config_modal_title" type="text" class="form-title" xpos="16" ypos="486" width="400" height="28"
                sizefont="18" color="label_ink">Configuracion</element>
 
       <!-- Color Theme: skin space-evenly peers + optical circle/caption center. -->
       <element name="color_theme_group" type="radiogroup" class="radio-group" title="Color Theme"
-               xpos="24" ypos="338" width="180" height="96">
+               xpos="24" ypos="316" width="180" height="96">
         <element name="theme_light" type="radiobutton" class="radio-button" width="156" height="24"
                  allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
           <element name="theme_light_anim" type="animation" width="16" height="16">
@@ -254,8 +254,9 @@
         </element>
       </element>
 
-      <!-- Window geometry persistence (draft until Accept). Defaults ON. -->
-      <element name="chk_savescreenposition" type="checkbox" class="config-check" xpos="24" ypos="280" width="420" height="28"
+      <!-- Guardar: center column beside Color Theme. Añadir: left under Color Theme.
+           Final coords from ApplyGeometry. -->
+      <element name="chk_savescreenposition" type="checkbox" class="config-check" xpos="244" ypos="400" width="280" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_savescreenposition_anim" type="animation" width="16" height="16">
           <image width="16" height="16">checkbox_off.png</image>
@@ -263,7 +264,7 @@
         </element>
         <element name="chk_savescreenposition_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Guardar posicion de la ventana</element>
       </element>
-      <element name="chk_savescreensize" type="checkbox" class="config-check" xpos="24" ypos="244" width="420" height="28"
+      <element name="chk_savescreensize" type="checkbox" class="config-check" xpos="244" ypos="364" width="280" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_savescreensize_anim" type="animation" width="16" height="16">
           <image width="16" height="16">checkbox_off.png</image>
@@ -271,8 +272,72 @@
         </element>
         <element name="chk_savescreensize_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Guardar tamano de la ventana</element>
       </element>
+      <!-- Añadir + seguimiento under Color Theme (ApplyGeometry owns final coords). -->
+      <element name="chk_adddatetimeconsole" type="checkbox" class="config-check" xpos="24" ypos="270" width="320" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_adddatetimeconsole_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_adddatetimeconsole_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Anadir Fecha y hora en la linea</element>
+      </element>
+      <element name="chk_addipconsole" type="checkbox" class="config-check" xpos="24" ypos="234" width="320" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_addipconsole_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_addipconsole_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Anadir IP en la Linea</element>
+      </element>
+      <element name="chk_texttracking" type="checkbox" class="config-check" xpos="24" ypos="198" width="320" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_texttracking_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_texttracking_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Seguimiento de texto</element>
+      </element>
 
-      <element name="config_modal_btn_default" type="multioption" xpos="262" ypos="16" width="160" height="53">
+      <!-- UDP left; UART right — same Y under Añadir + DynDNS (ApplyGeometry owns final coords). -->
+      <element name="lbl_udplistenport" type="text" class="config-label" xpos="24" ypos="186" width="320" height="18"
+               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Puerto UDP</element>
+      <element name="edit_udplistenport" type="edittext" class="config-edit" xpos="24" ypos="152" width="320" height="28"
+               sizefont="13" maxsizetext="5" inputmode="numeric" valuemin="1" valuemax="65535" valuestep="1"
+               selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
+               bckgrdcolor="64,72,84" color="label_ink">10001</element>
+
+      <element name="lbl_uartport" type="text" class="config-label" xpos="496" ypos="186" width="320" height="18"
+               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Puerto UART</element>
+      <element name="edit_uartport" type="edittext" class="config-edit" xpos="496" ypos="152" width="320" height="28"
+               sizefont="13" maxsizetext="48"
+               selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
+               bckgrdcolor="64,72,84" color="label_ink">1,115200,8,N,1,NONE</element>
+
+      <!-- DynDNS (right): radiogroup frame+title like Color Theme; controls are modal siblings for hit-test. -->
+      <element name="dyndns_group" type="radiogroup" class="radio-group" title="DynDNS"
+               xpos="480" ypos="228" width="352" height="184"></element>
+      <element name="chk_dyndns_active" type="checkbox" class="config-check" xpos="496" ypos="308" width="320" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_dyndns_active_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_dyndns_active_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Activar DynDNS</element>
+      </element>
+      <element name="lbl_dyndns_login" type="text" class="config-label" xpos="496" ypos="270" width="200" height="18"
+               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Login</element>
+      <element name="edit_dyndns_login" type="edittext" class="config-edit" xpos="496" ypos="236" width="320" height="28"
+               sizefont="13" maxsizetext="64"
+               selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
+               bckgrdcolor="64,72,84" color="label_ink"></element>
+      <element name="lbl_dyndns_password" type="text" class="config-label" xpos="496" ypos="192" width="200" height="18"
+               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Password</element>
+      <element name="edit_dyndns_password" type="edittext" class="config-edit" xpos="496" ypos="158" width="320" height="28"
+               sizefont="13" maxsizetext="64" inputmode="password"
+               selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
+               bckgrdcolor="64,72,84" color="label_ink"></element>
+
+      <element name="config_modal_btn_default" type="multioption" xpos="262" ypos="26" width="160" height="53">
         <element type="button" name="config_modal_btn_default" selectablestatus="active" width="160" height="53">
           <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
           <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Active.png</image></element>
@@ -291,7 +356,7 @@
         </element>
       </element>
 
-      <element name="config_modal_btn_accept" type="multioption" xpos="438" ypos="16" width="160" height="53">
+      <element name="config_modal_btn_accept" type="multioption" xpos="438" ypos="26" width="160" height="53">
         <element type="button" name="config_modal_btn_accept" selectablestatus="active" width="160" height="53">
           <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
           <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Active.png</image></element>
@@ -310,7 +375,7 @@
         </element>
       </element>
 
-      <element name="config_modal_btn_cancel" type="multioption" xpos="614" ypos="16" width="160" height="53">
+      <element name="config_modal_btn_cancel" type="multioption" xpos="614" ypos="26" width="160" height="53">
         <element type="button" name="config_modal_btn_cancel" selectablestatus="active" width="160" height="53">
           <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
           <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Active.png</image></element>
@@ -332,14 +397,14 @@
 
   </layout>
 
-  <!-- Filters dialog: same fixed 900×524 chrome as config_modal; C++ recenters on resize.
+  <!-- Filters dialog: same fixed 900×502 chrome as config_modal; C++ recenters on resize.
        Options TBD — footer buttons only for now. -->
   <layout name="filters_modal">
 
-    <element name="filters_modal" type="form" class="filters-modal" xpos="150" ypos="611" width="900" height="524" visible="0"
+    <element name="filters_modal" type="form" class="filters-modal" xpos="150" ypos="589" width="900" height="502" visible="0"
              roundrect="8" border-width="1" border-color="frame_line" bckgrdcolor="24,28,36"
              overflow-y="hidden" overflow-x="hidden">
-      <element name="filters_modal_title" type="text" xpos="16" ypos="508" width="400" height="22"
+      <element name="filters_modal_title" type="text" class="form-title" xpos="16" ypos="486" width="400" height="28"
                sizefont="18" color="label_ink">Filtros</element>
 
       <element name="filters_modal_btn_default" type="multioption" xpos="262" ypos="16" width="160" height="53">

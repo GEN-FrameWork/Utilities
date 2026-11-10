@@ -557,9 +557,17 @@ bool XTRACEMONITOR::UpdateInput()
     {
       if(button[XTRACEMONITOR_BUTTON_ESC]->IsPressedWithRelease())
         {
-          PersistScreenGeometryToCFG();
-          screen_geometry_persisted = true;
-          SetExitType(APPFLOWBASE_EXITTYPE_BY_USER);
+          // Editing an EditText: ESC drops focus (does not exit the app).
+          if(GEN_USERINTERFACE.EditText_HasFocus())
+            {
+              GEN_USERINTERFACE.EditText_ClearFocus(true);
+            }
+           else
+            {
+              PersistScreenGeometryToCFG();
+              screen_geometry_persisted = true;
+              SetExitType(APPFLOWBASE_EXITTYPE_BY_USER);
+            }
         }
     }
 
@@ -2285,17 +2293,33 @@ bool XTRACEMONITOR::ApplyColorTheme_PatchStyleBag(UI_STYLE& style, bool light)
         {
           value.Replace(NL("24,28,36")    , NL("236,238,242"));
           value.Replace(NL("12,14,18")    , NL("250,250,252"));
+          value.Replace(NL("64,72,84")    , NL("210,214,220")); // edit idle
+          value.Replace(NL("8,10,12")     , NL("248,250,252")); // edit focus
           value.Replace(NL("70,80,95")    , NL("140,150,165"));
           value.Replace(NL("160,170,185") , NL("140,150,165")); // prior Light token
           value.Replace(NL("200,208,220") , NL("40,44,52"));
+          value.Replace(NL("95,140,190,100") , NL("165,200,235,100")); // title-bar left
+          value.Replace(NL("95,140,190,0")   , NL("165,200,235,0"));   // title-bar right (transparent)
+          value.Replace(NL("95,140,190")     , NL("165,200,235"));     // title-bar RGB without alpha
+          value.Replace(NL("155,190,225")    , NL("210,228,245"));     // prior opaque right
+          value.Replace(NL("72,118,168")     , NL("165,200,235"));     // prior title-bar left
+          value.Replace(NL("130,170,210")    , NL("210,228,245"));     // prior title-bar right
         }
        else
         {
           value.Replace(NL("236,238,242") , NL("24,28,36"));
           value.Replace(NL("250,250,252") , NL("12,14,18"));
+          value.Replace(NL("210,214,220") , NL("64,72,84"));   // edit idle
+          value.Replace(NL("248,250,252") , NL("8,10,12"));    // edit focus
           value.Replace(NL("140,150,165") , NL("70,80,95"));
           value.Replace(NL("160,170,185") , NL("70,80,95"));
           value.Replace(NL("40,44,52")    , NL("200,208,220"));
+          value.Replace(NL("165,200,235,100") , NL("95,140,190,100")); // title-bar left
+          value.Replace(NL("165,200,235,0")   , NL("95,140,190,0"));   // title-bar right (transparent)
+          value.Replace(NL("165,200,235")     , NL("95,140,190"));     // title-bar RGB without alpha
+          value.Replace(NL("210,228,245")     , NL("155,190,225"));    // prior opaque right
+          value.Replace(NL("150,185,225")     , NL("95,140,190"));     // prior light left
+          value.Replace(NL("195,220,240")     , NL("155,190,225"));    // prior light right
         }
     }
 
@@ -2318,17 +2342,25 @@ bool XTRACEMONITOR::ApplyColorTheme_PatchStyleSheet(UI_STYLESHEET* sheet, bool l
 
   if(light)
     {
-      sheet->Variables().Set(NL("--page-bg")   , NL("236,238,242"));
-      sheet->Variables().Set(NL("--console-bg"), NL("250,250,252"));
-      sheet->Variables().Set(NL("--frame-line"), NL("140,150,165"));
-      sheet->Variables().Set(NL("--label-ink") , NL("40,44,52"));
+      sheet->Variables().Set(NL("--page-bg")        , NL("236,238,242"));
+      sheet->Variables().Set(NL("--console-bg")     , NL("250,250,252"));
+      sheet->Variables().Set(NL("--frame-line")     , NL("140,150,165"));
+      sheet->Variables().Set(NL("--label-ink")      , NL("40,44,52"));
+      sheet->Variables().Set(NL("--edit-idle-bg")   , NL("210,214,220"));
+      sheet->Variables().Set(NL("--edit-focus-bg")  , NL("248,250,252"));
+      sheet->Variables().Set(NL("--title-bar-left") , NL("165,200,235,100"));
+      sheet->Variables().Set(NL("--title-bar-right"), NL("165,200,235,0"));
     }
    else
     {
-      sheet->Variables().Set(NL("--page-bg")   , NL("24,28,36"));
-      sheet->Variables().Set(NL("--console-bg"), NL("12,14,18"));
-      sheet->Variables().Set(NL("--frame-line"), NL("70,80,95"));
-      sheet->Variables().Set(NL("--label-ink") , NL("200,208,220"));
+      sheet->Variables().Set(NL("--page-bg")        , NL("24,28,36"));
+      sheet->Variables().Set(NL("--console-bg")     , NL("12,14,18"));
+      sheet->Variables().Set(NL("--frame-line")     , NL("70,80,95"));
+      sheet->Variables().Set(NL("--label-ink")      , NL("200,208,220"));
+      sheet->Variables().Set(NL("--edit-idle-bg")   , NL("64,72,84"));
+      sheet->Variables().Set(NL("--edit-focus-bg")  , NL("8,10,12"));
+      sheet->Variables().Set(NL("--title-bar-left") , NL("95,140,190,100"));
+      sheet->Variables().Set(NL("--title-bar-right"), NL("95,140,190,0"));
     }
 
   XVECTOR<UI_CSSRULE*>* rules = sheet->Rules_GetAll();
@@ -2380,6 +2412,8 @@ bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
   XCHAR* page_bg    = light ? NL("236,238,242,100") : NL("24,28,36,100");
   XCHAR* console_bg = light ? NL("250,250,252,100") : NL("12,14,18,100");
   XCHAR* frame_line = light ? NL("140,150,165,100") : NL("70,80,95,100");
+  XCHAR* edit_idle  = light ? NL("210,214,220,100") : NL("64,72,84,100");
+  XCHAR* edit_focus = light ? NL("248,250,252,100") : NL("8,10,12,100");
 
   auto rgb_eq = [](UI_COLOR* c, XBYTE r, XBYTE g, XBYTE b) -> bool
     {
@@ -2412,6 +2446,19 @@ bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
   auto is_theme_console = [&](UI_COLOR* c) -> bool
     {
       return rgb_eq(c, 12, 14, 18) || rgb_eq(c, 250, 250, 252);
+    };
+  auto is_theme_edit_idle = [&](UI_COLOR* c) -> bool
+    {
+      return rgb_eq(c, 64, 72, 84) || rgb_eq(c, 210, 214, 220) || rgb_eq(c, 48, 54, 64) || rgb_eq(c, 220, 224, 230);
+    };
+  auto is_theme_edit_focus = [&](UI_COLOR* c) -> bool
+    {
+      return rgb_eq(c, 8, 10, 12) || rgb_eq(c, 248, 250, 252);
+    };
+  auto is_theme_title_bar = [&](UI_COLOR* c) -> bool
+    {
+      return rgb_eq(c, 95, 140, 190) || rgb_eq(c, 165, 200, 235) ||
+             rgb_eq(c, 72, 118, 168) || rgb_eq(c, 150, 185, 225);
     };
 
   bool changed = false;
@@ -2462,6 +2509,20 @@ bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
        else if(is_theme_page(bg))
         {
           bg->SetFromString(page_bg);
+          bg->SetValid(true);
+          changed = true;
+        }
+       else if((type == UI_ELEMENT_TYPE_EDITTEXT) && (is_theme_edit_idle(bg) || is_theme_edit_focus(bg)))
+        {
+          // Keep focus/idle roles across Dark↔Light; :selected reapply will pick the live one.
+          const bool focused = element->IsSelected();
+          bg->SetFromString(focused ? edit_focus : edit_idle);
+          bg->SetValid(true);
+          changed = true;
+        }
+       else if((type == UI_ELEMENT_TYPE_TEXT) && is_theme_title_bar(bg))
+        {
+          bg->SetFromString(light ? NL("165,200,235,100") : NL("95,140,190,100")); // plate start (end is transparent via style)
           bg->SetValid(true);
           changed = true;
         }
@@ -2741,7 +2802,13 @@ void XTRACEMONITOR::HandleEvent_UserInterface(UI_XEVENT* event)
                                                    }
                                                    break;
 
-      case UI_XEVENT_TYPE_OUTPUT_CHANGECONTENTS  : break;
+      case UI_XEVENT_TYPE_OUTPUT_CHANGECONTENTS  : { UI_ELEMENT* element = event->GetElement();
+                                                     if(element)
+                                                       {
+                                                         form_cfg.HandleElementChangeContents(element);
+                                                       }
+                                                   }
+                                                   break;
     }
 }
 

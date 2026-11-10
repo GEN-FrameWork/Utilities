@@ -13,6 +13,10 @@
   --console-bg:     12,14,18;     /* light: 250,250,252 */
   --frame-line:     70,80,95;     /* light: 160,170,185 */
   --label-ink:      200,208,220;  /* light: 40,44,52 */
+  --edit-idle-bg:   64,72,84;     /* light: 210,214,220 — gray when not editing */
+  --edit-focus-bg:  8,10,12;      /* light: 248,250,252 — near-black / near-white while editing */
+  --title-bar-left: 95,140,190,100; /* pale blue → transparent L→R (light: 165,200,235,100) */
+  --title-bar-right:95,140,190,0;   /* fully transparent on the right (light: 165,200,235,0) */
   --root-font-size: 16;
 }
 
@@ -23,6 +27,17 @@ form.filters-modal {
   border-width:     1;
   border-color:     var(--frame-line);
   border-radius:    8;
+}
+
+/* Modal title plate: pale-blue linear gradient left → right (no outline). */
+text.form-title {
+  background-color: var(--title-bar-left);
+  gradientcolor:    var(--title-bar-right);
+  border-width:     0;
+  border-radius:    4;
+  color:            var(--label-ink);
+  font-size:        18;
+  padding:          0,0,0,12;
 }
 
 /* Radio group: framed groupbox. Title sits on the top stroke (skin notch).
@@ -57,4 +72,23 @@ checkbox.config-check {
   border-width:     0;
   color:            var(--label-ink);
   font-size:        12;
+}
+
+text.config-label {
+  color:            var(--label-ink);
+  font-size:        12;
+  background-color: 0,0,0,0;
+}
+
+/* Inset field: idle fill + ink come from XML / runtime (UART error red + white glyphs survive :hover).
+   Only :selected overrides background to the focus fill — base rule must not re-assert idle gray/ink. */
+edittext.config-edit {
+  border-width:     1;
+  border-color:     var(--frame-line);
+  border-radius:    4;
+  font-size:        13;
+}
+
+edittext.config-edit:selected {
+  background-color: var(--edit-focus-bg);
 }
