@@ -40,9 +40,13 @@
 #include "UI_Element_Form.h"
 #include "UI_Element_Option.h"
 #include "UI_Element_Text.h"
+#include "UI_Property_Selectable.h"
 #include "UI_Layout.h"
 #include "UI_Skin.h"
 #include "UI_Manager.h"
+
+#include "XFactory.h"
+#include "XTimer.h"
 
 #include "XTraceMonitor.h"
 #include "XTraceMonitor_CFG.h"
@@ -77,6 +81,12 @@ XTRACEMONITOR_FORM_FILTERS::XTRACEMONITOR_FORM_FILTERS()
 *---------------------------------------------------------------------------------------------------------------------*/
 XTRACEMONITOR_FORM_FILTERS::~XTRACEMONITOR_FORM_FILTERS()
 {
+  if(close_timer)
+    {
+      GEN_XFACTORY.DeleteTimer(close_timer);
+      close_timer = NULL;
+    }
+
   Clean();
 }
 
@@ -308,6 +318,111 @@ bool XTRACEMONITOR_FORM_FILTERS::IsVisible()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool XTRACEMONITOR_FORM_FILTERS::HoldPressVisual(UI_ELEMENT* btn)
+* @brief      Forces the multioption Pressed face and holds it for PRESS_HOLD_MS.
+* @ingroup    UTILITIES
+*
+* @param[in]  btn : Modal multioption (Accept / Cancel / Predeterminado).
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_FILTERS::HoldPressVisual(UI_ELEMENT* btn)
+{
+  if(!btn) return false;
+
+  UI_PROPERTY_SELECTABLE* sel = dynamic_cast<UI_PROPERTY_SELECTABLE*>(btn);
+  if(sel)
+    {
+      sel->SetTimeSelected(XTRACEMONITOR_MODAL_BTN_PRESS_HOLD_MS);
+      btn->SetPreSelect(false);
+      btn->SetSelected(true);
+      if(sel->GetXTimerSelected()) sel->GetXTimerSelected()->Reset();
+    }
+
+  if(btn->GetComposeElements())
+    {
+      for(XDWORD c=0; c<btn->GetComposeElements()->GetSize(); c++)
+        {
+          UI_ELEMENT* face = btn->GetComposeElements()->Get(c);
+          if(!face) continue;
+          face->SetMustReDraw(true);
+          if(face->GetComposeElements())
+            {
+              for(XDWORD d=0; d<face->GetComposeElements()->GetSize(); d++)
+                {
+                  UI_ELEMENT* child = face->GetComposeElements()->Get(d);
+                  if(child) child->SetMustReDraw(true);
+                }
+            }
+        }
+    }
+
+  GEN_USERINTERFACE.Elements_SetToRedraw(btn, true);
+  if(filters_modal)
+    {
+      GEN_USERINTERFACE.Elements_SetToRedraw(filters_modal, true);
+      GEN_USERINTERFACE.ModalLayer_Invalidate();
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_FILTERS::ArmCloseAfterPress(UI_ELEMENT* btn)
+* @brief      Shows Pressed for PRESS_HOLD_MS, then closes the modal on Tick().
+* @ingroup    UTILITIES
+*
+* @param[in]  btn : Modal multioption that was clicked.
+*
+* @return     bool : true if armed (or already armed); otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_FILTERS::ArmCloseAfterPress(UI_ELEMENT* btn)
+{
+  if(close_armed) return true;
+
+  HoldPressVisual(btn);
+
+  if(!close_timer)
+    {
+      close_timer = GEN_XFACTORY.CreateTimer();
+      if(!close_timer) return Show(false);
+    }
+
+  close_timer->Reset();
+  close_armed = true;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_FILTERS::Tick()
+* @brief      Completes a deferred Accept/Cancel close after the press hold.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_FILTERS::Tick()
+{
+  if(!close_armed || !close_timer) return true;
+
+  if(close_timer->GetMeasureMilliSeconds() >= (XQWORD)XTRACEMONITOR_MODAL_BTN_PRESS_HOLD_MS)
+    {
+      close_armed = false;
+      return Show(false);
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool XTRACEMONITOR_FORM_FILTERS::Show(bool show)
 * @brief      Shows or hides the filters modal as a GEN modal layer.
 * @ingroup    UTILITIES
@@ -320,6 +435,8 @@ bool XTRACEMONITOR_FORM_FILTERS::IsVisible()
 bool XTRACEMONITOR_FORM_FILTERS::Show(bool show)
 {
   if(!owner || !filters_modal) return false;
+
+  close_armed = false;
 
   if(show)
     {
@@ -350,6 +467,9 @@ bool XTRACEMONITOR_FORM_FILTERS::Show(bool show)
       GEN_USERINTERFACE.Layout_PutBackground();
       GEN_USERINTERFACE.Elements_SetToRedraw();
 
+      // Same as Config: page wipe under the modal must not leave a dead net-status cluster.
+      owner->InternetStatus_Update(true);
+
       owner->OpStatus_Log(NL("Filters modal closed."));
     }
 
@@ -374,6 +494,16 @@ bool XTRACEMONITOR_FORM_FILTERS::HandleElementSelected(UI_ELEMENT* element)
 
   XSTRING* name = element->GetName();
   if(!name) return false;
+
+  if(close_armed)
+    {
+      if(!name->Compare(NL("filters_modal_btn_accept"), true) ||
+         !name->Compare(NL("filters_modal_btn_cancel"), true) ||
+         !name->Compare(NL("filters_modal_btn_default"), true))
+        {
+          return true;
+        }
+    }
 
   if(!name->Compare(NL("filter-btn"), true))
     {
@@ -439,7 +569,7 @@ bool XTRACEMONITOR_FORM_FILTERS::OnAccept()
     }
 
   owner->OpStatus_Log(NL("Filters: Aceptar - CFG guardado."));
-  return Show(false);
+  return ArmCloseAfterPress(filters_modal_btn_accept);
 }
 
 
@@ -459,7 +589,7 @@ bool XTRACEMONITOR_FORM_FILTERS::OnCancel()
   LoadCommittedFromCFG();
 
   owner->OpStatus_Log(NL("Filters: Cancelar."));
-  return Show(false);
+  return ArmCloseAfterPress(filters_modal_btn_cancel);
 }
 
 
@@ -478,7 +608,7 @@ bool XTRACEMONITOR_FORM_FILTERS::OnDefault()
 
   // Options TBD: reset draft to XTRACEMONITOR_CFG filter defaults (DoDefault values).
   owner->OpStatus_Log(NL("Filters: Predeterminado."));
-  return true;
+  return HoldPressVisual(filters_modal_btn_default);
 }
 
 
@@ -498,4 +628,6 @@ void XTRACEMONITOR_FORM_FILTERS::Clean()
   filters_modal_btn_accept  = NULL;
   filters_modal_btn_cancel  = NULL;
   filters_modal_btn_default = NULL;
+  close_timer               = NULL;
+  close_armed               = false;
 }

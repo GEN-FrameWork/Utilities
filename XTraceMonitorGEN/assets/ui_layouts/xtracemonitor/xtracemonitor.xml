@@ -2,16 +2,14 @@
 <!--
   XTraceMonitor layout.
   Canvas / window minimum: 1200 x 699. Sizeable above that: valor/footer width,
-  console W+H, tree height (bottom-aligned with console), and brand_monitor xpos
-  grow/shrink (chrome buttons track horizontally).
-  Outer margins 6px: left→tree, right→valor/console/opstatus/brand_monitor, bottom→opstatus foot.
+  console W+H, tree height (bottom-aligned with console). Chrome buttons track horizontally.
+  Outer margins 6px: left→tree, right→valor/console/opstatus, bottom→opstatus foot.
   Gaps tree↔panels / valor↔console / console↔foot = 6.
-  Content packed under caption (46)+2px: icons must clear the opaque caption band (EdgeTop>=48) or
-  ChromeCaption_SuppressesContentDraw skips them. Icons ypos 120 (72px → top 48), legends under icons.
-  Valor: header + 6 rows (h=158). Brand 82×82 transparent, 6px right, 3px above valor.
+  Custom caption height 40 (= app icon). Toolbar bubbles flush under caption (EdgeTop=40):
+  icons ypos 112 (72px), legends ypos 126 (14px under icons). brand_toolbar spans icon top→legend bottom.
+  Valor: header + 6 rows (h=158), top 134 (8px under bubble legends).
 
-  Caption height 46. Icons 72x72 (from 220 masters, +10% again).
-  Legends: forms centered under each button (text xpos=center).
+  Icons 72x72. Legends: forms centered under each button (text xpos=center).
 
   opstatus: foot form (same width as console). Collapsed = 1 line; double-click expands
   upward (bottom edge fixed) over the console showing up to 20 operative messages.
@@ -42,15 +40,13 @@
 
   <layout name="xtracemonitor" backgroundcolor="24,28,36">
 
-    <!-- Brand art (lupa/huellas): transparent PNG 82×82. Bottom 3px above valor (ypos 145).
-         Right margin 6px (1200−6−82=1112). Re-blit after chrome. -->
-    <element name="brand_monitor" type="image" xpos="1112" ypos="145" width="82" height="82">brand_monitor.png</element>
+    <!-- Left brand GEN Framework: master PNG 104×86 at 1:1 (no scale).
+         Bottom=legend bottom (126); top=bubble top / caption bottom (40). -->
+    <element name="brand_toolbar" type="image" xpos="16" ypos="126" width="104" height="86" alpha="95">brand_toolbar.png</element>
 
-    <!-- Left brand: 10px from app left, 95% opacity. Gap icon→first button ≈ 2× inter-button gap.
-         Grown +4×4 from bottom-right (top fixed: EdgeTop=y-h stays 51 → ypos 130→134). -->
-    <element name="brand_toolbar" type="image" xpos="10" ypos="134" width="109" height="83" alpha="95">brand_toolbar.png</element>
-
-    <element name="stop-btn" type="multioption" xpos="155" ypos="120" width="72" height="72">
+    <!-- Bubbles flush under caption (EdgeTop=40): ypos = 40+72.
+         Pitch 81 (gap 9 = 1/3 of prior 26); brand→first 120+9=129; packed left. -->
+    <element name="stop-btn" type="multioption" xpos="129" ypos="112" width="72" height="72">
       <element type="button" name="stop-btn" selectablestatus="active">
         <element type="animation"><image width="72" height="72">Stop_Active.png</image></element>
       </element>
@@ -65,7 +61,7 @@
       </element>
     </element>
 
-    <element name="run-btn" type="multioption" xpos="155" ypos="120" width="72" height="72" visible="false">
+    <element name="run-btn" type="multioption" xpos="129" ypos="112" width="72" height="72" visible="false">
       <element type="button" name="run-btn" selectablestatus="active">
         <element type="animation"><image width="72" height="72">Run_Active.png</image></element>
       </element>
@@ -82,11 +78,11 @@
     <!-- Shared legend after both icons: stays visible; caption swaps with workingmode (avoids Parar loss).
          text-align centers both captions in the load-time box (no C++ remasure / Y drift).
          Transparent like the other toolbar legends — GEN page-wipes compact legend forms. -->
-    <element name="runstop-lbl" type="form" xpos="148" ypos="134" width="86" height="14" backgroundcolor="0,0,0,0" border-width="0">
+    <element name="runstop-lbl" type="form" xpos="122" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0" border-width="0">
       <element name="runstop-txt" type="text" xpos="center" ypos="center" text-align="center" sizefont="11" color="label_ink">#[BTN_STOP]</element>
     </element>
 
-    <element name="clear-btn" type="multioption" xpos="253" ypos="120" width="72" height="72">
+    <element name="clear-btn" type="multioption" xpos="210" ypos="112" width="72" height="72">
       <element type="button" name="clear-btn" selectablestatus="active">
         <element type="animation"><image width="72" height="72">Clear_Active.png</image></element>
       </element>
@@ -100,11 +96,11 @@
         <element type="animation"><image width="72" height="72">Clear_Disabled.png</image></element>
       </element>
     </element>
-    <element name="clear-lbl" type="form" xpos="246" ypos="134" width="86" height="14" backgroundcolor="0,0,0,0">
+    <element name="clear-lbl" type="form" xpos="203" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_CLEAR]</element>
     </element>
 
-    <element name="delstatus-btn" type="multioption" xpos="351" ypos="120" width="72" height="72">
+    <element name="delstatus-btn" type="multioption" xpos="291" ypos="112" width="72" height="72">
       <element type="button" name="delstatus-btn" selectablestatus="active">
         <element type="animation"><image width="72" height="72">Del_Status_Active.png</image></element>
       </element>
@@ -118,12 +114,12 @@
         <element type="animation"><image width="72" height="72">Del_Status_Disabled.png</image></element>
       </element>
     </element>
-    <element name="delstatus-lbl" type="form" xpos="344" ypos="134" width="86" height="14" backgroundcolor="0,0,0,0">
+    <element name="delstatus-lbl" type="form" xpos="284" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_DELSTATUS]</element>
     </element>
 
-    <!-- After Del status: Filtro, then DynDNS, Save, Configuracion (pitch 98). -->
-    <element name="filter-btn" type="multioption" xpos="449" ypos="120" width="72" height="72">
+    <!-- After Del status: Filtro, then DynDNS, Save, Configuracion (pitch 81). -->
+    <element name="filter-btn" type="multioption" xpos="372" ypos="112" width="72" height="72">
       <element type="button" name="filter-btn" selectablestatus="active">
         <element type="animation"><image width="72" height="72">Filtros_Active.png</image></element>
       </element>
@@ -137,11 +133,11 @@
         <element type="animation"><image width="72" height="72">Filtros_Disabled.png</image></element>
       </element>
     </element>
-    <element name="filter-lbl" type="form" xpos="442" ypos="134" width="86" height="14" backgroundcolor="0,0,0,0">
+    <element name="filter-lbl" type="form" xpos="365" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_FILTER]</element>
     </element>
 
-    <element name="dyndns-btn" type="multioption" xpos="547" ypos="120" width="72" height="72">
+    <element name="dyndns-btn" type="multioption" xpos="453" ypos="112" width="72" height="72">
       <element type="button" name="dyndns-btn" selectablestatus="active">
         <element type="animation"><image width="72" height="72">DynDNS_Active.png</image></element>
       </element>
@@ -155,11 +151,11 @@
         <element type="animation"><image width="72" height="72">DynDNS_Disabled.png</image></element>
       </element>
     </element>
-    <element name="dyndns-lbl" type="form" xpos="540" ypos="134" width="86" height="14" backgroundcolor="0,0,0,0">
+    <element name="dyndns-lbl" type="form" xpos="446" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_DYNDNS]</element>
     </element>
 
-    <element name="save-btn" type="multioption" xpos="645" ypos="120" width="72" height="72">
+    <element name="save-btn" type="multioption" xpos="534" ypos="112" width="72" height="72">
       <element type="button" name="save-btn" selectablestatus="active">
         <element type="animation"><image width="72" height="72">Save_Active.png</image></element>
       </element>
@@ -173,11 +169,11 @@
         <element type="animation"><image width="72" height="72">Save_Disabled.png</image></element>
       </element>
     </element>
-    <element name="save-lbl" type="form" xpos="638" ypos="134" width="86" height="14" backgroundcolor="0,0,0,0">
+    <element name="save-lbl" type="form" xpos="527" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_SAVE]</element>
     </element>
 
-    <element name="config-btn" type="multioption" xpos="743" ypos="120" width="72" height="72">
+    <element name="config-btn" type="multioption" xpos="615" ypos="112" width="72" height="72">
       <element type="button" name="config-btn" selectablestatus="active">
         <element type="animation"><image width="72" height="72">Configuracion_Active.png</image></element>
       </element>
@@ -191,12 +187,26 @@
         <element type="animation"><image width="72" height="72">Configuracion_Disabled.png</image></element>
       </element>
     </element>
-    <element name="config-lbl" type="form" xpos="736" ypos="134" width="86" height="14" backgroundcolor="0,0,0,0">
+    <element name="config-lbl" type="form" xpos="608" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_CONFIG]</element>
     </element>
 
-    <!-- valor: width 972; height 158 (header 26 + 6×22); top aligned with tree (148). -->
-    <element name="valor" type="propertylist" xpos="222" ypos="306" width="972" height="158"
+    <!-- Top-right net status: same frame chrome as valor/console/tree; right edge tracks valor.
+         Root siblings; C++ measures text, sizes the frame, and re-anchors on every horizontal resize. -->
+    <element name="netstatus" type="form" xpos="834" ypos="120" width="280" height="54"
+             roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
+             overflow-x="hidden" overflow-y="hidden"></element>
+    <element name="netstatus_led" type="form" xpos="834" ypos="86" width="12" height="12"
+             roundrect="6" backgroundcolor="63,185,80,100" border-width="0" color="63,185,80,100"></element>
+    <element name="netstatus_state" type="text" xpos="850" ypos="86" width="260" height="16"
+             text-align="left" sizefont="12" color="label_ink" backgroundcolor="console_back">Conexion a internet</element>
+    <element name="netstatus_ip" type="text" xpos="850" ypos="104" width="260" height="16"
+             text-align="left" sizefont="12" color="label_ink" backgroundcolor="console_back">IP Publica: --</element>
+    <element name="netstatus_udp" type="text" xpos="850" ypos="122" width="260" height="16"
+             text-align="left" sizefont="12" color="label_ink" backgroundcolor="console_back">UDP Port: --</element>
+
+    <!-- valor: width 972; height 158 (header 26 + 6×22); top aligned with tree (134). -->
+    <element name="valor" type="propertylist" xpos="222" ypos="292" width="972" height="158"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              color="label_ink" sizefont="12" namecolumnwidth="220" overflow-y="auto"></element>
 
@@ -206,7 +216,7 @@
              color="label_ink" sizefont="12" rowheight="20" indentwidth="18"
              overflow-y="auto" overflow-x="auto"></element>
 
-    <!-- console: same left/width as valor; bottom 665; height 353 (tracks valor_top 148). -->
+    <!-- console: same left/width as valor; bottom 665; height tracks valor_top (C++ resize). -->
     <element name="log_console" type="console" xpos="222" ypos="665" width="972" height="353"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              sizefont="12" linespacing="3" maxlines="500"
@@ -301,14 +311,14 @@
       <!-- UDP left; UART right — same Y under Añadir + DynDNS (ApplyGeometry owns final coords). -->
       <element name="lbl_udplistenport" type="text" class="config-label" xpos="24" ypos="186" width="320" height="18"
                sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Puerto UDP</element>
-      <element name="edit_udplistenport" type="edittext" class="config-edit" xpos="24" ypos="152" width="320" height="28"
+      <element name="edit_udplistenport" type="combo" class="config-edit" xpos="24" ypos="152" width="320" height="28"
                sizefont="13" maxsizetext="5" inputmode="numeric" valuemin="1" valuemax="65535" valuestep="1"
                selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
                bckgrdcolor="64,72,84" color="label_ink">10001</element>
 
       <element name="lbl_uartport" type="text" class="config-label" xpos="496" ypos="186" width="320" height="18"
                sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Puerto UART</element>
-      <element name="edit_uartport" type="edittext" class="config-edit" xpos="496" ypos="152" width="320" height="28"
+      <element name="edit_uartport" type="combo" class="config-edit" xpos="496" ypos="152" width="320" height="28"
                sizefont="13" maxsizetext="48"
                selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
                bckgrdcolor="64,72,84" color="label_ink">1,115200,8,N,1,NONE</element>
@@ -337,7 +347,7 @@
                selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
                bckgrdcolor="64,72,84" color="label_ink"></element>
 
-      <element name="config_modal_btn_default" type="multioption" xpos="262" ypos="26" width="160" height="53">
+      <element name="config_modal_btn_default" type="multioption" xpos="262" ypos="16" width="160" height="53">
         <element type="button" name="config_modal_btn_default" selectablestatus="active" width="160" height="53">
           <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
           <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Active.png</image></element>
@@ -356,7 +366,7 @@
         </element>
       </element>
 
-      <element name="config_modal_btn_accept" type="multioption" xpos="438" ypos="26" width="160" height="53">
+      <element name="config_modal_btn_accept" type="multioption" xpos="438" ypos="16" width="160" height="53">
         <element type="button" name="config_modal_btn_accept" selectablestatus="active" width="160" height="53">
           <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
           <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Active.png</image></element>
@@ -375,7 +385,7 @@
         </element>
       </element>
 
-      <element name="config_modal_btn_cancel" type="multioption" xpos="614" ypos="26" width="160" height="53">
+      <element name="config_modal_btn_cancel" type="multioption" xpos="614" ypos="16" width="160" height="53">
         <element type="button" name="config_modal_btn_cancel" selectablestatus="active" width="160" height="53">
           <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
           <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Active.png</image></element>

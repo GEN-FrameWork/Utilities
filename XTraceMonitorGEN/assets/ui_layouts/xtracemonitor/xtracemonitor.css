@@ -82,13 +82,15 @@ text.config-label {
 
 /* Inset field: idle fill + ink come from XML / runtime (UART error red + white glyphs survive :hover).
    Only :selected overrides background to the focus fill — base rule must not re-assert idle gray/ink. */
-edittext.config-edit {
+edittext.config-edit,
+combo.config-edit {
   border-width:     1;
   border-color:     var(--frame-line);
   border-radius:    4;
   font-size:        13;
 }
 
-edittext.config-edit:selected {
+edittext.config-edit:selected,
+combo.config-edit:selected {
   background-color: var(--edit-focus-bg);
 }

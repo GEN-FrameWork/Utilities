@@ -44,6 +44,9 @@ enum XTRACEMONITOR_FORM_CFG_COLORTHEME
 // Symmetric passphrase for DynDNS password at-rest (AES-128). Change here if rotation is needed.
 #define XTRACEMONITOR_DYNDNS_CIPHER_PASSWORD            NL("XTM-DynDNS-AES128-Key!")
 
+// Hold Accept/Cancel/Predeterminado Pressed face so the click is visible before modal close.
+#define XTRACEMONITOR_MODAL_BTN_PRESS_HOLD_MS           300
+
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
 
 class XTRACEMONITOR;
@@ -53,7 +56,9 @@ class UI_ELEMENT_RADIOGROUP;
 class UI_ELEMENT_RADIOBUTTON;
 class UI_ELEMENT_CHECKBOX;
 class UI_ELEMENT_EDITTEXT;
+class UI_ELEMENT_COMBO;
 class UI_ELEMENT_MULTIOPTION;
+class XTIMER;
 
 class XTRACEMONITOR_FORM_CFG
 {
@@ -67,6 +72,7 @@ class XTRACEMONITOR_FORM_CFG
     bool                            ApplyGeometry                           ();
     bool                            Show                                    (bool show);
     bool                            IsVisible                               ();
+    bool                            Tick                                    ();
 
     bool                            HandleElementSelected                   (UI_ELEMENT* element);
     bool                            HandleElementChangeContents             (UI_ELEMENT* element);
@@ -94,10 +100,13 @@ class XTRACEMONITOR_FORM_CFG
     bool                            ApplyUARTFieldVisual                    ();
     bool                            ApplyDynDNSFieldsEnabled                ();
     bool                            ApplyDynDNSToolbarButton                (bool active);
+    bool                            RebuildTargetCombos                     ();
     bool                            SetDraftColorTheme                      (int colortheme);
     bool                            OnAccept                                ();
     bool                            OnCancel                                ();
     bool                            OnDefault                               ();
+    bool                            HoldPressVisual                         (UI_ELEMENT* btn);
+    bool                            ArmCloseAfterPress                      (UI_ELEMENT* btn);
 
     void                            Clean                                   ();
 
@@ -108,6 +117,8 @@ class XTRACEMONITOR_FORM_CFG
     UI_ELEMENT*                     config_modal_btn_accept;
     UI_ELEMENT*                     config_modal_btn_cancel;
     UI_ELEMENT*                     config_modal_btn_default;
+    XTIMER*                         close_timer;
+    bool                            close_armed;
     UI_ELEMENT_RADIOGROUP*          color_theme_group;
     UI_ELEMENT_RADIOBUTTON*         theme_light;
     UI_ELEMENT_RADIOBUTTON*         theme_dark;
@@ -117,9 +128,9 @@ class XTRACEMONITOR_FORM_CFG
     UI_ELEMENT_CHECKBOX*            chk_addipconsole;
     UI_ELEMENT_CHECKBOX*            chk_texttracking;
     UI_ELEMENT*                     lbl_udplistenport;
-    UI_ELEMENT_EDITTEXT*            edit_udplistenport;
+    UI_ELEMENT_COMBO*               edit_udplistenport;
     UI_ELEMENT*                     lbl_uartport;
-    UI_ELEMENT_EDITTEXT*            edit_uartport;
+    UI_ELEMENT_COMBO*               edit_uartport;
 
     UI_ELEMENT_RADIOGROUP*          dyndns_group;
     UI_ELEMENT_CHECKBOX*            chk_dyndns_active;

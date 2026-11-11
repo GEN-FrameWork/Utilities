@@ -18,7 +18,6 @@
         <activity android:name="android.app.NativeActivity"
                   android:label="@GEN_ANDROID_APP_LABEL@"
                   android:exported="true"
-                  android:theme="@style/TransparentTheme"
                   android:screenOrientation="user"
                   android:configChanges="orientation|screenSize|keyboardHidden">
             <meta-data android:name="android.app.lib_name"

@@ -83,6 +83,10 @@
 
 #include "APPFlowLog.h"
 #include "APPFlowExtended.h"
+#ifdef APPFLOW_EXTENDED_INTERNETSTATUS_ACTIVE
+#include "APPFlowExtended_InternetStatus.h"
+#include "APPFlowInternetServices.h"
+#endif
 
 #include "XTraceMonitor_CFG.h"
 #include "XTraceMonitor_TranslateID.h"
@@ -211,6 +215,9 @@ bool XTRACEMONITOR::AppProc_Ini()
   xtimer = GEN_XFACTORY.CreateTimer();
   if(!xtimer) return false;
 
+  netstatus_timer = GEN_XFACTORY.CreateTimer();
+  if(!netstatus_timer) return false;
+
   //--------------------------------------------------------------------------------------
 
   { XPATH xpath;
@@ -318,7 +325,18 @@ bool XTRACEMONITOR::AppProc_Update()
         {
           case XTRACEMONITOR_XFSMSTATE_NONE   : break;
 
-          case XTRACEMONITOR_XFSMSTATE_INI    : UpdateInput();
+          case XTRACEMONITOR_XFSMSTATE_INI    : form_cfg.Tick();
+                                                form_filters.Tick();
+
+                                                // While a modal is compositing, Draw_Text skips TextBackdrop
+                                                // restore — forced net-status redraws would alpha-stack glyphs
+                                                // (visible degradation next to the config/filters dialog).
+                                                if(!GEN_USERINTERFACE.Element_IsModalActive())
+                                                  {
+                                                    InternetStatus_Update(false);
+                                                  }
+
+                                                UpdateInput();
                                                 DrawFrame();
                                                 GetMainScreen()->UpdateViewports();
 
@@ -390,6 +408,12 @@ bool XTRACEMONITOR::AppProc_End()
     {
       GEN_XFACTORY.DeleteTimer(xtimer);
       xtimer = NULL;
+    }
+
+  if(netstatus_timer)
+    {
+      GEN_XFACTORY.DeleteTimer(netstatus_timer);
+      netstatus_timer = NULL;
     }
 
   //--------------------------------------------------------------------------------------
@@ -905,10 +929,19 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       return false;
     }
 
-  if(!BrandMonitor_Resolve())
+  // Optional: brand_monitor (lupa/huellas) removed from main layout; keep resolve soft.
+  BrandMonitor_Resolve();
+
+  if(!InternetStatus_Resolve())
     {
       return false;
     }
+
+  if(GetMainScreen())
+    {
+      InternetStatus_ApplyGeometry((double)GetMainScreen()->GetWidth());
+    }
+  InternetStatus_Update(true);
 
   if(!OpStatus_Resolve())
     {
@@ -1034,9 +1067,15 @@ bool XTRACEMONITOR::DrawFrame()
   if(size_relaid) GEN_USERINTERFACE.Elements_SetToRedraw();
   GEN_USERINTERFACE.Update();
 
-  // Chrome paints after content and its right-side button rebuild can wipe the brand top.
-  // Re-blit after chrome (same-frame) so a larger brand can sit flush under the caption.
+  // Chrome paints after content and its right-side button rebuild can wipe the brand top
+  // and the top-right net-status cluster (LED + latency/IP/UDP). Re-blit both same-frame.
+  // Skip net-status while a modal is up: ModalLayer_IsCompositing() disables TextBackdrop
+  // restore in Draw_Text, so every-frame wipe+Draw stacks anti-aliased ink (see config capture).
   BrandMonitor_RepaintAfterChrome();
+  if(!GEN_USERINTERFACE.Element_IsModalActive())
+    {
+      InternetStatus_RepaintAfterChrome();
+    }
 
   return true;
 }
@@ -1087,10 +1126,6 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
   const double valor_top = XTRACEMONITOR_LAYOUT_VALOR_TOP;
   const double valor_h  = XTRACEMONITOR_LAYOUT_VALOR_H;
   const double foot_h   = XTRACEMONITOR_LAYOUT_FOOT_H;
-  const double brand_w  = XTRACEMONITOR_LAYOUT_BRAND_W;
-  const double brand_h  = XTRACEMONITOR_LAYOUT_BRAND_H;
-  const double brand_gap_valor = XTRACEMONITOR_LAYOUT_BRAND_GAP_VALOR;
-
   double panel_w = W - margin - panels_x;
   if(panel_w < 1.0) panel_w = 1.0;
 
@@ -1170,21 +1205,6 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
       OpStatus_ApplyGeometry(visible);
     }
 
-  if(brand_monitor && brand_monitor->GetBoundaryLine())
-    {
-      double brand_x = W - margin - brand_w;
-      double brand_y = valor_top - brand_gap_valor;   // bottom edge; keeps 2px air above valor
-      if(brand_y < brand_h) brand_y = brand_h;
-      brand_monitor->SetXPosition(brand_x);
-      brand_monitor->SetYPosition(brand_y);
-      brand_monitor->GetBoundaryLine()->x      = brand_x;
-      brand_monitor->GetBoundaryLine()->y      = brand_y;
-      brand_monitor->GetBoundaryLine()->width  = brand_w;
-      brand_monitor->GetBoundaryLine()->height = brand_h;
-      brand_monitor->SetIntrinsicWidth(brand_w);
-      brand_monitor->SetIntrinsicHeight(brand_h);
-    }
-
   layout_applied_w = (int)W;
   layout_applied_h = (int)H;
 
@@ -1196,6 +1216,12 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
   if(form_filters.IsVisible())
     {
       form_filters.ApplyGeometry();
+    }
+
+  // Avoid remasure/paint under an active modal (TextBackdrop disabled while compositing).
+  if(!GEN_USERINTERFACE.Element_IsModalActive())
+    {
+      InternetStatus_ApplyGeometry(W);
     }
 
   if(!compose) return true;
@@ -1482,7 +1508,8 @@ bool XTRACEMONITOR::Tree_Seed()
 bool XTRACEMONITOR::BrandMonitor_Resolve()
 {
   brand_monitor = (UI_ELEMENT_IMAGE*)GEN_USERINTERFACE.Element_Get(NL("brand_monitor"), UI_ELEMENT_TYPE_IMAGE);
-  if(!brand_monitor) return false;
+  // Optional art (removed from main layout); soft-fail so Ini continues.
+  if(!brand_monitor) return true;
 
   return true;
 }
@@ -1547,6 +1574,487 @@ bool XTRACEMONITOR::BrandMonitor_RepaintAfterChrome()
 
   brand_monitor->SetMustReDraw(true);
   return skin_canvas->Draw(brand_monitor);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::InternetStatus_Resolve()
+* @brief      Resolves the top-right net-status LED and text elements.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::InternetStatus_Resolve()
+{
+  netstatus_form  = (UI_ELEMENT_FORM*)GEN_USERINTERFACE.Element_Get(NL("netstatus")      , UI_ELEMENT_TYPE_FORM);
+  netstatus_led   = (UI_ELEMENT_FORM*)GEN_USERINTERFACE.Element_Get(NL("netstatus_led")  , UI_ELEMENT_TYPE_FORM);
+  netstatus_state = (UI_ELEMENT_TEXT*)GEN_USERINTERFACE.Element_Get(NL("netstatus_state"), UI_ELEMENT_TYPE_TEXT);
+  netstatus_ip    = (UI_ELEMENT_TEXT*)GEN_USERINTERFACE.Element_Get(NL("netstatus_ip")   , UI_ELEMENT_TYPE_TEXT);
+  netstatus_udp   = (UI_ELEMENT_TEXT*)GEN_USERINTERFACE.Element_Get(NL("netstatus_udp")  , UI_ELEMENT_TYPE_TEXT);
+
+  if(!netstatus_form || !netstatus_led || !netstatus_state || !netstatus_ip || !netstatus_udp) return false;
+
+  // Compact fixed box — never show scroll chrome even if form default overflow is AUTO.
+  netstatus_form->Scroll_SetOverflow(UI_PROPERTY_SCROLLEABLE_TYPE_ALL, UI_OVERFLOW_HIDDEN);
+  netstatus_form->Scroll_SetActivate(UI_PROPERTY_SCROLLEABLE_TYPE_HORIZONTAL, false);
+  netstatus_form->Scroll_SetActivate(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL  , false);
+  netstatus_form->Scroll_SetBarShown(UI_PROPERTY_SCROLLEABLE_TYPE_HORIZONTAL, false);
+  netstatus_form->Scroll_SetBarShown(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL  , false);
+  netstatus_form->Scroll_SetVisible(UI_PROPERTY_SCROLLEABLE_TYPE_HORIZONTAL, false);
+  netstatus_form->Scroll_SetVisible(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL  , false);
+
+  // Same chrome as valor/console/tree (XML: roundrect 4, frame_line, console_back).
+  netstatus_form->SetRoundRect(4);
+  netstatus_form->SetBorderWidth(1.0);
+  if(netstatus_form->GetBorderColor())
+    {
+      netstatus_form->SetBorderColorFromString(NL("70,80,95,255"));
+    }
+  if(netstatus_form->GetBackgroundColor())
+    {
+      netstatus_form->GetBackgroundColor()->SetFromString(NL("12,14,18,255"));
+      netstatus_form->SetBackgroundColorSet(true);
+    }
+
+  // Opaque console_back plate under each line: Draw_Text self-clears glyphs; matches the frame fill.
+  auto set_ink_and_plate = [](UI_ELEMENT_TEXT* el)
+    {
+      if(!el) return;
+      if(el->GetColor())
+        {
+          el->GetColor()->SetRed(220);
+          el->GetColor()->SetGreen(226);
+          el->GetColor()->SetBlue(235);
+          el->GetColor()->SetAlpha(255);
+          el->GetColor()->SetValid(true);
+        }
+      if(el->GetBackgroundColor())
+        {
+          el->GetBackgroundColor()->SetRed(12);
+          el->GetBackgroundColor()->SetGreen(14);
+          el->GetBackgroundColor()->SetBlue(18);
+          el->GetBackgroundColor()->SetAlpha(255);
+          el->GetBackgroundColor()->SetValid(true);
+          el->SetBackgroundColorSet(true);
+        }
+    };
+  set_ink_and_plate(netstatus_state);
+  set_ink_and_plate(netstatus_ip);
+  set_ink_and_plate(netstatus_udp);
+
+  // Opaque LED fill from the start — tiny forms without fill are page-wiped as "legend strips".
+  if(netstatus_led->GetBackgroundColor())
+    {
+      netstatus_led->GetBackgroundColor()->SetRed(120);
+      netstatus_led->GetBackgroundColor()->SetGreen(130);
+      netstatus_led->GetBackgroundColor()->SetBlue(140);
+      netstatus_led->GetBackgroundColor()->SetAlpha(255);
+      netstatus_led->GetBackgroundColor()->SetValid(true);
+      netstatus_led->SetBackgroundColorSet(true);
+    }
+  netstatus_led->SetVisible(true);
+  netstatus_prev_valid = false;
+
+  if(netstatus_timer) netstatus_timer->Reset();
+
+  #ifdef APPFLOW_EXTENDED_INTERNETSTATUS_ACTIVE
+  // GEN already polls connection / public IP on APPFLOW_EXTENDED's background path —
+  // tighten cadence a bit so the LED tracks sooner than the default 30s / 3600s.
+  {
+    APPFLOWEXTENDED_INTERNETSTATUS* inet = APPFLOW_EXTENDED.GetInternetStatus();
+    APPFLOWINTERNETSERVICES*        svc  = inet ? inet->GetInternetServices() : NULL;
+    if(svc)
+      {
+        svc->ChangeCadenceCheck(APPFLOWINTERNETSERVICES_TASKID_CHECKCONNECTIONINTERNET, 5, true);
+        svc->ChangeCadenceCheck(APPFLOWINTERNETSERVICES_TASKID_GETIPS, 30, true);
+      }
+  }
+  #endif
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::InternetStatus_ApplyGeometry(double canvas_w)
+* @brief      Right-aligns the net-status cluster under the caption on the live canvas width.
+* @ingroup    UTILITIES
+*
+* @param[in]  canvas_w : Live canvas width in pixels.
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::InternetStatus_WipeCluster(double left, double top, double right, double bottom)
+{
+  if((right <= left) || (bottom <= top)) return false;
+
+  UI_LAYOUT* layout = netstatus_state ? netstatus_state->GetLayout() : NULL;
+  if(!layout || !layout->GetSkin() || layout->GetSkin()->GetDrawMode() != UI_SKIN_DRAWMODE_CANVAS) return false;
+
+  UI_SKINCANVAS* skin   = (UI_SKINCANVAS*)layout->GetSkin();
+  GRP2DCANVAS*   canvas = skin->GetCanvas();
+  if(!canvas) return false;
+
+  XBYTE pr = 24, pg = 28, pb = 36;
+  if(layout->GetBackground() && layout->GetBackground()->GetColor() &&
+     layout->GetBackground()->GetColor()->IsValid())
+    {
+      UI_COLOR* page = layout->GetBackground()->GetColor();
+      pr = (XBYTE)page->GetRed();
+      pg = (XBYTE)page->GetGreen();
+      pb = (XBYTE)page->GetBlue();
+    }
+
+  // PutPixel = copy_pixel (opaque). Rectangle fill can alpha-blend and leave glyph residue.
+  GRP2DCOLOR_RGBA8 pagecol(pr, pg, pb, 255);
+  int wi = (int)(right - left); if(wi < 1) wi = 1;
+  int hi = (int)(bottom - top); if(hi < 1) hi = 1;
+  for(int py = 0; py < hi; py++)
+    {
+      for(int px = 0; px < wi; px++)
+        {
+          canvas->PutPixel(left + (double)px, top + (double)py, (const GRP2DCOLOR*)&pagecol);
+        }
+    }
+  return true;
+}
+
+
+bool XTRACEMONITOR::InternetStatus_PaintCluster()
+{
+  if(!netstatus_led || !netstatus_state || !netstatus_ip || !netstatus_udp) return false;
+
+  UI_LAYOUT* layout = netstatus_state->GetLayout();
+  if(!layout || !layout->GetSkin() || layout->GetSkin()->GetDrawMode() != UI_SKIN_DRAWMODE_CANVAS) return false;
+
+  UI_SKINCANVAS* skin = (UI_SKINCANVAS*)layout->GetSkin();
+
+  // After an opaque page wipe, drop TextBackdrop WITHOUT restore so Draw_Text does not
+  // PutBitmapNoAlpha a stale (glyph-baked) snapshot over the clean page, then re-captures.
+  skin->DiscardTextBackdrop(netstatus_state);
+  skin->DiscardTextBackdrop(netstatus_ip);
+  skin->DiscardTextBackdrop(netstatus_udp);
+
+  if(netstatus_form) netstatus_form->SetMustReDraw(true);
+  netstatus_led->SetMustReDraw(true);
+  netstatus_state->SetMustReDraw(true);
+  netstatus_ip->SetMustReDraw(true);
+  netstatus_udp->SetMustReDraw(true);
+
+  // Frame first (same Draw_Form chrome as valor), then LED + lines on top.
+  if(netstatus_form) skin->Draw(netstatus_form);
+  skin->Draw(netstatus_led);
+  skin->Draw(netstatus_state);
+  skin->Draw(netstatus_ip);
+  skin->Draw(netstatus_udp);
+  return true;
+}
+
+
+bool XTRACEMONITOR::InternetStatus_RepaintAfterChrome()
+{
+  if(!netstatus_led || !netstatus_state || !netstatus_ip || !netstatus_udp) return false;
+  if(!netstatus_prev_valid) return false;
+  if(GEN_USERINTERFACE.Element_IsModalActive()) return false;
+
+  // Same contract as BrandMonitor_RepaintAfterChrome: chrome's right-button rebuild can
+  // page-wipe this AABB after content Update, which both hid the LED and left partial
+  // glyph ink that the next latency redraw alpha-stacked on top of.
+  if(!InternetStatus_WipeCluster(netstatus_prev_l, netstatus_prev_t, netstatus_prev_r, netstatus_prev_b))
+    return false;
+  return InternetStatus_PaintCluster();
+}
+
+
+bool XTRACEMONITOR::InternetStatus_ApplyGeometry(double canvas_w)
+{
+  if(!netstatus_led || !netstatus_state || !netstatus_ip || !netstatus_udp) return false;
+  if(!netstatus_led->GetBoundaryLine() || !netstatus_state->GetBoundaryLine() ||
+     !netstatus_ip->GetBoundaryLine() || !netstatus_udp->GetBoundaryLine()) return false;
+
+  // Frame right edge = valor/console right edge (canvas_w - LAYOUT_MARGIN).
+  const double margin    = XTRACEMONITOR_LAYOUT_MARGIN;
+  const double led       = XTRACEMONITOR_LAYOUT_NETSTATUS_LED;
+  const double line_h    = XTRACEMONITOR_LAYOUT_NETSTATUS_LINE_H;
+  const double line_gap  = XTRACEMONITOR_LAYOUT_NETSTATUS_LINE_GAP;
+  const double led_gap   = XTRACEMONITOR_LAYOUT_NETSTATUS_LED_GAP;
+  const double text_pad  = XTRACEMONITOR_LAYOUT_NETSTATUS_TEXT_PAD;
+  const double frame_pad = XTRACEMONITOR_LAYOUT_NETSTATUS_FRAME_PAD;
+
+  UI_SKINCANVAS* skin = NULL;
+  UI_LAYOUT* layout = netstatus_state->GetLayout();
+  if(layout && layout->GetSkin() && layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
+    {
+      skin = (UI_SKINCANVAS*)layout->GetSkin();
+    }
+
+  auto measure = [&](UI_ELEMENT_TEXT* el) -> double
+    {
+      if(!el || !el->GetText() || el->GetText()->IsEmpty()) return 120.0;
+      XDWORD sf = el->GetSizeFont();
+      if(sf < 1) sf = 12;
+      if(!skin) return (double)el->GetText()->GetSize() * (double)sf * 0.55;
+      double tw = skin->GetWidthString(el->GetText()->Get(), sf);
+      if(tw < 1.0) tw = 120.0;
+      return tw;
+    };
+
+  double tw_state = measure(netstatus_state);
+  double tw_ip    = measure(netstatus_ip);
+  double tw_udp   = measure(netstatus_udp);
+  double text_w   = tw_state;
+  if(tw_ip  > text_w) text_w = tw_ip;
+  if(tw_udp > text_w) text_w = tw_udp;
+  text_w += text_pad;
+
+  const double content_w = led + led_gap + text_w;
+  const double content_h = (line_h * 3.0) + (line_gap * 2.0);
+  const double frame_w   = content_w + (frame_pad * 2.0);
+  const double frame_h   = content_h + (frame_pad * 2.0);
+
+  double frame_right = canvas_w - margin;
+  if(frame_right < margin + frame_w) frame_right = margin + frame_w;
+  const double frame_x = frame_right - frame_w;
+
+  // Same vertical gap as valor↔console (LAYOUT_GAP): frame bottom sits GAP above valor top.
+  const double gap          = XTRACEMONITOR_LAYOUT_GAP;
+  const double frame_bottom = XTRACEMONITOR_LAYOUT_VALOR_TOP - gap;
+  const double frame_top    = frame_bottom - frame_h;
+  const double content_top  = frame_top + frame_pad;
+  const double state_y      = content_top + line_h;
+  const double ip_y         = state_y + line_h + line_gap;
+  const double udp_y        = ip_y + line_h + line_gap;
+  const double led_y        = state_y - ((line_h - led) * 0.5);
+
+  const double led_x  = frame_x + frame_pad;
+  const double text_x = led_x + led + led_gap;
+
+  // Wipe previous/new frame AABB (+1 for border AA).
+  const double pad = 2.0;
+  const double cluster_l = frame_x - pad;
+  const double cluster_t = frame_top - pad;
+  const double cluster_r = frame_right + pad;
+  const double cluster_b = frame_bottom + pad;
+
+  if(netstatus_prev_valid)
+    {
+      InternetStatus_WipeCluster(netstatus_prev_l, netstatus_prev_t, netstatus_prev_r, netstatus_prev_b);
+    }
+  InternetStatus_WipeCluster(cluster_l, cluster_t, cluster_r, cluster_b);
+
+  auto place = [](UI_ELEMENT* el, double abs_x, double abs_y, double cw, double ch)
+    {
+      if(!el || !el->GetBoundaryLine()) return;
+      el->GetBoundaryLine()->x      = abs_x;
+      el->GetBoundaryLine()->y      = abs_y;
+      el->GetBoundaryLine()->width  = cw;
+      el->GetBoundaryLine()->height = ch;
+      el->SetIntrinsicWidth(cw);
+      el->SetIntrinsicHeight(ch);
+      el->SetXPosition(abs_x);
+      el->SetYPosition(abs_y);
+      if(el->GetType() == UI_ELEMENT_TYPE_FORM)
+        {
+          UI_BOUNDARYLINE* vis = ((UI_ELEMENT_FORM*)el)->GetVisibleRect();
+          if(vis)
+            {
+              vis->x = abs_x; vis->y = abs_y; vis->width = cw; vis->height = ch;
+            }
+        }
+    };
+
+  if(netstatus_form && netstatus_form->GetBoundaryLine())
+    {
+      place((UI_ELEMENT*)netstatus_form, frame_x, frame_bottom, frame_w, frame_h);
+    }
+
+  place((UI_ELEMENT*)netstatus_led  , led_x , led_y  , led   , led);
+  place((UI_ELEMENT*)netstatus_state, text_x, state_y, text_w, line_h);
+  place((UI_ELEMENT*)netstatus_ip   , text_x, ip_y   , text_w, line_h);
+  place((UI_ELEMENT*)netstatus_udp  , text_x, udp_y  , text_w, line_h);
+
+  if(netstatus_state) netstatus_state->SetTextAlign(UI_ELEMENT_TYPE_ALIGN_LEFT);
+  if(netstatus_ip)    netstatus_ip->SetTextAlign(UI_ELEMENT_TYPE_ALIGN_LEFT);
+  if(netstatus_udp)   netstatus_udp->SetTextAlign(UI_ELEMENT_TYPE_ALIGN_LEFT);
+
+  // LED must stay an opaque "paintable" form (h<=28 & w<=120): otherwise RepaintCompactLegendForms
+  // treats it as a toolbar legend strip and page-wipes it every frame.
+  if(netstatus_led->GetBackgroundColor())
+    {
+      const bool online = netstatus_haveinternet;
+      netstatus_led->GetBackgroundColor()->SetRed  (online ? 63  : 248);
+      netstatus_led->GetBackgroundColor()->SetGreen(online ? 185 : 81);
+      netstatus_led->GetBackgroundColor()->SetBlue (online ? 80  : 73);
+      netstatus_led->GetBackgroundColor()->SetAlpha(255);
+      netstatus_led->GetBackgroundColor()->SetValid(true);
+      netstatus_led->SetBackgroundColorSet(true);
+    }
+  if(netstatus_led->GetColor())
+    {
+      netstatus_led->GetBackgroundColor()->CopyTo(netstatus_led->GetColor());
+      netstatus_led->GetColor()->SetValid(true);
+    }
+  netstatus_led->SetVisible(true);
+
+  netstatus_prev_l = cluster_l;
+  netstatus_prev_t = cluster_t;
+  netstatus_prev_r = cluster_r;
+  netstatus_prev_b = cluster_b;
+  netstatus_prev_valid = true;
+
+  InternetStatus_PaintCluster();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::InternetStatus_Update(bool force)
+* @brief      Paints the net LED from APPFLOW_EXTENDED InternetStatus (GEN-updated) + UDP/target CFG.
+* @ingroup    UTILITIES
+*
+* @param[in]  force : When true, bypass the UI poll timer.
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::InternetStatus_Update(bool force)
+{
+  if(!netstatus_led || !netstatus_state || !netstatus_ip || !netstatus_udp) return false;
+
+  #ifndef APPFLOW_EXTENDED_INTERNETSTATUS_ACTIVE
+  return false;
+  #else
+
+  // Never paint/remasure under an active modal (Draw_Text TextBackdrop path is disabled).
+  if(!force && GEN_USERINTERFACE.Element_IsModalActive()) return true;
+
+  if(!force && netstatus_timer &&
+     (netstatus_timer->GetMeasureMilliSeconds() < (XDWORD)XTRACEMONITOR_NETSTATUS_POLL_MS))
+    {
+      return true;
+    }
+
+  if(netstatus_timer) netstatus_timer->Reset();
+
+  APPFLOWEXTENDED_INTERNETSTATUS* inet = APPFLOW_EXTENDED.GetInternetStatus();
+  APPFLOWINTERNETSERVICES*        svc  = inet ? inet->GetInternetServices() : NULL;
+  if(!svc) return false;
+
+  // Live values from GEN InternetServices (scheduler updates connection/latency/public IP off-UI).
+  const bool   online   = svc->HaveInternetConnection();
+  const XDWORD latency  = svc->GetInternetLatency();
+  XSTRING*     publicip = svc->GetPublicIP();
+
+  const bool online_changed = (online != netstatus_haveinternet);
+  netstatus_haveinternet = online;
+
+  // LED colour is the connection state; label stays "Conexion a internet" (+ latency when online).
+  XSTRING state_line;
+  if(online)
+    {
+      state_line.Format(NL("Conexion a internet · %u ms"), latency);
+    }
+   else
+    {
+      state_line.Set(NL("Conexion a internet"));
+    }
+
+  XSTRING ip_line;
+  if(online && publicip && !publicip->IsEmpty())
+    {
+      ip_line.Format(NL("IP Publica: %s"), publicip->Get());
+    }
+   else
+    {
+      ip_line.Set(NL("IP Publica: --"));
+    }
+
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  const int udp_port = cfg.ResolveUDPListenPort(cfg.GetUDPListenPort());
+  XSTRING target_name;
+  const int ntargets = cfg.GetTargetCount();
+  for(int i = 0; i < ntargets; i++)
+    {
+      XTRACEMONITOR_CFG_TARGET target;
+      if(!cfg.GetTarget(i, target)) continue;
+      if(target.type != XTRACEMONITOR_CFG_TARGETTYPE_UDP) continue;
+      if(target.port != udp_port) continue;
+      target_name = target.name;
+      break;
+    }
+
+  XSTRING udp_line;
+  if(!target_name.IsEmpty())
+    {
+      udp_line.Format(NL("UDP Port: %d · %s"), udp_port, target_name.Get());
+    }
+   else
+    {
+      udp_line.Format(NL("UDP Port: %d"), udp_port);
+    }
+
+  UI_SKINCANVAS* skin = NULL;
+  UI_LAYOUT* layout = netstatus_state->GetLayout();
+  if(layout && layout->GetSkin() && layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
+    skin = (UI_SKINCANVAS*)layout->GetSkin();
+
+  // XSTRING::Compare is strcmp-style: 0 = equal. Skip only when unchanged.
+  auto apply_line = [&](UI_ELEMENT_TEXT* el, XSTRING& last, const XSTRING& now, bool force_set) -> bool
+    {
+      if(!el || !el->GetText()) return false;
+      if(!force_set && !last.Compare(now.Get())) return false;
+      // Restore TextBackdrop (if any) before swapping the string — GEN Draw_Text alpha-blends.
+      if(skin) skin->PrepareTextContentChange(el);
+      el->GetText()->Set(now.Get());
+      last = now;
+      el->SetMustReDraw(true);
+      return true;
+    };
+
+  bool any = false;
+  any |= apply_line(netstatus_state, netstatus_last_state, state_line, force);
+  any |= apply_line(netstatus_ip   , netstatus_last_ip   , ip_line   , force);
+  any |= apply_line(netstatus_udp  , netstatus_last_udp  , udp_line  , force);
+
+  // LED colour via components (avoid CSV alpha ambiguity). Always refresh when online flips or forced.
+  if((online_changed || force || any) && netstatus_led->GetBackgroundColor())
+    {
+      netstatus_led->GetBackgroundColor()->SetRed  (online ? 63  : 248);
+      netstatus_led->GetBackgroundColor()->SetGreen(online ? 185 : 81);
+      netstatus_led->GetBackgroundColor()->SetBlue (online ? 80  : 73);
+      netstatus_led->GetBackgroundColor()->SetAlpha(255);
+      netstatus_led->GetBackgroundColor()->SetValid(true);
+      netstatus_led->SetBackgroundColorSet(true);
+      if(netstatus_led->GetColor())
+        {
+          netstatus_led->GetColor()->SetRed  (online ? 63  : 248);
+          netstatus_led->GetColor()->SetGreen(online ? 185 : 81);
+          netstatus_led->GetColor()->SetBlue (online ? 80  : 73);
+          netstatus_led->GetColor()->SetAlpha(255);
+          netstatus_led->GetColor()->SetValid(true);
+        }
+    }
+
+  // Content and/or LED change → remasure + right-pack (UDP/latency/IP widths differ) then repaint.
+  if(any || online_changed || force)
+    {
+      if(GetMainScreen())
+        {
+          InternetStatus_ApplyGeometry((double)GetMainScreen()->GetWidth());
+        }
+       else
+        {
+          InternetStatus_PaintCluster();
+        }
+    }
+
+  return true;
+  #endif
 }
 
 
@@ -2157,6 +2665,61 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
         }
     }
 
+  // Net-status frame + text plates match valor/console (console_back / frame_line / label_ink).
+  if(netstatus_form)
+    {
+      netstatus_form->SetRoundRect(4);
+      netstatus_form->SetBorderWidth(1.0);
+      netstatus_form->SetBorderColorFromString(light ? NL("140,150,165,255") : NL("70,80,95,255"));
+      if(netstatus_form->GetBackgroundColor())
+        {
+          netstatus_form->GetBackgroundColor()->SetFromString(light ? NL("250,250,252,255") : NL("12,14,18,255"));
+          netstatus_form->SetBackgroundColorSet(true);
+        }
+      netstatus_form->SetMustReDraw(true);
+    }
+
+  auto theme_net_ink = [&](UI_ELEMENT_TEXT* el)
+    {
+      if(!el) return;
+      if(el->GetColor())
+        {
+          if(light)
+            {
+              el->GetColor()->SetRed(40); el->GetColor()->SetGreen(44); el->GetColor()->SetBlue(52);
+            }
+           else
+            {
+              el->GetColor()->SetRed(220); el->GetColor()->SetGreen(226); el->GetColor()->SetBlue(235);
+            }
+          el->GetColor()->SetAlpha(255);
+          el->GetColor()->SetValid(true);
+        }
+      if(el->GetBackgroundColor())
+        {
+          // Same fill as the netstatus frame (console_back) so glyphs do not flash a page plate.
+          if(light)
+            {
+              el->GetBackgroundColor()->SetRed(250);
+              el->GetBackgroundColor()->SetGreen(250);
+              el->GetBackgroundColor()->SetBlue(252);
+            }
+           else
+            {
+              el->GetBackgroundColor()->SetRed(12);
+              el->GetBackgroundColor()->SetGreen(14);
+              el->GetBackgroundColor()->SetBlue(18);
+            }
+          el->GetBackgroundColor()->SetAlpha(255);
+          el->GetBackgroundColor()->SetValid(true);
+          el->SetBackgroundColorSet(true);
+        }
+      el->SetMustReDraw(true);
+    };
+  theme_net_ink(netstatus_state);
+  theme_net_ink(netstatus_ip);
+  theme_net_ink(netstatus_udp);
+
   // Chrome zip often loads after Ini (first canvas). Retry from DrawFrame until RefreshChrome sticks.
   chrome_theme_dirty = true;
   ApplyColorTheme_RefreshChrome(light);
@@ -2164,6 +2727,10 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
   GEN_USERINTERFACE.Layout_PutBackground();
   GEN_USERINTERFACE.Elements_SetToRedraw();
   BrandMonitor_RepaintAfterChrome();
+  if(GetMainScreen())
+    InternetStatus_ApplyGeometry((double)GetMainScreen()->GetWidth());
+   else
+    InternetStatus_RepaintAfterChrome();
 
   OpStatus_Log(light ? NL("Color Theme: Light.") : NL("Color Theme: Dark."));
   return true;
@@ -2512,11 +3079,16 @@ bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
           bg->SetValid(true);
           changed = true;
         }
-       else if((type == UI_ELEMENT_TYPE_EDITTEXT) && (is_theme_edit_idle(bg) || is_theme_edit_focus(bg)))
+       else if(((type == UI_ELEMENT_TYPE_EDITTEXT) || (type == UI_ELEMENT_TYPE_COMBO) ||
+                (type == UI_ELEMENT_TYPE_MENU) || (type == UI_ELEMENT_TYPE_OPTION)) &&
+               (is_theme_edit_idle(bg) || is_theme_edit_focus(bg)))
         {
           // Keep focus/idle roles across Dark↔Light; :selected reapply will pick the live one.
+          // COMBO is an EditText subclass with its own type — Puerto UDP/UART must remap too.
+          // MENU/OPTION share the edit idle plate (combo dropdowns created before theme remap).
           const bool focused = element->IsSelected();
-          bg->SetFromString(focused ? edit_focus : edit_idle);
+          const bool popup   = ((type == UI_ELEMENT_TYPE_MENU) || (type == UI_ELEMENT_TYPE_OPTION));
+          bg->SetFromString((focused && !popup) ? edit_focus : edit_idle);
           bg->SetValid(true);
           changed = true;
         }
@@ -2917,6 +3489,18 @@ void XTRACEMONITOR::Clean()
   opstatus_last_baseline = 0.0f;
   opstatus_line_h        = 0.0f;
   brand_monitor             = NULL;
+  netstatus_form            = NULL;
+  netstatus_led             = NULL;
+  netstatus_state           = NULL;
+  netstatus_ip              = NULL;
+  netstatus_udp             = NULL;
+  netstatus_timer           = NULL;
+  netstatus_haveinternet    = false;
+  netstatus_prev_l          = 0.0;
+  netstatus_prev_t          = 0.0;
+  netstatus_prev_r          = 0.0;
+  netstatus_prev_b          = 0.0;
+  netstatus_prev_valid      = false;
   layout_applied_w          = 0;
   layout_applied_h          = 0;
   resize_recover_frames     = 0;

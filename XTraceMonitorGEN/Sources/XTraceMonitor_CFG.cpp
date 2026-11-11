@@ -52,6 +52,92 @@ XTRACEMONITOR_CFG* XTRACEMONITOR_CFG::instance = NULL;
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         XTRACEMONITOR_CFG_TARGET::XTRACEMONITOR_CFG_TARGET()
+* @brief      Constructor
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XTRACEMONITOR_CFG_TARGET::XTRACEMONITOR_CFG_TARGET()
+{
+  Clean();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XTRACEMONITOR_CFG_TARGET::~XTRACEMONITOR_CFG_TARGET()
+* @brief      Destructor
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XTRACEMONITOR_CFG_TARGET::~XTRACEMONITOR_CFG_TARGET()
+{
+  Clean();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG_TARGET::Clean()
+* @brief      Clears target fields.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG_TARGET::Clean()
+{
+  type = XTRACEMONITOR_CFG_TARGETTYPE_UNKNOWN;
+  name.Empty();
+  host.Empty();
+  port = 0;
+  uartconfig.Empty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XTRACEMONITOR_CFG_ORIGIN::XTRACEMONITOR_CFG_ORIGIN()
+* @brief      Constructor
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XTRACEMONITOR_CFG_ORIGIN::XTRACEMONITOR_CFG_ORIGIN()
+{
+  Clean();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XTRACEMONITOR_CFG_ORIGIN::~XTRACEMONITOR_CFG_ORIGIN()
+* @brief      Destructor
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XTRACEMONITOR_CFG_ORIGIN::~XTRACEMONITOR_CFG_ORIGIN()
+{
+  Clean();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG_ORIGIN::Clean()
+* @brief      Clears origin fields.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG_ORIGIN::Clean()
+{
+  isactive = false;
+  showip   = false;
+  name.Empty();
+  url.Empty();
+  ip.Empty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool XTRACEMONITOR_CFG::GetIsInstanced()
 * @brief      Checks if the singleton instance is created.
 * @ingroup    UTILITIES
@@ -164,6 +250,118 @@ bool XTRACEMONITOR_CFG::DoVariableMapping()
   AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_DYNDNS, XTRACEMONITOR_CFG_DYNDNS_PASSWORD, &dyndns_password,
            NL("DynDNS password AES+Base64 (empty when inactive)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
 
+  AddRemark(XTRACEMONITOR_CFG_SECTION_TARGET, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
+  AddRemark(XTRACEMONITOR_CFG_SECTION_TARGET, NL(" Trace targets (legacy servers): type1=UDP host,port ; type2=UART (port,baud,...)"), 0, 2);
+  AddValueSecuence<XSTRING>(XFILECFG_VALUETYPE_STRING,
+                            XTRACEMONITOR_CFG_SECTION_TARGET,
+                            XTRACEMONITOR_CFG_TARGET_ITEM,
+                            XTRACEMONITOR_CFG_TARGET_ITEM_MASK,
+                            XTRACEMONITOR_CFG_MINTARGETS,
+                            XTRACEMONITOR_CFG_MAXTARGETS,
+                            targets,
+                            ntargets,
+                            NL("Target item (type,name,...)"),
+                            APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+
+  AddRemark(XTRACEMONITOR_CFG_SECTION_ORIGINS, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
+  AddRemark(XTRACEMONITOR_CFG_SECTION_ORIGINS, NL(" Trace origins (legacy origins XX): isactive,showip,name,url,ip"), 0, 2);
+  AddValueSecuence<XSTRING>(XFILECFG_VALUETYPE_STRING,
+                            XTRACEMONITOR_CFG_SECTION_ORIGINS,
+                            XTRACEMONITOR_CFG_ORIGIN_ITEM,
+                            XTRACEMONITOR_CFG_ORIGIN_ITEM_MASK,
+                            XTRACEMONITOR_CFG_MINORIGINS,
+                            XTRACEMONITOR_CFG_MAXORIGINS,
+                            origins,
+                            norigins,
+                            NL("Origin item (isactive,showip,name,url,ip)"),
+                            APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::SeedDefaultTargetsIfEmpty()
+* @brief      Fills empty [target] slots with the legacy server conversion seed.
+* @note       INTERNAL — used by DoDefault and first-run migration when the INI has no target lines yet.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the seed was applied; false if slots already had data.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::SeedDefaultTargetsIfEmpty()
+{
+  bool any = false;
+  for(int i=0; i<ntargets; i++)
+    {
+      XSTRING* line = targets.Get(i);
+      if(line && !line->IsEmpty()) { any = true; break; }
+    }
+  if(any) return false;
+
+  static const XCHAR* seed[] =
+    {
+      NL("1,GEN FrameWork,xtracegen.dyndns.org,10001"),
+      NL("1,EndoraSoft,xtraceendorasoft.dyndns.org,10101"),
+      NL("1,IMT,xtraceimt.dyndns.org,10201"),
+      NL("1,Bizintek,xtracebizintek.dyndns.org,10301"),
+      NL("1,Lantek,xtracelantek.dyndns.org,10401"),
+      NL("1,Symplio,xtracesymplio.dyndns.org,10501"),
+      NL("2,UART STM32 WB55 0,(7,115200,8,N,1,NONE)"),
+      NL("2,UART STM32 F0,(2,115200,8,N,1,NONE)"),
+      NL("1,CAF,xtracecaf.dyndns.org,10601"),
+      NL("1,IMT 2,xtraceimt.dyndns.org,10701"),
+    };
+
+  const int seed_n = (int)(sizeof(seed) / sizeof(seed[0]));
+  for(int i=0; i<ntargets; i++)
+    {
+      XSTRING* line = targets.Get(i);
+      if(!line) continue;
+      if(i < seed_n) line->Set(seed[i]);
+                else line->Empty();
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::SeedDefaultOriginsIfEmpty()
+* @brief      Fills empty [origins] slots with the legacy origin conversion seed.
+* @note       INTERNAL — used by DoDefault and first-run migration when the INI has no origin lines yet.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the seed was applied; false if slots already had data.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::SeedDefaultOriginsIfEmpty()
+{
+  bool any = false;
+  for(int i=0; i<norigins; i++)
+    {
+      XSTRING* line = origins.Get(i);
+      if(line && !line->IsEmpty()) { any = true; break; }
+    }
+  if(any) return false;
+
+  // Legacy DoDefault origins[0]: Local / xdebug.kicks-ass.org (active + showip).
+  static const XCHAR* seed[] =
+    {
+      NL("yes,yes,Local,xdebug.kicks-ass.org,"),
+    };
+
+  const int seed_n = (int)(sizeof(seed) / sizeof(seed[0]));
+  for(int i=0; i<norigins; i++)
+    {
+      XSTRING* line = origins.Get(i);
+      if(!line) continue;
+      if(i < seed_n) line->Set(seed[i]);
+                else line->Empty();
+    }
+
   return true;
 }
 
@@ -226,6 +424,21 @@ bool XTRACEMONITOR_CFG::DoDefault()
   dyndns_active                         = XTRACEMONITOR_CFG_DYNDNS_ACTIVE_DEFAULT;
   dyndns_login.Empty();
   dyndns_password.Empty();
+
+  // Force legacy seed on factory defaults (clear first so SeedDefaultTargetsIfEmpty always applies).
+  for(int i=0; i<ntargets; i++)
+    {
+      XSTRING* line = targets.Get(i);
+      if(line) line->Empty();
+    }
+  SeedDefaultTargetsIfEmpty();
+
+  for(int i=0; i<norigins; i++)
+    {
+      XSTRING* line = origins.Get(i);
+      if(line) line->Empty();
+    }
+  SeedDefaultOriginsIfEmpty();
 
   //------------------------------------------------------------------------------
 
@@ -881,6 +1094,506 @@ void XTRACEMONITOR_CFG::SetDynDNSPassword(XSTRING* value)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         int XTRACEMONITOR_CFG::GetTargetCount()
+* @brief      Number of mapped [target] item slots.
+* @ingroup    UTILITIES
+*
+* @return     int : Slot count (ntargets).
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+int XTRACEMONITOR_CFG::GetTargetCount()
+{
+  return ntargets;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XSTRING* XTRACEMONITOR_CFG::GetTargetLine(int index)
+* @brief      Raw CSV line for a target slot (0-based).
+* @ingroup    UTILITIES
+*
+* @param[in]  index : Slot index.
+*
+* @return     XSTRING* : Line pointer; NULL if out of range.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XSTRING* XTRACEMONITOR_CFG::GetTargetLine(int index)
+{
+  if(index < 0) return NULL;
+  if(index >= ntargets) return NULL;
+  return targets.Get(index);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::SetTargetLine(int index, XCHAR* line)
+* @brief      Sets the raw CSV line for a target slot.
+* @ingroup    UTILITIES
+*
+* @param[in]  index : Slot index.
+* @param[in]  line : CSV text (may be NULL to clear).
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::SetTargetLine(int index, XCHAR* line)
+{
+  XSTRING* slot = GetTargetLine(index);
+  if(!slot) return false;
+  if(line) slot->Set(line);
+      else slot->Empty();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::SetTargetLine(int index, XSTRING* line)
+* @brief      Sets the raw CSV line for a target slot.
+* @ingroup    UTILITIES
+*
+* @param[in]  index : Slot index.
+* @param[in]  line : CSV text (may be NULL to clear).
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::SetTargetLine(int index, XSTRING* line)
+{
+  return SetTargetLine(index, line ? line->Get() : NULL);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::GetTarget(int index, XTRACEMONITOR_CFG_TARGET& out)
+* @brief      Parses a target slot into typed fields.
+* @ingroup    UTILITIES
+*
+* @param[in]  index : Slot index.
+* @param[out] out : Typed target.
+*
+* @return     bool : true if parsed; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::GetTarget(int index, XTRACEMONITOR_CFG_TARGET& out)
+{
+  return ParseTargetLine(GetTargetLine(index), out);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::SetTarget(int index, const XTRACEMONITOR_CFG_TARGET& in)
+* @brief      Serializes typed fields into a target slot line.
+* @ingroup    UTILITIES
+*
+* @param[in]  index : Slot index.
+* @param[in]  in : Typed target.
+*
+* @return     bool : true if written; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::SetTarget(int index, const XTRACEMONITOR_CFG_TARGET& in)
+{
+  XSTRING line;
+  if(!FormatTargetLine(in, line)) return false;
+  return SetTargetLine(index, line.Get());
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         int XTRACEMONITOR_CFG::GetOriginCount()
+* @brief      Number of mapped [origins] item slots.
+* @ingroup    UTILITIES
+*
+* @return     int : Slot count (norigins).
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+int XTRACEMONITOR_CFG::GetOriginCount()
+{
+  return norigins;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XSTRING* XTRACEMONITOR_CFG::GetOriginLine(int index)
+* @brief      Raw CSV line for an origin slot (0-based).
+* @ingroup    UTILITIES
+*
+* @param[in]  index : Slot index.
+*
+* @return     XSTRING* : Line pointer; NULL if out of range.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XSTRING* XTRACEMONITOR_CFG::GetOriginLine(int index)
+{
+  if(index < 0) return NULL;
+  if(index >= norigins) return NULL;
+  return origins.Get(index);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::SetOriginLine(int index, XCHAR* line)
+* @brief      Sets the raw CSV line for an origin slot.
+* @ingroup    UTILITIES
+*
+* @param[in]  index : Slot index.
+* @param[in]  line : CSV text (may be NULL to clear).
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::SetOriginLine(int index, XCHAR* line)
+{
+  XSTRING* slot = GetOriginLine(index);
+  if(!slot) return false;
+  if(line) slot->Set(line);
+      else slot->Empty();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::SetOriginLine(int index, XSTRING* line)
+* @brief      Sets the raw CSV line for an origin slot.
+* @ingroup    UTILITIES
+*
+* @param[in]  index : Slot index.
+* @param[in]  line : CSV text (may be NULL to clear).
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::SetOriginLine(int index, XSTRING* line)
+{
+  return SetOriginLine(index, line ? line->Get() : NULL);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::GetOrigin(int index, XTRACEMONITOR_CFG_ORIGIN& out)
+* @brief      Parses an origin slot into typed fields.
+* @ingroup    UTILITIES
+*
+* @param[in]  index : Slot index.
+* @param[out] out : Typed origin.
+*
+* @return     bool : true if parsed; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::GetOrigin(int index, XTRACEMONITOR_CFG_ORIGIN& out)
+{
+  return ParseOriginLine(GetOriginLine(index), out);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::SetOrigin(int index, const XTRACEMONITOR_CFG_ORIGIN& in)
+* @brief      Serializes typed fields into an origin slot line.
+* @ingroup    UTILITIES
+*
+* @param[in]  index : Slot index.
+* @param[in]  in : Typed origin.
+*
+* @return     bool : true if written; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::SetOrigin(int index, const XTRACEMONITOR_CFG_ORIGIN& in)
+{
+  XSTRING line;
+  if(!FormatOriginLine(in, line)) return false;
+  return SetOriginLine(index, line.Get());
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::ParseTargetLine(XSTRING* line, XTRACEMONITOR_CFG_TARGET& out)
+* @brief      Parses type,name,... with parentheses protecting UART CSV commas.
+* @note       INTERNAL
+* @ingroup    UTILITIES
+*
+* @param[in]  line : Source CSV.
+* @param[out] out : Typed fields.
+*
+* @return     bool : true if parsed; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::ParseTargetLine(XSTRING* line, XTRACEMONITOR_CFG_TARGET& out)
+{
+  out.Clean();
+  if(!line || line->IsEmpty()) return false;
+
+  XVECTOR<XSTRING*> fields;
+  XSTRING           cur;
+  int               depth = 0;
+  XDWORD            n     = line->GetSize();
+
+  for(XDWORD i=0; i<n; i++)
+    {
+      XCHAR ch = line->Get()[i];
+      if(ch == (XCHAR)'(')
+        {
+          depth++;
+          cur.Add(ch);
+          continue;
+        }
+      if(ch == (XCHAR)')')
+        {
+          if(depth > 0) depth--;
+          cur.Add(ch);
+          continue;
+        }
+      if((ch == (XCHAR)',') && (depth == 0))
+        {
+          cur.DeleteCharacter((XCHAR)' ' , XSTRINGCONTEXT_FROM_FIRST);
+          cur.DeleteCharacter((XCHAR)' ' , XSTRINGCONTEXT_TO_END);
+          cur.DeleteCharacter((XCHAR)'\t', XSTRINGCONTEXT_FROM_FIRST);
+          cur.DeleteCharacter((XCHAR)'\t', XSTRINGCONTEXT_TO_END);
+          XSTRING* field = GEN_NEW XSTRING();
+          if(!field)
+            {
+              fields.DeleteContents();
+              fields.DeleteAll();
+              return false;
+            }
+          (*field) = cur;
+          fields.Add(field);
+          cur.Empty();
+          continue;
+        }
+      cur.Add(ch);
+    }
+
+  cur.DeleteCharacter((XCHAR)' ' , XSTRINGCONTEXT_FROM_FIRST);
+  cur.DeleteCharacter((XCHAR)' ' , XSTRINGCONTEXT_TO_END);
+  cur.DeleteCharacter((XCHAR)'\t', XSTRINGCONTEXT_FROM_FIRST);
+  cur.DeleteCharacter((XCHAR)'\t', XSTRINGCONTEXT_TO_END);
+  {
+    XSTRING* field = GEN_NEW XSTRING();
+    if(!field)
+      {
+        fields.DeleteContents();
+        fields.DeleteAll();
+        return false;
+      }
+    (*field) = cur;
+    fields.Add(field);
+  }
+
+  bool ok = false;
+  do
+    {
+      if(fields.GetSize() < 2) break;
+
+      XSTRING* tstr = fields.Get(0);
+      XSTRING* name = fields.Get(1);
+      if(!tstr || !name || tstr->IsEmpty()) break;
+
+      out.type = tstr->ConvertToInt(0, NULL, false);
+      out.name = (*name);
+
+      if(out.type == XTRACEMONITOR_CFG_TARGETTYPE_UDP)
+        {
+          if(fields.GetSize() < 4) break;
+          XSTRING* host = fields.Get(2);
+          XSTRING* port = fields.Get(3);
+          if(!host || !port || host->IsEmpty() || port->IsEmpty()) break;
+          out.host = (*host);
+          out.port = port->ConvertToInt(0, NULL, false);
+          if(out.port <= 0) break;
+          ok = true;
+        }
+      else if(out.type == XTRACEMONITOR_CFG_TARGETTYPE_UART)
+        {
+          if(fields.GetSize() < 3) break;
+          XSTRING* uart = fields.Get(2);
+          if(!uart || uart->IsEmpty()) break;
+          out.uartconfig = (*uart);
+          // Strip surrounding parentheses used to protect commas in the INI line.
+          if((out.uartconfig.GetSize() >= 2) &&
+             (out.uartconfig.Get()[0] == (XCHAR)'(') &&
+             (out.uartconfig.Get()[out.uartconfig.GetSize()-1] == (XCHAR)')'))
+            {
+              XSTRING inner;
+              out.uartconfig.Copy(1, (int)out.uartconfig.GetSize()-1, inner);
+              out.uartconfig = inner;
+            }
+          ok = !out.uartconfig.IsEmpty();
+        }
+    }
+  while(false);
+
+  fields.DeleteContents();
+  fields.DeleteAll();
+  if(!ok) out.Clean();
+  return ok;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::FormatTargetLine(const XTRACEMONITOR_CFG_TARGET& in, XSTRING& line)
+* @brief      Builds the INI CSV line for a typed target.
+* @note       INTERNAL
+* @ingroup    UTILITIES
+*
+* @param[in]  in : Typed fields.
+* @param[out] line : CSV text.
+*
+* @return     bool : true if formatted; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::FormatTargetLine(const XTRACEMONITOR_CFG_TARGET& in, XSTRING& line)
+{
+  line.Empty();
+
+  if(in.type == XTRACEMONITOR_CFG_TARGETTYPE_UDP)
+    {
+      line.Format(NL("%d,%s,%s,%d"), in.type, in.name.Get(), in.host.Get(), in.port);
+      return true;
+    }
+
+  if(in.type == XTRACEMONITOR_CFG_TARGETTYPE_UART)
+    {
+      line.Format(NL("%d,%s,(%s)"), in.type, in.name.Get(), in.uartconfig.Get());
+      return true;
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::ParseOriginLine(XSTRING* line, XTRACEMONITOR_CFG_ORIGIN& out)
+* @brief      Parses isactive,showip,name,url,ip CSV (bools via ConvertToBoolean).
+* @note       INTERNAL
+* @ingroup    UTILITIES
+*
+* @param[in]  line : Source CSV.
+* @param[out] out : Typed fields.
+*
+* @return     bool : true if parsed; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::ParseOriginLine(XSTRING* line, XTRACEMONITOR_CFG_ORIGIN& out)
+{
+  out.Clean();
+  if(!line || line->IsEmpty()) return false;
+
+  XVECTOR<XSTRING*> fields;
+  XSTRING           cur;
+  XDWORD            n = line->GetSize();
+
+  for(XDWORD i=0; i<n; i++)
+    {
+      XCHAR ch = line->Get()[i];
+      if(ch == (XCHAR)',')
+        {
+          cur.DeleteCharacter((XCHAR)' ' , XSTRINGCONTEXT_FROM_FIRST);
+          cur.DeleteCharacter((XCHAR)' ' , XSTRINGCONTEXT_TO_END);
+          cur.DeleteCharacter((XCHAR)'\t', XSTRINGCONTEXT_FROM_FIRST);
+          cur.DeleteCharacter((XCHAR)'\t', XSTRINGCONTEXT_TO_END);
+          XSTRING* field = GEN_NEW XSTRING();
+          if(!field)
+            {
+              fields.DeleteContents();
+              fields.DeleteAll();
+              return false;
+            }
+          (*field) = cur;
+          fields.Add(field);
+          cur.Empty();
+          continue;
+        }
+      cur.Add(ch);
+    }
+
+  cur.DeleteCharacter((XCHAR)' ' , XSTRINGCONTEXT_FROM_FIRST);
+  cur.DeleteCharacter((XCHAR)' ' , XSTRINGCONTEXT_TO_END);
+  cur.DeleteCharacter((XCHAR)'\t', XSTRINGCONTEXT_FROM_FIRST);
+  cur.DeleteCharacter((XCHAR)'\t', XSTRINGCONTEXT_TO_END);
+  {
+    XSTRING* field = GEN_NEW XSTRING();
+    if(!field)
+      {
+        fields.DeleteContents();
+        fields.DeleteAll();
+        return false;
+      }
+    (*field) = cur;
+    fields.Add(field);
+  }
+
+  bool ok = false;
+  do
+    {
+      // Trailing empty ip yields 5 fields (last empty). Require at least name+url present.
+      if(fields.GetSize() < 4) break;
+
+      XSTRING* a = fields.Get(0);
+      XSTRING* b = fields.Get(1);
+      XSTRING* name = fields.Get(2);
+      XSTRING* url  = fields.Get(3);
+      XSTRING* ip   = (fields.GetSize() >= 5) ? fields.Get(4) : NULL;
+      if(!a || !b || !name || !url) break;
+      if(a->IsEmpty() || b->IsEmpty()) break;
+      if(name->IsEmpty()) break;
+
+      out.isactive = a->ConvertToBoolean();
+      out.showip   = b->ConvertToBoolean();
+      out.name     = (*name);
+      out.url      = (*url);
+      if(ip) out.ip = (*ip);
+      ok = true;
+    }
+  while(false);
+
+  fields.DeleteContents();
+  fields.DeleteAll();
+  if(!ok) out.Clean();
+  return ok;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::FormatOriginLine(const XTRACEMONITOR_CFG_ORIGIN& in, XSTRING& line)
+* @brief      Builds the INI CSV line for a typed origin (bools as yes/no).
+* @note       INTERNAL
+* @ingroup    UTILITIES
+*
+* @param[in]  in : Typed fields.
+* @param[out] line : CSV text.
+*
+* @return     bool : true if formatted; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::FormatOriginLine(const XTRACEMONITOR_CFG_ORIGIN& in, XSTRING& line)
+{
+  line.Format(NL("%s,%s,%s,%s,%s"),
+              in.isactive ? NL("yes") : NL("no"),
+              in.showip   ? NL("yes") : NL("no"),
+              in.name.Get(),
+              in.url.Get(),
+              in.ip.Get());
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool XTRACEMONITOR_CFG::ParseIntPair(XSTRING* value, int& a, int& b)
 * @brief      Parses a "a, b" integer pair from a CFG string.
 * @note       INTERNAL
@@ -941,6 +1654,14 @@ XTRACEMONITOR_CFG::XTRACEMONITOR_CFG(XCHAR* namefile) : APPFLOWCFG(namefile)
   if(namefile)
     {
       Ini<XTRACEMONITOR_CFG>();
+      // Existing INIs without [target]/[origins] keep empty slots after load — seed once.
+      bool seeded = false;
+      if(SeedDefaultTargetsIfEmpty()) seeded = true;
+      if(SeedDefaultOriginsIfEmpty()) seeded = true;
+      if(seeded)
+        {
+          Save();
+        }
     }
 }
 
@@ -986,4 +1707,10 @@ void XTRACEMONITOR_CFG::Clean()
   dyndns_active        = XTRACEMONITOR_CFG_DYNDNS_ACTIVE_DEFAULT;
   dyndns_login.Empty();
   dyndns_password.Empty();
+  ntargets = 0;
+  targets.DeleteContents();
+  targets.DeleteAll();
+  norigins = 0;
+  origins.DeleteContents();
+  origins.DeleteAll();
 }

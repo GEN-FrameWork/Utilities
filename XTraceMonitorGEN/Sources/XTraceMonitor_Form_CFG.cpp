@@ -44,10 +44,14 @@
 #include "UI_Element_RadioButton.h"
 #include "UI_Element_CheckBox.h"
 #include "UI_Element_EditText.h"
+#include "UI_Element_Combo.h"
 #include "UI_Element_MultiOption.h"
 #include "UI_Element_Animation.h"
+#include "UI_Property_Selectable.h"
 #include "UI_Layout.h"
 #include "UI_Skin.h"
+#include "XFactory.h"
+#include "XTimer.h"
 #include "UI_Manager.h"
 
 #include "CipherAES.h"
@@ -87,6 +91,12 @@ XTRACEMONITOR_FORM_CFG::XTRACEMONITOR_FORM_CFG()
 *---------------------------------------------------------------------------------------------------------------------*/
 XTRACEMONITOR_FORM_CFG::~XTRACEMONITOR_FORM_CFG()
 {
+  if(close_timer)
+    {
+      GEN_XFACTORY.DeleteTimer(close_timer);
+      close_timer = NULL;
+    }
+
   Clean();
 }
 
@@ -136,9 +146,9 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
   chk_addipconsole         = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_addipconsole")      , UI_ELEMENT_TYPE_CHECKBOX);
   chk_texttracking         = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_texttracking")      , UI_ELEMENT_TYPE_CHECKBOX);
   lbl_udplistenport        = GEN_USERINTERFACE.Element_Get(NL("lbl_udplistenport"), UI_ELEMENT_TYPE_TEXT);
-  edit_udplistenport       = (UI_ELEMENT_EDITTEXT*)GEN_USERINTERFACE.Element_Get(NL("edit_udplistenport"), UI_ELEMENT_TYPE_EDITTEXT);
+  edit_udplistenport       = (UI_ELEMENT_COMBO*)GEN_USERINTERFACE.Element_Get(NL("edit_udplistenport"), UI_ELEMENT_TYPE_COMBO);
   lbl_uartport             = GEN_USERINTERFACE.Element_Get(NL("lbl_uartport"), UI_ELEMENT_TYPE_TEXT);
-  edit_uartport            = (UI_ELEMENT_EDITTEXT*)GEN_USERINTERFACE.Element_Get(NL("edit_uartport"), UI_ELEMENT_TYPE_EDITTEXT);
+  edit_uartport            = (UI_ELEMENT_COMBO*)GEN_USERINTERFACE.Element_Get(NL("edit_uartport"), UI_ELEMENT_TYPE_COMBO);
   dyndns_group             = (UI_ELEMENT_RADIOGROUP*)GEN_USERINTERFACE.Element_Get(NL("dyndns_group"), UI_ELEMENT_TYPE_RADIOGROUP);
   chk_dyndns_active        = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_dyndns_active"), UI_ELEMENT_TYPE_CHECKBOX);
   lbl_dyndns_login         = GEN_USERINTERFACE.Element_Get(NL("lbl_dyndns_login"), UI_ELEMENT_TYPE_TEXT);
@@ -191,6 +201,7 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
   if(!SyncChecksFromDraft()) return false;
   if(!SyncPortFromDraft()) return false;
   if(!SyncUARTFromDraft()) return false;
+  if(!RebuildTargetCombos()) return false;
   if(!SyncDynDNSFromDraft()) return false;
   if(!ApplyDynDNSFieldsEnabled()) return false;
   if(!ApplyDynDNSToolbarButton(dyndns_active_committed)) return false;
@@ -249,8 +260,8 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   const double gap   = XTRACEMONITOR_CONFIGMODAL_BTN_GAP;
   const double row_w = (btn_w * 3.0) + (gap * 2.0);
   const double btn_x = (modal_w - row_w) * 0.5;
-  // Trimmed from modal bottom; keep content locked to top.
-  const double btn_local_y = XTRACEMONITOR_CONFIGMODAL_BTN_BOTTOM_PAD + 10.0;
+  // Same bottom gap as filters_modal (BTN_BOTTOM_PAD); keep content locked to top.
+  const double btn_local_y = XTRACEMONITOR_CONFIGMODAL_BTN_BOTTOM_PAD;
 
   auto place_child = [](UI_ELEMENT* el, double local_x, double local_y, double w, double h)
     {
@@ -595,6 +606,113 @@ bool XTRACEMONITOR_FORM_CFG::IsVisible()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool XTRACEMONITOR_FORM_CFG::HoldPressVisual(UI_ELEMENT* btn)
+* @brief      Forces the multioption Pressed face and holds it for PRESS_HOLD_MS.
+* @ingroup    UTILITIES
+*
+* @param[in]  btn : Modal multioption (Accept / Cancel / Predeterminado).
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::HoldPressVisual(UI_ELEMENT* btn)
+{
+  if(!btn) return false;
+
+  // Draw_MultiOption picks the SELECTED face from the multioption itself (not the child button).
+  UI_PROPERTY_SELECTABLE* sel = dynamic_cast<UI_PROPERTY_SELECTABLE*>(btn);
+  if(sel)
+    {
+      sel->SetTimeSelected(XTRACEMONITOR_MODAL_BTN_PRESS_HOLD_MS);
+      btn->SetPreSelect(false);
+      btn->SetSelected(true);
+      if(sel->GetXTimerSelected()) sel->GetXTimerSelected()->Reset();
+    }
+
+  // Force every face (esp. selectablestatus=selected / Pressed PNG) dirty for the modal rebuild.
+  if(btn->GetComposeElements())
+    {
+      for(XDWORD c=0; c<btn->GetComposeElements()->GetSize(); c++)
+        {
+          UI_ELEMENT* face = btn->GetComposeElements()->Get(c);
+          if(!face) continue;
+          face->SetMustReDraw(true);
+          if(face->GetComposeElements())
+            {
+              for(XDWORD d=0; d<face->GetComposeElements()->GetSize(); d++)
+                {
+                  UI_ELEMENT* child = face->GetComposeElements()->Get(d);
+                  if(child) child->SetMustReDraw(true);
+                }
+            }
+        }
+    }
+
+  GEN_USERINTERFACE.Elements_SetToRedraw(btn, true);
+  if(config_modal)
+    {
+      GEN_USERINTERFACE.Elements_SetToRedraw(config_modal, true);
+      GEN_USERINTERFACE.ModalLayer_Invalidate();
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::ArmCloseAfterPress(UI_ELEMENT* btn)
+* @brief      Shows Pressed for PRESS_HOLD_MS, then closes the modal on Tick().
+* @ingroup    UTILITIES
+*
+* @param[in]  btn : Modal multioption that was clicked.
+*
+* @return     bool : true if armed (or already armed); otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::ArmCloseAfterPress(UI_ELEMENT* btn)
+{
+  if(close_armed) return true;
+
+  HoldPressVisual(btn);
+
+  if(!close_timer)
+    {
+      close_timer = GEN_XFACTORY.CreateTimer();
+      if(!close_timer) return Show(false);
+    }
+
+  close_timer->Reset();
+  close_armed = true;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::Tick()
+* @brief      Completes a deferred Accept/Cancel close after the press hold.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::Tick()
+{
+  if(!close_armed || !close_timer) return true;
+
+  if(close_timer->GetMeasureMilliSeconds() >= (XQWORD)XTRACEMONITOR_MODAL_BTN_PRESS_HOLD_MS)
+    {
+      close_armed = false;
+      return Show(false);
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool XTRACEMONITOR_FORM_CFG::Show(bool show)
 * @brief      Shows or hides the config modal as a GEN modal layer.
 * @ingroup    UTILITIES
@@ -607,6 +725,8 @@ bool XTRACEMONITOR_FORM_CFG::IsVisible()
 bool XTRACEMONITOR_FORM_CFG::Show(bool show)
 {
   if(!owner || !config_modal) return false;
+
+  close_armed = false;
 
   if(show)
     {
@@ -636,6 +756,7 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
       if(!SyncChecksFromDraft()) return false;
       if(!SyncPortFromDraft()) return false;
       if(!SyncUARTFromDraft()) return false;
+      if(!RebuildTargetCombos()) return false;
       if(!SyncDynDNSFromDraft()) return false;
       if(!ApplyDynDNSFieldsEnabled()) return false;
 
@@ -655,6 +776,9 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
 
       GEN_USERINTERFACE.Layout_PutBackground();
       GEN_USERINTERFACE.Elements_SetToRedraw();
+
+      // Page was wiped: rebuild net-status from committed CFG (UDP/target) + live internet values.
+      owner->InternetStatus_Update(true);
 
       owner->OpStatus_Log(NL("Config modal closed."));
     }
@@ -677,6 +801,18 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
 bool XTRACEMONITOR_FORM_CFG::HandleElementSelected(UI_ELEMENT* element)
 {
   if(!element) return false;
+
+  // Ignore further modal-button clicks while the press-hold close is armed.
+  if(close_armed)
+    {
+      XSTRING* n = element->GetName();
+      if(n && (!n->Compare(NL("config_modal_btn_accept"), true) ||
+               !n->Compare(NL("config_modal_btn_cancel"), true) ||
+               !n->Compare(NL("config_modal_btn_default"), true)))
+        {
+          return true;
+        }
+    }
 
   // Color Theme draft only — theme is NOT applied until Accept (+ future Apply task).
   if(element->GetType() == UI_ELEMENT_TYPE_RADIOBUTTON)
@@ -1041,6 +1177,51 @@ bool XTRACEMONITOR_FORM_CFG::SyncUARTFromDraft()
   edit_uartport->Cursor_SetPosition(edit_uartport->GetText()->GetSize());
   ApplyUARTFieldVisual();
   GEN_USERINTERFACE.Elements_SetToRedraw(edit_uartport);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::RebuildTargetCombos()
+* @brief      Fills UDP/UART combo menus from [target] (type1 / type2) with tabulated rows.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::RebuildTargetCombos()
+{
+  if(!edit_udplistenport || !edit_uartport) return false;
+
+  edit_udplistenport->ClearItems();
+  edit_uartport->ClearItems();
+
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  const int n = cfg.GetTargetCount();
+
+  // Columns are drawn at tab stops inside the edit-field width (see UI_ELEMENT_COMBO::RebuildMenu).
+  for(int i=0; i<n; i++)
+    {
+      XTRACEMONITOR_CFG_TARGET target;
+      if(!cfg.GetTarget(i, target)) continue;
+
+      if(target.type == XTRACEMONITOR_CFG_TARGETTYPE_UDP)
+        {
+          XSTRING value;
+          value.Format(NL("%d"), target.port);
+          edit_udplistenport->AddItemColumns(value.Get(), target.name.Get(), target.host.Get(), value.Get());
+        }
+      else if(target.type == XTRACEMONITOR_CFG_TARGETTYPE_UART)
+        {
+          edit_uartport->AddItemColumns(target.uartconfig.Get(), target.name.Get(), target.uartconfig.Get(), NULL);
+        }
+    }
+
+  // Menus are rebuilt lazily on OpenMenu; ensure they exist under the modal father.
+  if(edit_udplistenport->GetLayout()) edit_udplistenport->EnsureMenu(edit_udplistenport->GetLayout());
+  if(edit_uartport->GetLayout())      edit_uartport->EnsureMenu(edit_uartport->GetLayout());
+
   return true;
 }
 
@@ -1425,7 +1606,9 @@ bool XTRACEMONITOR_FORM_CFG::DecryptDynDNSPassword(XSTRING& in_b64, XSTRING& out
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool XTRACEMONITOR_FORM_CFG::OnAccept()
-* @brief      Commits draft to CFG, saves the INI file, closes the modal.
+* @brief      Commits draft to CFG, saves the INI (incl. live window rect if save flags on), closes.
+* @note       Does not re-apply savedscreenposition/size to the live window — that was snapping
+*             the app back to the rect loaded when the modal opened.
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the operation is successful; otherwise false.
@@ -1458,8 +1641,9 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   cfg.SetColorTheme(colortheme_draft);
   cfg.SetSaveScreenPosition(savescreenposition_draft);
   cfg.SetSaveScreenSize(savescreensize_draft);
-  cfg.SetSavedScreenPosition(savedscreenposition_draft.Get());
-  cfg.SetSavedScreenSize(savedscreensize_draft.Get());
+  // Do not write stale savedscreenposition/size drafts here — Accept must not snap the live
+  // window back to the values loaded when the modal opened. Live geometry is captured below
+  // via PersistScreenGeometryToCFG when the matching save checkboxes are on.
   cfg.SetUDPListenPort(udplistenport_draft);
   if(uart_ok) cfg.SetUARTPort(&uartport_draft);
   cfg.SetAddDateTimeConsole(adddatetimeconsole_draft);
@@ -1490,6 +1674,12 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
       owner->OpStatus_Log(NL("Config: Aceptar - error al guardar CFG."));
       return false;
     }
+
+  // With save-position / save-size checked: refresh .ini from the live window so the next
+  // start matches what the user sees now (and Accept never re-applies an old rect).
+  owner->PersistScreenGeometryToCFG();
+  if(cfg.GetSavedScreenPosition()) savedscreenposition_draft = (*cfg.GetSavedScreenPosition());
+  if(cfg.GetSavedScreenSize())     savedscreensize_draft     = (*cfg.GetSavedScreenSize());
 
   colortheme_committed          = colortheme_draft;
   savescreenposition_committed  = savescreenposition_draft;
@@ -1532,10 +1722,8 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
       return Show(false);
     }
 
-  // Predeterminado can reset draft geometry to (0,0) / design minimum; apply after commit.
-  owner->ApplySavedScreenGeometry();
-
-  return Show(false);
+  // Net-status refresh runs on Show(false) after the modal layer is gone (safe TextBackdrop path).
+  return ArmCloseAfterPress(config_modal_btn_accept);
 }
 
 
@@ -1574,7 +1762,7 @@ bool XTRACEMONITOR_FORM_CFG::OnCancel()
   ApplyDynDNSToolbarButton(dyndns_active_committed);
 
   owner->OpStatus_Log(NL("Config: Cancelar."));
-  return Show(false);
+  return ArmCloseAfterPress(config_modal_btn_cancel);
 }
 
 
@@ -1615,7 +1803,8 @@ bool XTRACEMONITOR_FORM_CFG::OnDefault()
   ApplyDynDNSToolbarButton(dyndns_active_draft);
 
   owner->OpStatus_Log(NL("Config: Predeterminado."));
-  return true;
+  // Stay open: only hold the Pressed face so the click is visible.
+  return HoldPressVisual(config_modal_btn_default);
 }
 
 
@@ -1635,6 +1824,8 @@ void XTRACEMONITOR_FORM_CFG::Clean()
   config_modal_btn_accept   = NULL;
   config_modal_btn_cancel   = NULL;
   config_modal_btn_default  = NULL;
+  close_timer               = NULL;
+  close_armed               = false;
   color_theme_group         = NULL;
   theme_light               = NULL;
   theme_dark                = NULL;

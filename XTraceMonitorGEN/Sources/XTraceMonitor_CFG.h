@@ -31,6 +31,7 @@
 /*---- INCLUDES ------------------------------------------------------------------------------------------------------*/
 
 #include "XString.h"
+#include "XVector.h"
 
 #include "APPFlowCFG.h"
 
@@ -57,6 +58,22 @@
 #define XTRACEMONITOR_CFG_DYNDNS_LOGIN                  NL("login")
 #define XTRACEMONITOR_CFG_DYNDNS_PASSWORD               NL("password")
 
+#define XTRACEMONITOR_CFG_SECTION_TARGET                NL("target")
+#define XTRACEMONITOR_CFG_TARGET_ITEM                   NL("item")
+#define XTRACEMONITOR_CFG_TARGET_ITEM_MASK              NL("%02d")
+
+// Min slots so DoDefault can seed the legacy 10 servers; empty lines stay allowed.
+#define XTRACEMONITOR_CFG_MINTARGETS                    10
+#define XTRACEMONITOR_CFG_MAXTARGETS                    32
+
+#define XTRACEMONITOR_CFG_SECTION_ORIGINS               NL("origins")
+#define XTRACEMONITOR_CFG_ORIGIN_ITEM                   NL("item")
+#define XTRACEMONITOR_CFG_ORIGIN_ITEM_MASK              NL("%02d")
+
+// Min 1 slot for DoDefault seed; empty slots beyond present INI keys are not created.
+#define XTRACEMONITOR_CFG_MINORIGINS                    1
+#define XTRACEMONITOR_CFG_MAXORIGINS                    10
+
 #define XTRACEMONITOR_CFG_DYNDNS_ACTIVE_DEFAULT         false
 
 #define XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT    false
@@ -81,7 +98,48 @@
 // (DIOSTREAMUARTCONFIG::SetFromString rejects port 0; use COM index >= 1).
 #define XTRACEMONITOR_CFG_UARTPORT_DEFAULT              NL("1,115200,8,N,1,NONE")
 
+enum XTRACEMONITOR_CFG_TARGETTYPE
+{
+  XTRACEMONITOR_CFG_TARGETTYPE_UNKNOWN = 0 ,
+  XTRACEMONITOR_CFG_TARGETTYPE_UDP         ,
+  XTRACEMONITOR_CFG_TARGETTYPE_UART
+};
+
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
+
+class XTRACEMONITOR_CFG_TARGET
+{
+  public:
+
+                                    XTRACEMONITOR_CFG_TARGET                ();
+                                   ~XTRACEMONITOR_CFG_TARGET                ();
+
+    void                            Clean                                   ();
+
+    int                             type;
+    XSTRING                         name;
+    XSTRING                         host;         // type UDP
+    int                             port;         // type UDP
+    XSTRING                         uartconfig;   // type UART (no surrounding parentheses)
+};
+
+
+class XTRACEMONITOR_CFG_ORIGIN
+{
+  public:
+
+                                    XTRACEMONITOR_CFG_ORIGIN                ();
+                                   ~XTRACEMONITOR_CFG_ORIGIN                ();
+
+    void                            Clean                                   ();
+
+    bool                            isactive;
+    bool                            showip;
+    XSTRING                         name;
+    XSTRING                         url;
+    XSTRING                         ip;
+};
+
 
 class XTRACEMONITOR_CFG : public APPFLOWCFG
 {
@@ -147,6 +205,20 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
     void                            SetDynDNSPassword                       (XCHAR* value);
     void                            SetDynDNSPassword                       (XSTRING* value);
 
+    int                             GetTargetCount                          ();
+    XSTRING*                        GetTargetLine                           (int index);
+    bool                            SetTargetLine                           (int index, XCHAR* line);
+    bool                            SetTargetLine                           (int index, XSTRING* line);
+    bool                            GetTarget                               (int index, XTRACEMONITOR_CFG_TARGET& out);
+    bool                            SetTarget                               (int index, const XTRACEMONITOR_CFG_TARGET& in);
+
+    int                             GetOriginCount                          ();
+    XSTRING*                        GetOriginLine                           (int index);
+    bool                            SetOriginLine                           (int index, XCHAR* line);
+    bool                            SetOriginLine                           (int index, XSTRING* line);
+    bool                            GetOrigin                               (int index, XTRACEMONITOR_CFG_ORIGIN& out);
+    bool                            SetOrigin                               (int index, const XTRACEMONITOR_CFG_ORIGIN& in);
+
   private:
 
                                     XTRACEMONITOR_CFG                       (XCHAR* namefile);
@@ -156,6 +228,12 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
     void                            operator =                              (XTRACEMONITOR_CFG const&);
 
     bool                            ParseIntPair                            (XSTRING* value, int& a, int& b);
+    bool                            ParseTargetLine                         (XSTRING* line, XTRACEMONITOR_CFG_TARGET& out);
+    bool                            FormatTargetLine                        (const XTRACEMONITOR_CFG_TARGET& in, XSTRING& line);
+    bool                            SeedDefaultTargetsIfEmpty               ();
+    bool                            ParseOriginLine                         (XSTRING* line, XTRACEMONITOR_CFG_ORIGIN& out);
+    bool                            FormatOriginLine                        (const XTRACEMONITOR_CFG_ORIGIN& in, XSTRING& line);
+    bool                            SeedDefaultOriginsIfEmpty               ();
 
     void                            Clean                                   ();
 
@@ -176,6 +254,12 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
     bool                            dyndns_active;
     XSTRING                         dyndns_login;
     XSTRING                         dyndns_password;   // ciphertext in INI; plaintext after Form decrypt load
+
+    int                             ntargets;
+    XVECTOR<XSTRING*>               targets;
+
+    int                             norigins;
+    XVECTOR<XSTRING*>               origins;
 };
 
 

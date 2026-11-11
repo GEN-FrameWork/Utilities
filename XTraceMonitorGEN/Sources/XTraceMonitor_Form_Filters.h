@@ -32,11 +32,16 @@
 
 /*---- DEFINES & ENUMS  ----------------------------------------------------------------------------------------------*/
 
+#ifndef XTRACEMONITOR_MODAL_BTN_PRESS_HOLD_MS
+#define XTRACEMONITOR_MODAL_BTN_PRESS_HOLD_MS           300
+#endif
+
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
 
 class XTRACEMONITOR;
 class UI_ELEMENT;
 class UI_ELEMENT_FORM;
+class XTIMER;
 
 class XTRACEMONITOR_FORM_FILTERS
 {
@@ -50,6 +55,7 @@ class XTRACEMONITOR_FORM_FILTERS
     bool                            ApplyGeometry                           ();
     bool                            Show                                    (bool show);
     bool                            IsVisible                               ();
+    bool                            Tick                                    ();
 
     bool                            HandleElementSelected                   (UI_ELEMENT* element);
 
@@ -59,6 +65,8 @@ class XTRACEMONITOR_FORM_FILTERS
     bool                            OnAccept                                ();
     bool                            OnCancel                                ();
     bool                            OnDefault                               ();
+    bool                            HoldPressVisual                         (UI_ELEMENT* btn);
+    bool                            ArmCloseAfterPress                      (UI_ELEMENT* btn);
 
     void                            Clean                                   ();
 
@@ -69,6 +77,8 @@ class XTRACEMONITOR_FORM_FILTERS
     UI_ELEMENT*                     filters_modal_btn_accept;
     UI_ELEMENT*                     filters_modal_btn_cancel;
     UI_ELEMENT*                     filters_modal_btn_default;
+    XTIMER*                         close_timer;
+    bool                            close_armed;
 };
 
 

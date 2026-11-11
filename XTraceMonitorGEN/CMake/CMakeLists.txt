@@ -29,6 +29,7 @@ option(USERINTERFACE_FEATURE                                    "User Interace" 
 
 option(APPFLOW_FEATURE                                          "Application Flow modules"                                ON )
 option(APPFLOW_EXTENDED_FEATURE                                 "Application Flow Extended"                               ON )
+option(APPFLOW_EXTENDED_INTERNETSTATUS_FEATURE                  "Application Flow Extended Internet Status"               ON )
 option(APPFLOW_LOG_FEATURE                                      "Application Flow Log"                                    ON )
 option(APPFLOW_GRAPHICS_FEATURE                                 "Application Flow Graphics"                               ON )
 option(APPFLOW_GRAPHICS_NOTCONSOLE_FEATURE                      "Application Flow Graphics (Deactive Console)"            ON )

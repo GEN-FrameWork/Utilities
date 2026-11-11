@@ -91,15 +91,19 @@ enum XTRACEMONITOR_BUTTONS
 #define XTRACEMONITOR_LAYOUT_MARGIN               6.0
 #define XTRACEMONITOR_LAYOUT_GAP                  6.0
 #define XTRACEMONITOR_LAYOUT_PANELS_X             222.0  // tree 6+210 + gap 6
-#define XTRACEMONITOR_LAYOUT_CAPTION_H            46.0
-#define XTRACEMONITOR_LAYOUT_CHROME_GAP           2.0    // air under custom caption before content
-#define XTRACEMONITOR_LAYOUT_VALOR_TOP            148.0  // clears legends (y=134) + compact legend wipe
+#define XTRACEMONITOR_LAYOUT_CAPTION_H            40.0   // matches chrome app icon (40×40)
+#define XTRACEMONITOR_LAYOUT_CHROME_GAP           0.0    // toolbar bubbles flush under caption
+#define XTRACEMONITOR_LAYOUT_VALOR_TOP            134.0  // 8px under legend bottom (y=126)
 #define XTRACEMONITOR_LAYOUT_VALOR_H              158.0  // header 26 + 6 rows×22 (exact 6 lines)
 #define XTRACEMONITOR_LAYOUT_FOOT_H               22.0
-#define XTRACEMONITOR_LAYOUT_BRAND_W              82.0
-#define XTRACEMONITOR_LAYOUT_BRAND_H              82.0
-#define XTRACEMONITOR_LAYOUT_BRAND_GAP_VALOR      3.0    // brand bottom above valor top
 #define XTRACEMONITOR_LAYOUT_OPSTATUS_TEXT_PAD_X  8.0
+#define XTRACEMONITOR_LAYOUT_NETSTATUS_LED         12.0  // visible circle; must stay paintable (opaque fill)
+#define XTRACEMONITOR_LAYOUT_NETSTATUS_LINE_H      16.0
+#define XTRACEMONITOR_LAYOUT_NETSTATUS_LINE_GAP     2.0
+#define XTRACEMONITOR_LAYOUT_NETSTATUS_LED_GAP      6.0  // LED → "Conexion a internet"
+#define XTRACEMONITOR_LAYOUT_NETSTATUS_TEXT_PAD     0.0  // measure slack inside the frame
+#define XTRACEMONITOR_LAYOUT_NETSTATUS_FRAME_PAD    6.0  // inner pad LED/text ↔ frame (same chrome as valor)
+#define XTRACEMONITOR_NETSTATUS_POLL_MS           1000  // UI refresh from GEN-cached InternetStatus
 
 #define XTRACEMONITOR_OPSTATUS_MAXLINES           20
 #define XTRACEMONITOR_OPSTATUS_LINEHEIGHT         18.0f
@@ -136,6 +140,7 @@ class UI_ELEMENT_CONSOLE;
 class UI_ELEMENT_PROPERTYLIST;
 class UI_ELEMENT_TREE;
 class UI_ELEMENT_IMAGE;
+class UI_ELEMENT_FORM;
 class GRPXEVENT;
 class XTRACEMONITOR_CFG;
 class UI_STYLE;
@@ -182,6 +187,13 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
 
     bool                            BrandMonitor_Resolve                    ();
     bool                            BrandMonitor_RepaintAfterChrome         ();
+
+    bool                            InternetStatus_Resolve                  ();
+    bool                            InternetStatus_ApplyGeometry            (double canvas_w);
+    bool                            InternetStatus_Update                   (bool force = false);
+    bool                            InternetStatus_WipeCluster              (double left, double top, double right, double bottom);
+    bool                            InternetStatus_PaintCluster             ();
+    bool                            InternetStatus_RepaintAfterChrome       ();
 
     bool                            OpStatus_Resolve                        ();
     bool                            OpStatus_Log                            (XCHAR* message);
@@ -242,6 +254,22 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     XTIMER*                         opstatus_click_timer;
 
     UI_ELEMENT_IMAGE*               brand_monitor;
+
+    UI_ELEMENT_FORM*                netstatus_form;
+    UI_ELEMENT_FORM*                netstatus_led;
+    UI_ELEMENT_TEXT*                netstatus_state;
+    UI_ELEMENT_TEXT*                netstatus_ip;
+    UI_ELEMENT_TEXT*                netstatus_udp;
+    XTIMER*                         netstatus_timer;
+    bool                            netstatus_haveinternet;
+    XSTRING                         netstatus_last_state;
+    XSTRING                         netstatus_last_ip;
+    XSTRING                         netstatus_last_udp;
+    double                          netstatus_prev_l;
+    double                          netstatus_prev_t;
+    double                          netstatus_prev_r;
+    double                          netstatus_prev_b;
+    bool                            netstatus_prev_valid;
 
     XTRACEMONITOR_FORM_CFG          form_cfg;
     XTRACEMONITOR_FORM_FILTERS      form_filters;
