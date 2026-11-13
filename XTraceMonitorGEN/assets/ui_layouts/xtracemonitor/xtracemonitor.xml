@@ -1,32 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  XTraceMonitor layout.
-  Canvas / window minimum: 1200 x 699. Sizeable above that: valor/footer width,
-  console W+H, tree height (bottom-aligned with console). Chrome buttons track horizontally.
-  Outer margins 6px: left→tree, right→valor/console/opstatus, bottom→opstatus foot.
-  Gaps tree↔panels / valor↔console / console↔foot = 6.
-  Custom caption height 40 (= app icon). Toolbar bubbles flush under caption (EdgeTop=40):
-  icons ypos 112 (72px), legends ypos 126 (14px under icons). brand_toolbar spans icon top→legend bottom.
-  Valor: header + 6 rows (h=158), top 134 (8px under bubble legends).
-
-  Icons 72x72. Legends: forms centered under each button (text xpos=center).
-
-  opstatus: foot form (same width as console). Collapsed = 1 line; double-click expands
-  upward (bottom edge fixed) over the console showing up to 20 operative messages.
--->
 <layouts>
 
-  <!-- Same pattern as UI_System/dashboard.xml: vectorfont = default; catalog + languagefonts
-       switch in Noto SC as glyph fallback when XTranslation actual language is Chinese. -->
+ 
   <skin name="" drawmode="canvas" rasterfont="verdana18" vectorfont="Nunito-SemiBold.ttf" backgroundcolor="24,28,36"></skin>
 
-  <!-- GEN XML: start tags without attributes need a space before '>'. -->
+
   <fonts >
     <font name="default" file="Nunito-SemiBold.ttf"></font>
     <font name="cjk" file="NotoSansSC-Regular.otf"></font>
   </fonts>
 
-  <!-- Language face AFTER default: ASCII stays on Nunito; Noto SC paints missing CJK glyphs. -->
+
   <languagefonts >
     <map language="chi" font="cjk"></map>
   </languagefonts>
@@ -35,17 +19,13 @@
   <color name="console_back">12,14,18,255</color>
   <color name="label_ink">200,208,220,255</color>
 
-  <!-- CSS Lite for config/filters modals + radio controls (class-scoped; main chrome stays absolute XML). -->
+
   <stylesheet >xtracemonitor.css</stylesheet>
 
   <layout name="xtracemonitor" backgroundcolor="24,28,36">
 
-    <!-- Left brand GEN Framework: master PNG 104×86 at 1:1 (no scale).
-         Bottom=legend bottom (126); top=bubble top / caption bottom (40). -->
     <element name="brand_toolbar" type="image" xpos="16" ypos="126" width="104" height="86" alpha="95">brand_toolbar.png</element>
 
-    <!-- Bubbles flush under caption (EdgeTop=40): ypos = 40+72.
-         Pitch 81 (gap 9 = 1/3 of prior 26); brand→first 120+9=129; packed left. -->
     <element name="stop-btn" type="multioption" xpos="129" ypos="112" width="72" height="72">
       <element type="button" name="stop-btn" selectablestatus="active">
         <element type="animation"><image width="72" height="72">Stop_Active.png</image></element>
@@ -75,9 +55,7 @@
         <element type="animation"><image width="72" height="72">Run_Disabled.png</image></element>
       </element>
     </element>
-    <!-- Shared legend after both icons: stays visible; caption swaps with workingmode (avoids Parar loss).
-         text-align centers both captions in the load-time box (no C++ remasure / Y drift).
-         Transparent like the other toolbar legends — GEN page-wipes compact legend forms. -->
+
     <element name="runstop-lbl" type="form" xpos="122" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0" border-width="0">
       <element name="runstop-txt" type="text" xpos="center" ypos="center" text-align="center" sizefont="11" color="label_ink">#[BTN_STOP]</element>
     </element>
@@ -131,6 +109,217 @@
       </element>
       <element type="button" name="filter-btn" selectablestatus="deactive">
         <element type="animation"><image width="72" height="72">Filtros_Disabled.png</image></element>
+      </element>
+    </element>
+
+    <element name="filter-active-btn" type="multioption" xpos="372" ypos="112" width="72" height="72" visible="false">
+      <element type="button" name="filter-active-btn" selectablestatus="active">
+        <element type="animation" state="play" timedelay="10">
+          <image width="72" height="72">Filtro_Figuras_Active01.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active02.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active03.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active04.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active05.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active06.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active07.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active08.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active09.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active10.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active11.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active12.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active13.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active14.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active15.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active16.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active17.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active18.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active19.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active20.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active21.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active22.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active23.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active24.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active25.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active26.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active27.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active28.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active29.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active30.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active31.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active32.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active33.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active34.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active35.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active36.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active37.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active38.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active39.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active40.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active41.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active42.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active43.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active44.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active45.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active46.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active47.png</image>
+          <image width="72" height="72">Filtro_Figuras_Active48.png</image>
+        </element>
+      </element>
+      <element type="button" name="filter-active-btn" selectablestatus="preselect">
+        <element type="animation" state="play" timedelay="10">
+          <image width="72" height="72">Filtro_Figuras_Preselected01.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected02.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected03.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected04.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected05.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected06.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected07.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected08.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected09.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected10.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected11.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected12.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected13.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected14.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected15.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected16.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected17.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected18.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected19.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected20.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected21.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected22.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected23.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected24.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected25.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected26.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected27.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected28.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected29.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected30.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected31.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected32.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected33.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected34.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected35.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected36.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected37.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected38.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected39.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected40.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected41.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected42.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected43.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected44.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected45.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected46.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected47.png</image>
+          <image width="72" height="72">Filtro_Figuras_Preselected48.png</image>
+        </element>
+      </element>
+      <element type="button" name="filter-active-btn" selectablestatus="selected">
+        <element type="animation" state="play" timedelay="10">
+          <image width="72" height="72">Filtro_Figuras_Pressed01.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed02.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed03.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed04.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed05.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed06.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed07.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed08.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed09.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed10.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed11.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed12.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed13.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed14.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed15.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed16.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed17.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed18.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed19.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed20.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed21.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed22.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed23.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed24.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed25.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed26.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed27.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed28.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed29.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed30.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed31.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed32.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed33.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed34.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed35.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed36.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed37.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed38.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed39.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed40.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed41.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed42.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed43.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed44.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed45.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed46.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed47.png</image>
+          <image width="72" height="72">Filtro_Figuras_Pressed48.png</image>
+        </element>
+      </element>
+      <element type="button" name="filter-active-btn" selectablestatus="deactive">
+        <element type="animation" state="play" timedelay="10">
+          <image width="72" height="72">Filtro_Figuras_Disabled01.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled02.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled03.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled04.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled05.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled06.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled07.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled08.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled09.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled10.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled11.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled12.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled13.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled14.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled15.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled16.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled17.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled18.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled19.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled20.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled21.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled22.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled23.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled24.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled25.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled26.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled27.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled28.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled29.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled30.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled31.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled32.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled33.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled34.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled35.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled36.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled37.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled38.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled39.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled40.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled41.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled42.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled43.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled44.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled45.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled46.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled47.png</image>
+          <image width="72" height="72">Filtro_Figuras_Disabled48.png</image>
+        </element>
       </element>
     </element>
     <element name="filter-lbl" type="form" xpos="365" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
@@ -191,8 +380,6 @@
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_CONFIG]</element>
     </element>
 
-    <!-- Top-right net status: same frame chrome as valor/console/tree; right edge tracks valor.
-         Root siblings; C++ measures text, sizes the frame, and re-anchors on every horizontal resize. -->
     <element name="netstatus" type="form" xpos="834" ypos="120" width="280" height="54"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              overflow-x="hidden" overflow-y="hidden"></element>
@@ -205,24 +392,20 @@
     <element name="netstatus_udp" type="text" xpos="850" ypos="122" width="260" height="16"
              text-align="left" sizefont="12" color="label_ink" backgroundcolor="console_back">UDP Port: --</element>
 
-    <!-- valor: width 972; height 158 (header 26 + 6×22); top aligned with tree (134). -->
     <element name="valor" type="propertylist" xpos="222" ypos="292" width="972" height="158"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              color="label_ink" sizefont="12" namecolumnwidth="220" overflow-y="auto"></element>
 
-    <!-- tree: 6px from app left; bottom aligned with console (ypos 665). Height 517 at min; grows with window. -->
     <element name="tree" type="tree" xpos="6" ypos="665" width="210" height="517"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              color="label_ink" sizefont="12" rowheight="20" indentwidth="18"
              overflow-y="auto" overflow-x="auto"></element>
 
-    <!-- console: same left/width as valor; bottom 665; height tracks valor_top (C++ resize). -->
     <element name="log_console" type="console" xpos="222" ypos="665" width="972" height="353"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              sizefont="12" linespacing="3" maxlines="500"
              autoscroll="true" wordwrap="false" overflow-y="auto" overflow-x="auto"></element>
 
-    <!-- opstatus foot: 6px above window bottom (ypos 693 = 699−6). Width matches panels. -->
     <element name="opstatus" type="form" xpos="222" ypos="693" width="972" height="22"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              overflow-y="hidden" overflow-x="hidden">
@@ -233,8 +416,7 @@
 
   </layout>
 
-  <!-- Config dialog on its own layout (same XML / shared skin+canvas). Fixed 900×502;
-       C++ only recenters on resize. No layout backgroundcolor: skin fill invalidated in Resolve. -->
+
   <layout name="config_modal">
 
     <element name="config_modal" type="form" class="config-modal" xpos="150" ypos="589" width="900" height="502" visible="0"
@@ -243,7 +425,6 @@
       <element name="config_modal_title" type="text" class="form-title" xpos="16" ypos="486" width="400" height="28"
                sizefont="18" color="label_ink">Configuracion</element>
 
-      <!-- Color Theme: skin space-evenly peers + optical circle/caption center. -->
       <element name="color_theme_group" type="radiogroup" class="radio-group" title="Color Theme"
                xpos="24" ypos="316" width="180" height="96">
         <element name="theme_light" type="radiobutton" class="radio-button" width="156" height="24"
@@ -264,8 +445,6 @@
         </element>
       </element>
 
-      <!-- Guardar: center column beside Color Theme. Añadir: left under Color Theme.
-           Final coords from ApplyGeometry. -->
       <element name="chk_savescreenposition" type="checkbox" class="config-check" xpos="244" ypos="400" width="280" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_savescreenposition_anim" type="animation" width="16" height="16">
@@ -282,7 +461,7 @@
         </element>
         <element name="chk_savescreensize_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Guardar tamano de la ventana</element>
       </element>
-      <!-- Añadir + seguimiento under Color Theme (ApplyGeometry owns final coords). -->
+
       <element name="chk_adddatetimeconsole" type="checkbox" class="config-check" xpos="24" ypos="270" width="320" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_adddatetimeconsole_anim" type="animation" width="16" height="16">
@@ -308,7 +487,6 @@
         <element name="chk_texttracking_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Seguimiento de texto</element>
       </element>
 
-      <!-- UDP left; UART right — same Y under Añadir + DynDNS (ApplyGeometry owns final coords). -->
       <element name="lbl_udplistenport" type="text" class="config-label" xpos="24" ypos="186" width="320" height="18"
                sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Puerto UDP</element>
       <element name="edit_udplistenport" type="combo" class="config-edit" xpos="24" ypos="152" width="320" height="28"
@@ -323,7 +501,6 @@
                selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
                bckgrdcolor="64,72,84" color="label_ink">1,115200,8,N,1,NONE</element>
 
-      <!-- DynDNS (right): radiogroup frame+title like Color Theme; controls are modal siblings for hit-test. -->
       <element name="dyndns_group" type="radiogroup" class="radio-group" title="DynDNS"
                xpos="480" ypos="228" width="352" height="184"></element>
       <element name="chk_dyndns_active" type="checkbox" class="config-check" xpos="496" ypos="308" width="320" height="28"
@@ -407,8 +584,6 @@
 
   </layout>
 
-  <!-- Filters dialog: same fixed 900×502 chrome as config_modal; C++ recenters on resize.
-       Options TBD — footer buttons only for now. -->
   <layout name="filters_modal">
 
     <element name="filters_modal" type="form" class="filters-modal" xpos="150" ypos="589" width="900" height="502" visible="0"
@@ -416,6 +591,73 @@
              overflow-y="hidden" overflow-x="hidden">
       <element name="filters_modal_title" type="text" class="form-title" xpos="16" ypos="486" width="400" height="28"
                sizefont="18" color="label_ink">Filtros</element>
+
+      <element name="text_filter_group" type="radiogroup" class="radio-group" title="Text Filter"
+               xpos="24" ypos="430" width="320" height="110"></element>
+      <element name="chk_textfilter_active" type="checkbox" class="config-check" xpos="40" ypos="400" width="280" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_textfilter_active_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_textfilter_active_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Enable text filter</element>
+      </element>
+      <element name="edit_textfilter" type="edittext" class="config-edit" xpos="40" ypos="364" width="260" height="24"
+               sizefont="12" maxsizetext="128"
+               selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
+               bckgrdcolor="64,72,84" color="label_ink"></element>
+
+      <element name="level_filter_group" type="radiogroup" class="radio-group" title="Level Filter"
+               xpos="24" ypos="300" width="480" height="160"></element>
+
+      <element name="chk_level_0" type="checkbox" class="config-check" xpos="40" ypos="330" width="200" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_level_0_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_level_0_txt" type="text" sizefont="12" color="200,208,220" backgroundcolor="0,0,0,0">0 - Black</element>
+      </element>
+      <element name="chk_level_1" type="checkbox" class="config-check" xpos="40" ypos="294" width="200" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_level_1_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_level_1_txt" type="text" sizefont="12" color="80,160,255" backgroundcolor="0,0,0,0">1 - Blue</element>
+      </element>
+      <element name="chk_level_2" type="checkbox" class="config-check" xpos="40" ypos="258" width="200" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_level_2_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_level_2_txt" type="text" sizefont="12" color="80,200,100" backgroundcolor="0,0,0,0">2 - Green</element>
+      </element>
+      <element name="chk_level_3" type="checkbox" class="config-check" xpos="260" ypos="330" width="200" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_level_3_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_level_3_txt" type="text" sizefont="12" color="180,120,220" backgroundcolor="0,0,0,0">3 - Purple</element>
+      </element>
+      <element name="chk_level_4" type="checkbox" class="config-check" xpos="260" ypos="294" width="200" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_level_4_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_level_4_txt" type="text" sizefont="12" color="230,80,80" backgroundcolor="0,0,0,0">4 - Red</element>
+      </element>
+      <element name="chk_level_5" type="checkbox" class="config-check" xpos="260" ypos="258" width="200" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_level_5_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">checkbox_off.png</image>
+          <image width="16" height="16">checkbox_on.png</image>
+        </element>
+        <element name="chk_level_5_txt" type="text" sizefont="12" color="140,148,160" backgroundcolor="0,0,0,0">5 - Gray</element>
+      </element>
 
       <element name="filters_modal_btn_default" type="multioption" xpos="262" ypos="16" width="160" height="53">
         <element type="button" name="filters_modal_btn_default" selectablestatus="active" width="160" height="53">

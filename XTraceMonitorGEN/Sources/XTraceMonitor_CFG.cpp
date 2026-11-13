@@ -228,9 +228,14 @@ bool XTRACEMONITOR_CFG::DoVariableMapping()
   AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_UARTPORT, &uartport,
            NL("UART serial line (Port,Baudrate,DataBits,Parity,StopBits,Flow)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
 
-  // Filters options (XTraceMonitor_Form_Filters) — keys added here as the modal gains controls.
   AddRemark(XTRACEMONITOR_CFG_SECTION_FILTERS, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
   AddRemark(XTRACEMONITOR_CFG_SECTION_FILTERS, NL(" Filters section of configuration"), 0, 2);
+  AddValue(XFILECFG_VALUETYPE_BOOLEAN, XTRACEMONITOR_CFG_SECTION_FILTERS, XTRACEMONITOR_CFG_FILTERS_ISTEXTFILTERACTIVE, &filters_istextactive,
+           NL("Enable console text substring filter"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_FILTERS, XTRACEMONITOR_CFG_FILTERS_TEXTFILTER, &filters_text,
+           NL("Text filter substring (used when istextfilteractive=yes)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT, XTRACEMONITOR_CFG_SECTION_FILTERS, XTRACEMONITOR_CFG_FILTERS_LEVELFILTER, &filters_levels,
+           NL("XTrace level bitmask (bit0=Black … bit5=Gray; 255=all)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
 
   AddRemark(XTRACEMONITOR_CFG_SECTION_CONSOLE, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
   AddRemark(XTRACEMONITOR_CFG_SECTION_CONSOLE, NL(" Console line prefix options"), 0, 2);
@@ -420,6 +425,10 @@ bool XTRACEMONITOR_CFG::DoDefault()
   adddatetimeconsole                    = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
   addipconsole                          = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;
   texttracking                          = XTRACEMONITOR_CFG_TEXTTRACKING_DEFAULT;
+
+  filters_istextactive                  = XTRACEMONITOR_CFG_FILTERS_ISTEXTFILTERACTIVE_DEFAULT;
+  filters_text.Empty();
+  filters_levels                        = XTRACEMONITOR_CFG_FILTERS_LEVELFILTER_DEFAULT;
 
   dyndns_active                         = XTRACEMONITOR_CFG_DYNDNS_ACTIVE_DEFAULT;
   dyndns_login.Empty();
@@ -663,6 +672,113 @@ bool XTRACEMONITOR_CFG::GetTextTracking()
 void XTRACEMONITOR_CFG::SetTextTracking(bool enable)
 {
   texttracking = enable;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::Filters_IsTextActive()
+* @brief      True when the console text substring filter is enabled ([filters]).
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the text filter is active.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::Filters_IsTextActive()
+{
+  return filters_istextactive;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::Filters_SetIsTextActive(bool istextactive)
+* @brief      Enables or disables the console text substring filter.
+* @ingroup    UTILITIES
+*
+* @param[in]  istextactive : true to apply Filters_GetText() as a substring filter.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::Filters_SetIsTextActive(bool istextactive)
+{
+  filters_istextactive = istextactive;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XSTRING* XTRACEMONITOR_CFG::Filters_GetText()
+* @brief      Substring used when Filters_IsTextActive() is true ([filters] textfilter).
+* @ingroup    UTILITIES
+*
+* @return     XSTRING* : Filter text (may be empty).
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XSTRING* XTRACEMONITOR_CFG::Filters_GetText()
+{
+  return &filters_text;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::Filters_SetText(XCHAR* value)
+* @brief      Sets the text-filter substring.
+* @ingroup    UTILITIES
+*
+* @param[in]  value : Filter text (NULL clears).
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::Filters_SetText(XCHAR* value)
+{
+  if(value) filters_text.Set(value);
+       else filters_text.Empty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::Filters_SetText(XSTRING* value)
+* @brief      Sets the text-filter substring.
+* @ingroup    UTILITIES
+*
+* @param[in]  value : Filter text (NULL clears).
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::Filters_SetText(XSTRING* value)
+{
+  if(value) filters_text = (*value);
+       else filters_text.Empty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         int XTRACEMONITOR_CFG::Filters_GetLevels()
+* @brief      XTrace level bitmask ([filters] levelfilter).
+* @ingroup    UTILITIES
+*
+* @return     int : Level bits (see XTRACEMONITOR_CFG_FILTER_LEVEL_*).
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+int XTRACEMONITOR_CFG::Filters_GetLevels()
+{
+  return filters_levels;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::Filters_SetLevels(int levels)
+* @brief      Sets the XTrace level bitmask persisted under [filters].
+* @ingroup    UTILITIES
+*
+* @param[in]  levels : Level bits (0..255 typical; factory default 255=all).
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::Filters_SetLevels(int levels)
+{
+  filters_levels = levels;
 }
 
 
@@ -1704,6 +1820,9 @@ void XTRACEMONITOR_CFG::Clean()
   adddatetimeconsole   = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
   addipconsole         = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;
   texttracking         = XTRACEMONITOR_CFG_TEXTTRACKING_DEFAULT;
+  filters_istextactive = XTRACEMONITOR_CFG_FILTERS_ISTEXTFILTERACTIVE_DEFAULT;
+  filters_text.Empty();
+  filters_levels       = XTRACEMONITOR_CFG_FILTERS_LEVELFILTER_DEFAULT;
   dyndns_active        = XTRACEMONITOR_CFG_DYNDNS_ACTIVE_DEFAULT;
   dyndns_login.Empty();
   dyndns_password.Empty();

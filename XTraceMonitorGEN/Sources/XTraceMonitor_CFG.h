@@ -47,6 +47,21 @@
 #define XTRACEMONITOR_CFG_UARTPORT                      NL("uartport")
 
 #define XTRACEMONITOR_CFG_SECTION_FILTERS               NL("filters")
+#define XTRACEMONITOR_CFG_FILTERS_ISTEXTFILTERACTIVE    NL("istextfilteractive")
+#define XTRACEMONITOR_CFG_FILTERS_TEXTFILTER            NL("textfilter")
+#define XTRACEMONITOR_CFG_FILTERS_LEVELFILTER           NL("levelfilter")
+
+// XTrace level bit masks (same as legacy Unit1.h). UI order 0..5 is Black,Blue,Green,Purple,Red,Gray.
+#define XTRACEMONITOR_CFG_FILTER_LEVEL_BLACK            0x00000001
+#define XTRACEMONITOR_CFG_FILTER_LEVEL_PURPLE           0x00000002
+#define XTRACEMONITOR_CFG_FILTER_LEVEL_GREEN            0x00000004
+#define XTRACEMONITOR_CFG_FILTER_LEVEL_BLUE             0x00000008
+#define XTRACEMONITOR_CFG_FILTER_LEVEL_RED              0x00000010
+#define XTRACEMONITOR_CFG_FILTER_LEVEL_GRAY             0x00000020
+#define XTRACEMONITOR_CFG_FILTER_LEVEL_ALL              0x000000FF
+
+#define XTRACEMONITOR_CFG_FILTERS_ISTEXTFILTERACTIVE_DEFAULT  false
+#define XTRACEMONITOR_CFG_FILTERS_LEVELFILTER_DEFAULT         XTRACEMONITOR_CFG_FILTER_LEVEL_ALL
 
 #define XTRACEMONITOR_CFG_SECTION_CONSOLE               NL("console")
 #define XTRACEMONITOR_CFG_ADDDATETIMECONSOLE            NL("adddatetimeconsole")
@@ -194,6 +209,14 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
     bool                            IsUARTPortValid                         (XSTRING* value);
     bool                            IsUARTPortValid                         (XSTRING& value);
 
+    bool                            Filters_IsTextActive                    ();
+    void                            Filters_SetIsTextActive                 (bool istextactive);
+    XSTRING*                        Filters_GetText                         ();
+    void                            Filters_SetText                         (XCHAR* value);
+    void                            Filters_SetText                         (XSTRING* value);
+    int                             Filters_GetLevels                       ();
+    void                            Filters_SetLevels                       (int levels);
+
     bool                            GetDynDNSActive                         ();
     void                            SetDynDNSActive                         (bool active);
 
@@ -250,6 +273,10 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
     bool                            adddatetimeconsole;
     bool                            addipconsole;
     bool                            texttracking;
+
+    bool                            filters_istextactive;
+    XSTRING                         filters_text;
+    int                             filters_levels;
 
     bool                            dyndns_active;
     XSTRING                         dyndns_login;

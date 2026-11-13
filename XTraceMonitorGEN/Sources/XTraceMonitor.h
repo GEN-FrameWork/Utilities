@@ -124,6 +124,16 @@ enum XTRACEMONITOR_BUTTONS
 #define XTRACEMONITOR_CONFIGMODAL_PAD             24.0
 #define XTRACEMONITOR_CONFIGMODAL_TITLE_PAD       16.0
 #define XTRACEMONITOR_CONFIGMODAL_TITLE_H         28.0
+// Vertical content band shared by all modals (Config is the master):
+//   CONTENT_TOP    = Color Theme EdgeTop  (theme_y 316 + theme_h 96)
+//   CONTENT_BOTTOM = UDP/UART edit bottom (port_edit_y) — gap above button tops stays identical
+#define XTRACEMONITOR_CONFIGMODAL_CONTENT_TOP     412.0
+#define XTRACEMONITOR_CONFIGMODAL_CONTENT_BOTTOM  130.0
+// Title↔content and content↔buttons gaps measured on Config (use for Filters modal height).
+// title_bot = H - TITLE_PAD - TITLE_H = 458 → TITLE_TO_CONTENT = 458 - 412 = 46
+// btn_top   = BTN_BOTTOM_PAD + BTN_H   = 69  → CONTENT_TO_BTNS  = 130 - 69  = 61
+#define XTRACEMONITOR_CONFIGMODAL_TITLE_TO_CONTENT  (XTRACEMONITOR_CONFIGMODAL_H - XTRACEMONITOR_CONFIGMODAL_TITLE_PAD - XTRACEMONITOR_CONFIGMODAL_TITLE_H - XTRACEMONITOR_CONFIGMODAL_CONTENT_TOP)
+#define XTRACEMONITOR_CONFIGMODAL_CONTENT_TO_BTNS   (XTRACEMONITOR_CONFIGMODAL_CONTENT_BOTTOM - (XTRACEMONITOR_CONFIGMODAL_BTN_BOTTOM_PAD + XTRACEMONITOR_CONFIGMODAL_BTN_H))
 
 
 
@@ -139,6 +149,7 @@ class UI_ELEMENT_TEXTBOX;
 class UI_ELEMENT_CONSOLE;
 class UI_ELEMENT_PROPERTYLIST;
 class UI_ELEMENT_TREE;
+struct UI_ELEMENT_TREE_NODE;
 class UI_ELEMENT_IMAGE;
 class UI_ELEMENT_FORM;
 class GRPXEVENT;
@@ -183,6 +194,8 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
 
     bool                            Tree_Resolve                            ();
     bool                            Tree_Seed                               ();
+    bool                            Tree_BuildUARTLabel                     (XSTRING& out);
+    bool                            Tree_UpdateUARTLabel                    ();
     bool                            Tree_UpdateInput                        ();
 
     bool                            BrandMonitor_Resolve                    ();
@@ -208,7 +221,9 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
 
     bool                            Toolbar_SetWorkingMode                  (bool on);
     bool                            Toolbar_ApplyRunStopVisibility          ();
-    bool                            Toolbar_SlotSetVisible                  (UI_ELEMENT* element, bool visible);
+    bool                            Toolbar_ApplyFilterBtnVisibility        ();
+    bool                            Toolbar_SlotSetVisible                  (UI_ELEMENT* element, bool visible, XCHAR* legend_element_name = NULL);
+    static bool                     Filters_IsNonDefaultCommitted           ();
 
     bool                            ApplySavedScreenGeometry                ();
     bool                            PersistScreenGeometryToCFG              ();
@@ -239,6 +254,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            valor_prevpressed;
 
     UI_ELEMENT_TREE*                treeelement;
+    UI_ELEMENT_TREE_NODE*           tree_uart_node;
     bool                            tree_prevpressed;
 
     UI_ELEMENT_FORM*                opstatus_form;

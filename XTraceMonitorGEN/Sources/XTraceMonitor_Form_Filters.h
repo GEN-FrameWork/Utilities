@@ -3,7 +3,7 @@
 * @file       XTraceMonitor_Form_Filters.h
 *
 * @class      XTRACEMONITOR_FORM_FILTERS
-* @brief      Filters modal: draft/commit shell, Accept / Cancel / Predeterminado
+* @brief      Filters modal: text filter + level bitmask draft/commit to CFG [filters]
 * @ingroup    UTILITIES
 *
 * @copyright  EndoraSoft. All rights reserved.
@@ -30,6 +30,8 @@
 
 /*---- INCLUDES ------------------------------------------------------------------------------------------------------*/
 
+#include "XString.h"
+
 /*---- DEFINES & ENUMS  ----------------------------------------------------------------------------------------------*/
 
 #ifndef XTRACEMONITOR_MODAL_BTN_PRESS_HOLD_MS
@@ -41,6 +43,9 @@
 class XTRACEMONITOR;
 class UI_ELEMENT;
 class UI_ELEMENT_FORM;
+class UI_ELEMENT_CHECKBOX;
+class UI_ELEMENT_EDITTEXT;
+class UI_ELEMENT_RADIOGROUP;
 class XTIMER;
 
 class XTRACEMONITOR_FORM_FILTERS
@@ -62,11 +67,19 @@ class XTRACEMONITOR_FORM_FILTERS
   private:
 
     bool                            LoadCommittedFromCFG                    ();
+    bool                            SyncControlsFromDraft                   ();
+    bool                            ReadDraftFromControls                   ();
+    bool                            ApplyDefaultsToDraft                    ();
+    bool                            ApplyTextFilterEditEnabled              ();
     bool                            OnAccept                                ();
     bool                            OnCancel                                ();
     bool                            OnDefault                               ();
     bool                            HoldPressVisual                         (UI_ELEMENT* btn);
     bool                            ArmCloseAfterPress                      (UI_ELEMENT* btn);
+
+    static int                      LevelMaskForIndex                       (int index);
+    bool                            LevelCheckGet                           (int index);
+    void                            LevelCheckSet                           (int index, bool on);
 
     void                            Clean                                   ();
 
@@ -77,6 +90,20 @@ class XTRACEMONITOR_FORM_FILTERS
     UI_ELEMENT*                     filters_modal_btn_accept;
     UI_ELEMENT*                     filters_modal_btn_cancel;
     UI_ELEMENT*                     filters_modal_btn_default;
+
+    UI_ELEMENT_RADIOGROUP*          text_filter_group;
+    UI_ELEMENT_CHECKBOX*            chk_textfilter_active;
+    UI_ELEMENT_EDITTEXT*            edit_textfilter;
+    UI_ELEMENT_RADIOGROUP*          level_filter_group;
+    UI_ELEMENT_CHECKBOX*            chk_level[6];
+
+    bool                            textfilter_active_committed;
+    bool                            textfilter_active_draft;
+    XSTRING                         textfilter_committed;
+    XSTRING                         textfilter_draft;
+    int                             levelfilter_committed;
+    int                             levelfilter_draft;
+
     XTIMER*                         close_timer;
     bool                            close_armed;
 };

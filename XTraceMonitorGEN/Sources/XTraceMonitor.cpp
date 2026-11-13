@@ -53,6 +53,11 @@
 #include "GRPScreenCFGChromes.h"
 #include "GRPScreen.h"
 #include "GRPViewPort.h"
+
+#include <stdio.h>
+#ifdef WINDOWS
+#include <windows.h>
+#endif
 #include "GRPXEvent.h"
 
 #include "INPManager.h"
@@ -73,6 +78,7 @@
 #include "UI_Element_Tree.h"
 #include "UI_Element_Image.h"
 #include "UI_Element_Option.h"
+#include "UI_Element_Animation.h"
 #include "UI_Skin.h"
 #include "UI_SkinCanvas.h"
 #include "UI_BoundaryLine.h"
@@ -87,6 +93,9 @@
 #include "APPFlowExtended_InternetStatus.h"
 #include "APPFlowInternetServices.h"
 #endif
+
+#include "DIOIP.h"
+#include "DIODNSResolver.h"
 
 #include "XTraceMonitor_CFG.h"
 #include "XTraceMonitor_TranslateID.h"
@@ -291,8 +300,6 @@ bool XTRACEMONITOR::AppProc_FirstUpdate()
       return false;
     }
 
-  // Apply saved desktop geometry after the native window exists (Create/Show can ignore
-  // pre-Create SetPosition on some hosts; size is usually already applied via SetWidth/Height).
   ApplySavedScreenGeometry();
 
   //--------------------------------------------------------------------------------------
@@ -316,7 +323,6 @@ bool XTRACEMONITOR::AppProc_FirstUpdate()
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::AppProc_Update()
 {
-  // WM_QUIT sets exit before this call; persist while mainscreen is still alive.
   PersistScreenGeometryIfExiting();
 
   if(GetEvent()==XTRACEMONITOR_XFSMEVENT_NONE)
@@ -328,9 +334,6 @@ bool XTRACEMONITOR::AppProc_Update()
           case XTRACEMONITOR_XFSMSTATE_INI    : form_cfg.Tick();
                                                 form_filters.Tick();
 
-                                                // While a modal is compositing, Draw_Text skips TextBackdrop
-                                                // restore — forced net-status redraws would alpha-stack glyphs
-                                                // (visible degradation next to the config/filters dialog).
                                                 if(!GEN_USERINTERFACE.Element_IsModalActive())
                                                   {
                                                     InternetStatus_Update(false);
@@ -371,7 +374,6 @@ bool XTRACEMONITOR::AppProc_Update()
         }
     }
 
-  // CLOSE/ESC set exit during UpdateInput; persist before APPFLOWGRAPHICS::End deletes the screen.
   PersistScreenGeometryIfExiting();
 
   return true;
@@ -453,9 +455,6 @@ bool XTRACEMONITOR::UpdateInput()
       now_cursor_x = (int)cursor->GetX();
       now_cursor_y = (int)height - (int)cursor->GetY();
 
-      // Motion gestures (keep historical path). Click/release handling below must NOT live only
-      // inside this branch: IsPressedWithRelease needs to observe press frames, and IsReadyToTest
-      // would otherwise swallow short clicks (including opstatus double-click).
       if(cursor->GetMotion()->IsReadyToTest(50))
         {
           cursor->GetMotion()->InvertYAxis(height);
@@ -487,8 +486,6 @@ bool XTRACEMONITOR::UpdateInput()
 
           bool mouseheld = (button[XTRACEMONITOR_BUTTON_MOUSE] && button[XTRACEMONITOR_BUTTON_MOUSE]->IsPressed());
 
-          // Overlay scrollbar thumb drag (tree / propertylist / console): capture on press over the
-          // track, follow while held, release without firing a content SELECCTION.
           if(mouseheld)
             {
               bar_owned = GEN_USERINTERFACE.ScrollBar_OnPointer(now_cursor_x, now_cursor_y, true);
@@ -521,13 +518,11 @@ bool XTRACEMONITOR::UpdateInput()
             }
         }
 
-      // Always sample mouse click/release (independent of motion-buffer gating).
       if(button[XTRACEMONITOR_BUTTON_MOUSE] && button[XTRACEMONITOR_BUTTON_MOUSE]->IsPressedWithRelease())
         {
           int click_x = now_cursor_x;
           int click_y = now_cursor_y;
 
-          // While a GEN modal form is up, do not route clicks to foot/opstatus under it.
           if(GEN_USERINTERFACE.Element_IsModalActive())
             {
               if(!bar_owned)
@@ -550,7 +545,6 @@ bool XTRACEMONITOR::UpdateInput()
 
   OpStatus_UpdateInput();
 
-  // Re-assert foot geometry after UI layout writeback (intrinsic/boundary can be restored mid-frame).
   if(opstatus_form)
     {
       XDWORD visible = 1;
@@ -563,7 +557,6 @@ bool XTRACEMONITOR::UpdateInput()
       OpStatus_ApplyGeometry(visible);
       if(opstatus_expanded && (opstatus_count > 1)) GEN_USERINTERFACE.Element_PutToLastPositionLayout(opstatus_form);
 
-      // Until line metrics are known, keep text dirty so ContentHeight is measured on draw.
       if((opstatus_line_h < 1.0f) && opstatus_text)
         {
           opstatus_text->SetMustReDraw(true);
@@ -581,7 +574,6 @@ bool XTRACEMONITOR::UpdateInput()
     {
       if(button[XTRACEMONITOR_BUTTON_ESC]->IsPressedWithRelease())
         {
-          // Editing an EditText: ESC drops focus (does not exit the app).
           if(GEN_USERINTERFACE.EditText_HasFocus())
             {
               GEN_USERINTERFACE.EditText_ClearFocus(true);
@@ -629,7 +621,6 @@ bool XTRACEMONITOR::Ini_Graphics(GRPSCREEN* screen)
 
   screen->SetDesktopScreenSelected(GRPSCREENTYPE_DESKTOP_MAIN);
 
-  // Seed Create() geometry from CFG when valid; ApplySavedScreenGeometry() re-applies after Show.
   int pos_x = 0;
   int pos_y = 0;
   int size_w = XTRACEMONITOR_WINDOW_WIDTH;
@@ -656,7 +647,6 @@ bool XTRACEMONITOR::Ini_Graphics(GRPSCREEN* screen)
   screen->SetWidth((XDWORD)size_w);
   screen->SetHeight((XDWORD)size_h);
 
-  // Custom chrome (borderless GEN caption). Must run before the native window is created.
   UserInterface_CFGChromes(screen);
 
   return true;
@@ -729,23 +719,21 @@ bool XTRACEMONITOR::PersistScreenGeometryToCFG()
   bool dirty = false;
 
   if(cfg.GetSaveScreenPosition())
-    {
-      // Prefer cached WM_MOVE position: Get_Position()/GetWindowRect can return garbage once the
-      // HWND is already tearing down (WM_CLOSE → destroy → WM_QUIT), while GetPositionX/Y still hold
-      // the last known live coordinates.
+    {      
       int x = screen->GetPositionX();
       int y = screen->GetPositionY();
       int live_x = 0;
       int live_y = 0;
+
       if(screen->Get_Position(live_x, live_y))
-        {
-          // Reject obviously invalid desktop coords from a dying HWND.
+        {         
           if((live_x > -30000) && (live_x < 30000) && (live_y > -30000) && (live_y < 30000))
             {
               x = live_x;
               y = live_y;
             }
         }
+
       cfg.SetSavedScreenPosition(x, y);
       dirty = true;
     }
@@ -756,11 +744,13 @@ bool XTRACEMONITOR::PersistScreenGeometryToCFG()
       int h = (int)screen->GetHeight();
       int cw = 0;
       int ch = 0;
+
       if(screen->GetClientSize(cw, ch) && (cw >= XTRACEMONITOR_WINDOW_WIDTH) && (ch >= XTRACEMONITOR_WINDOW_HEIGHT))
         {
           w = cw;
           h = ch;
         }
+
       cfg.SetSavedScreenSize(w, h);
       dirty = true;
     }
@@ -810,8 +800,7 @@ bool XTRACEMONITOR::Ini_Canvas(GRPSCREEN* screen)
     {
       GRPVIEWPORT* viewport = screen->GetViewport(GRPVIEWPORT_ID_MAIN);
       if(viewport)
-        {
-          // Min = design size (1200×699). Max allows growth; chrome buttons track via UpdateCFGChromesButtonsPosition.
+        {          
           viewport->SetMinSize((float)XTRACEMONITOR_WINDOW_WIDTH, (float)XTRACEMONITOR_WINDOW_HEIGHT);
           viewport->SetMaxSize(3840.0f, 2160.0f);
         }
@@ -839,6 +828,7 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       consoleelement            = NULL;
       valorelement              = NULL;
       treeelement               = NULL;
+      tree_uart_node            = NULL;
       opstatus_form             = NULL;
       opstatus_text             = NULL;
       brand_monitor             = NULL;
@@ -929,7 +919,6 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       return false;
     }
 
-  // Optional: brand_monitor (lupa/huellas) removed from main layout; keep resolve soft.
   BrandMonitor_Resolve();
 
   if(!InternetStatus_Resolve())
@@ -960,14 +949,13 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       return false;
     }
 
-  // Remap app tokens + chrome title/caption for the persisted theme before the first frame.
   ApplyColorTheme(XTRACEMONITOR_CFG::GetInstance(false).GetColorTheme());
 
-  // Default: workingmode on → Stop visible / Run hidden. Apply once after first Layout_PutBackground
-  // so ConvertToBoolean-fixed XML visibility is enforced without painting into an empty canvas.
-  // (Calling Apply before any compose used to discard legend TextBackdrop into a gray plate.)
+
   workingmode = true;
+
   Toolbar_ApplyRunStopVisibility();
+  Toolbar_ApplyFilterBtnVisibility();
 
   OpStatus_Log(NL("XTraceMonitor ready."));
 
@@ -1013,32 +1001,28 @@ bool XTRACEMONITOR::DrawFrame()
       return true;
     }
 
-  // Belt-and-suspenders: CHANGESIZE can race with canvas recreate; re-apply flexible layout whenever
-  // the live client size diverges from the last geometry we laid out, then force a full redraw.
+
   int live_w = (int)screen->GetWidth();
   int live_h = (int)screen->GetHeight();
   bool size_relaid = false;
-  if((live_w != layout_applied_w) || (live_h != layout_applied_h))
+  bool size_mismatch = ((live_w != layout_applied_w) || (live_h != layout_applied_h));
+  if(size_mismatch)
     {
       Layout_ApplyFlexibleResize(true);
       size_relaid = true;
       resize_recover_frames = 3;
-      // Fresh buffer: drop any canvas-level rebuild snapshots before ReleaseDrawFramerate/Rebuild.
+     
       canvas->DeleteAllRebuildAreas();
       canvas->SetClipBox(0.0, 0.0, (double)(live_w > 0 ? live_w - 1 : 0), (double)(live_h > 0 ? live_h - 1 : 0));
     }
   else if(resize_recover_frames > 0)
     {
-      // UpdateSize compose can lose to GLES surface recreate / Overlay dirt clear on the first
-      // frames after maximize/extend — force a few full page wipe + redraw passes.
       GEN_USERINTERFACE.Layout_PutBackground();
       GEN_USERINTERFACE.Elements_SetToRedraw();
       size_relaid = true;
       resize_recover_frames--;
     }
 
-  // Chrome layout may appear only after the first canvas/LoadCFGChromesLayout — finish Light/Dark
-  // caption title ink + cache invalidate once it exists.
   if(chrome_theme_dirty)
     {
       XTRACEMONITOR_CFG& cfgtheme = XTRACEMONITOR_CFG::GetInstance(false);
@@ -1060,22 +1044,27 @@ bool XTRACEMONITOR::DrawFrame()
 
   if(!size_relaid) canvas->RebuildAllAreas();
 
-  // Bottom-left: 5px from left and bottom (DrawFramerate y is the text baseline; +2 is box bottom).
   canvas->DrawFramerate(screen, 5.0, (double)(screen->GetHeight() - 7));
 
   GEN_USERINTERFACE.Elements_RebuildDrawAreas();
   if(size_relaid) GEN_USERINTERFACE.Elements_SetToRedraw();
   GEN_USERINTERFACE.Update();
 
-  // Chrome paints after content and its right-side button rebuild can wipe the brand top
-  // and the top-right net-status cluster (LED + latency/IP/UDP). Re-blit both same-frame.
-  // Skip net-status while a modal is up: ModalLayer_IsCompositing() disables TextBackdrop
-  // restore in Draw_Text, so every-frame wipe+Draw stacks anti-aliased ink (see config capture).
   BrandMonitor_RepaintAfterChrome();
   if(!GEN_USERINTERFACE.Element_IsModalActive())
     {
       InternetStatus_RepaintAfterChrome();
     }
+
+  {
+    UI_LAYOUT* xtm = GEN_USERINTERFACE.Layouts_Get(NL("xtracemonitor"));
+    if(xtm && xtm->GetSkin() && xtm->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
+      {
+        UI_SKINCANVAS* skin = (UI_SKINCANVAS*)xtm->GetSkin();
+        if(skin && skin->CompactLegendsNeedRepair())
+          skin->RepaintCompactLegendForms(xtm);
+      }
+  }
 
   return true;
 }
@@ -1100,15 +1089,11 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
   GRPSCREEN* screen = GetMainScreen();
   if(!screen) return false;
 
-  // Use the LIVE canvas size only. Clamping W/H up to the design minimum while GetWidth() was still
-  // a few pixels short (startup client/canvas desync) parked brand_monitor and right-edge panels past
-  // the present edge. Window min size is enforced by the viewport / WM_GETMINMAXINFO path instead.
+ 
   double W = (double)screen->GetWidth();
   double H = (double)screen->GetHeight();
   if((W < 1.0) || (H < 1.0)) return false;
 
-  // Keep design size in sync for CSS @media / rem resolution. UIScale stays inactive at scale 1.0
-  // without autofit (see UI_LAYOUT::IsUIScaleActive) so flexible layout paints 1:1 on the live canvas.
   UI_LAYOUT* content_layout = GEN_USERINTERFACE.Layouts_Get(NL("xtracemonitor"));
   if(content_layout &&
      ((content_layout->GetDesignWidth() != (XDWORD)W) || (content_layout->GetDesignHeight() != (XDWORD)H)))
@@ -1136,7 +1121,7 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
   double console_h   = console_bot - console_top;
   if(console_h < 1.0) console_h = 1.0;
 
-  // Keep opstatus text baseline glued to the foot when the window height changes.
+  
   if((opstatus_foot_y > 0.0) && (foot_y != opstatus_foot_y) && (opstatus_last_baseline > 0.0))
     {
       opstatus_last_baseline += (foot_y - opstatus_foot_y);
@@ -1144,7 +1129,6 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
 
   opstatus_foot_y = foot_y;
 
-  // Tree: fixed width/xpos; height tracks window so top stays with valor and bottom with console.
   double tree_h = console_bot - valor_top;
   if(tree_h < 1.0) tree_h = 1.0;
 
@@ -1168,7 +1152,6 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
 
   if(consoleelement && consoleelement->GetBoundaryLine())
     {
-      // Root elements: boundaryline.y is the absolute bottom edge used if CalculePosition re-runs.
       consoleelement->GetBoundaryLine()->width  = panel_w;
       consoleelement->GetBoundaryLine()->height = console_h;
       consoleelement->GetBoundaryLine()->y      = console_bot;
@@ -1218,7 +1201,6 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
       form_filters.ApplyGeometry();
     }
 
-  // Avoid remasure/paint under an active modal (TextBackdrop disabled while compositing).
   if(!GEN_USERINTERFACE.Element_IsModalActive())
     {
       InternetStatus_ApplyGeometry(W);
@@ -1226,8 +1208,6 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
 
   if(!compose) return true;
 
-  // Canvas was recreated empty on UpdateSize / live drag: wipe background and dirty EVERY layout
-  // element so tree / toolbar / flex panels all repaint at the new geometry.
   GEN_USERINTERFACE.Layout_PutBackground();
   GEN_USERINTERFACE.Elements_SetToRedraw();
 
@@ -1268,11 +1248,6 @@ bool XTRACEMONITOR::Console_SeedStartupLines()
 
   consoleelement->Clear();
 
-  consoleelement->PrintColor(UI_ELEMENT_CONSOLE_COLOR_GREEN, NL("XTraceMonitor ready."));
-  consoleelement->PrintColor(UI_ELEMENT_CONSOLE_COLOR_GRAY,  NL("------------------------------------------------"));
-  consoleelement->PrintColor(UI_ELEMENT_CONSOLE_COLOR_BLUE,  NL("UI_ELEMENT_CONSOLE layout loaded."));
-  consoleelement->PrintColor(UI_ELEMENT_CONSOLE_COLOR_GRAY,  NL("Next: wire XTrace feed and remaining UI."));
-
   return true;
 }
 
@@ -1298,7 +1273,7 @@ bool XTRACEMONITOR::Valor_Resolve()
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool XTRACEMONITOR::Valor_Seed()
-* @brief      Seeds sample status rows into the "valor" property list.
+* @brief      Clears the "valor" property list (no sample rows — filled by live status later).
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the operation is successful; otherwise false.
@@ -1309,18 +1284,6 @@ bool XTRACEMONITOR::Valor_Seed()
   if(!valorelement) return false;
 
   valorelement->Clear();
-
-  valorelement->Add(NL("S.O. version")       , NL("Windows 11 Pro 10.0.26300 (x64)"));
-  valorelement->Add(NL("Public IP")          , NL("203.0.113.42"));
-  valorelement->Add(NL("Serial")             , NL("XTM-2026-000417"));
-  valorelement->Add(NL("Local IPs")          , NL("192.168.1.24, 10.0.0.7"));
-  valorelement->Add(NL("User")               , NL("SirGraham"));
-  valorelement->Add(NL("Domain user")        , NL("ENDORASOFT\\sirgraham"));
-  valorelement->Add(NL("Manager server")     , NL("manager.endorasoft.local:8443"));
-  valorelement->Add(NL("Operability Status") , NL("Operative"));
-  valorelement->Add(NL("APP version")        , NL("1.0.0"));
-  valorelement->Add(NL("Last report")        , NL("2026-10-31 17:54:00"));
-
   GEN_USERINTERFACE.Elements_SetToRedraw(valorelement);
 
   return true;
@@ -1340,7 +1303,6 @@ bool XTRACEMONITOR::Valor_UpdateSplitter()
 {
   if(!valorelement || !cursor || !button[XTRACEMONITOR_BUTTON_MOUSE]) return false;
 
-  // GEN modal: property-list splitter under the dialog must not steal the pointer.
   if(GEN_USERINTERFACE.Element_ModalBlocksInteraction(valorelement))
     {
       if(valorelement->IsSplitDragging()) valorelement->Split_EndDrag();
@@ -1373,7 +1335,6 @@ bool XTRACEMONITOR::Valor_UpdateSplitter()
     }
    else
     {
-      // Grab only on the press transition, so dragging INTO the splitter from elsewhere does not grab it.
       if(pressed && !valor_prevpressed)
         {
           if(valorelement->HitTestSplitter(local_x, local_y, valorelement->GetBoundaryLine()->width, valorelement->GetBoundaryLine()->height))
@@ -1410,7 +1371,7 @@ bool XTRACEMONITOR::Tree_Resolve()
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool XTRACEMONITOR::Tree_Seed()
-* @brief      Seeds a sample hierarchy into the "tree" element.
+* @brief      Seeds the tree with All, Local (no internet), CFG [origins], and one UART node.
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the operation is successful; otherwise false.
@@ -1421,77 +1382,134 @@ bool XTRACEMONITOR::Tree_Seed()
   if(!treeelement) return false;
 
   treeelement->Clear();
+  tree_uart_node = NULL;
 
-  // Optional per-node icons (PNG): drawn at height == sizefont in front of the label.
   UI_ELEMENT_TREE_NODE* all = treeelement->AddNode(NULL, NL("All"), NL("tree_icon_all.png"));
   if(!all) return false;
 
   treeelement->AddNode(all, NL("# Local (no internet)"), NL("tree_icon_local.png"));
-  treeelement->AddNode(all, NL("Home [88.14.204.122]"), NL("tree_icon_home.png"));
 
-  // Rich sample: many IPs + deep children with long labels to exercise generic H/V scroll.
-  static const XCHAR* ips[] =
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  const int norigins = cfg.GetOriginCount();
+
+  for(int i=0; i<norigins; i++)
     {
-      NL("IP [37.189.128.248]"),
-      NL("IP [46.189.241.182]"),
-      NL("IP [79.117.197.73]"),
-      NL("IP [83.38.7.165]"),
-      NL("IP [83.56.150.31]"),
-      NL("IP [85.85.131.24]"),
-      NL("IP* [83.38.38.127]"),
-      NL("IP* [85.192.82.189]"),
-      NL("IP [91.200.12.44]"),
-      NL("IP [103.21.244.17]"),
-      NL("IP [151.80.33.210]"),
-      NL("IP [185.199.108.153]"),
-      NL("IP [198.51.100.77]"),
-      NL("IP [203.0.113.90]"),
-      NL("IP [212.64.18.5]"),
-    };
+      XTRACEMONITOR_CFG_ORIGIN origin;
+      if(!cfg.GetOrigin(i, origin)) continue;
+      if(origin.name.IsEmpty()) continue;
 
-  for(XDWORD i=0; i<(XDWORD)(sizeof(ips) / sizeof(ips[0])); i++)
-    {
-      UI_ELEMENT_TREE_NODE* ip = treeelement->AddNode(all, (XCHAR*)ips[i], NL("tree_icon_ip.png"));
-      if(!ip) continue;
-
-      UI_ELEMENT_TREE_NODE* trace = treeelement->AddNode(ip, NL("Trace A — uplink via edge-router.primary"), NL("tree_icon_trace.png"));
-      treeelement->AddNode(ip, NL("Trace B — secondary path (failover)"), NL("tree_icon_trace.png"));
-
-      if(trace)
+      XSTRING display_ip = origin.ip;
+      if(display_ip.IsEmpty() && !origin.url.IsEmpty())
         {
-          UI_ELEMENT_TREE_NODE* sess = treeelement->AddNode(trace, NL("Session peer [192.168.1.24] NAT"), NL("tree_icon_session.png"));
-          treeelement->AddNode(trace, NL("Session peer [10.0.0.7] NAT"), NL("tree_icon_session.png"));
-          treeelement->AddNode(trace, NL("Session peer [172.16.4.88] DMZ"), NL("tree_icon_session.png"));
-
-          if(sess)
+          DIOIP resolved;
+          if(GEN_DIODNSRESOLVER.ResolveURL(origin.url.Get(), resolved))
             {
-              UI_ELEMENT_TREE_NODE* flow = treeelement->AddNode(sess, NL("Flow TCP/443 → cdn.endorasoft.local"), NL("tree_icon_flow.png"));
-              treeelement->AddNode(sess, NL("Flow UDP/1194 → vpn.endorasoft.local"), NL("tree_icon_flow.png"));
-
-              if(flow)
-                {
-                  treeelement->AddNode(flow, NL("Packet sample #001 — SYN/ACK handshake complete"), NL("tree_icon_packet.png"));
-                  treeelement->AddNode(flow, NL("Packet sample #002 — TLS ClientHello (SNI)"), NL("tree_icon_packet.png"));
-                  treeelement->Expand(flow);
-                }
-
-              treeelement->Expand(sess);
+              resolved.GetXString(display_ip);
             }
-
-          treeelement->Expand(trace);
         }
 
-      treeelement->Expand(ip);
+      XSTRING label = origin.name;
+      if(origin.showip && !display_ip.IsEmpty())
+        {
+          label.Format(NL("%s (%s)"), origin.name.Get(), display_ip.Get());
+        }
+
+     
+      XCHAR* icon = NL("tree_icon_ip.png");
+      if(!display_ip.IsEmpty())
+        {
+         
+          bool is_local = (display_ip.Find(NL("192.168."), 0, true) == 0) ||
+                          (display_ip.Find(NL("10.")     , 0, true) == 0) ||
+                          (display_ip.Find(NL("127.")    , 0, true) == 0);
+          if(!is_local && (display_ip.Find(NL("172."), 0, true) == 0))
+            {            
+              XSTRING second;
+              int     dot1 = display_ip.Find(NL("."), 0, true);
+              int     dot2 = (dot1 >= 0) ? display_ip.Find(NL("."), dot1 + 1, true) : -1;
+              if((dot1 >= 0) && (dot2 > dot1))
+                {
+                  display_ip.Copy(dot1 + 1, dot2, second);
+                  int octet = second.ConvertToInt();
+                  if((octet >= 16) && (octet <= 31)) is_local = true;
+                }
+            }
+          icon = is_local ? NL("tree_icon_packet.png") : NL("tree_icon_ip.png");
+        }
+
+      treeelement->AddNode(all, label.Get(), icon);
     }
 
-  treeelement->AddNode(all, NL("UART STM32 F0"), NL("tree_icon_uart.png"));
-  treeelement->AddNode(all, NL("UART STM32 F4 (long label overflow check)"), NL("tree_icon_uart.png"));
+  XSTRING uart_label;
+  Tree_BuildUARTLabel(uart_label);
+  tree_uart_node = treeelement->AddNode(all, uart_label.Get(), NL("tree_icon_uart.png"));
 
   treeelement->Expand(all);
   treeelement->SetSelected(all);
 
   GEN_USERINTERFACE.Elements_SetToRedraw(treeelement);
 
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::Tree_BuildUARTLabel(XSTRING& out)
+* @brief      Builds the single UART tree label from the active uartport vs [target] type UART.
+* @ingroup    UTILITIES
+*
+* @param[out] out : "UART" or "UART <TargetName>" when the serial line matches a Target.
+*
+* @return     bool : true always (out is always filled).
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::Tree_BuildUARTLabel(XSTRING& out)
+{
+  out = NL("UART");
+
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  XSTRING* uart = cfg.GetUARTPort();
+  if(!uart || uart->IsEmpty()) return true;
+
+  const int ntargets = cfg.GetTargetCount();
+  for(int i=0; i<ntargets; i++)
+    {
+      XTRACEMONITOR_CFG_TARGET target;
+
+      if(!cfg.GetTarget(i, target)) continue;
+      if(target.type != XTRACEMONITOR_CFG_TARGETTYPE_UART) continue;
+      if(target.name.IsEmpty() || target.uartconfig.IsEmpty()) continue;
+     
+      if(uart->Compare(target.uartconfig.Get()) != 0) continue;
+
+      out.Format(NL("UART %s"), target.name.Get());
+      return true;
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::Tree_UpdateUARTLabel()
+* @brief      Refreshes the single UART tree node label after uartport / Target changes.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the node was updated; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::Tree_UpdateUARTLabel()
+{
+  if(!treeelement || !tree_uart_node) return false;
+
+  XSTRING label;
+  Tree_BuildUARTLabel(label);
+  if(!tree_uart_node->text.Compare(label.Get())) return true;
+
+  tree_uart_node->text.Set(label.Get());
+  GEN_USERINTERFACE.Elements_SetToRedraw(treeelement);
   return true;
 }
 
@@ -1536,8 +1554,6 @@ bool XTRACEMONITOR::BrandMonitor_RepaintAfterChrome()
   GRP2DCANVAS*   canvas      = skin_canvas->GetCanvas();
   if(!canvas) return false;
 
-  // Opaque page wipe under the brand AABB so repeated alpha blits do not compound.
-  // Never paint into the valor band (top = VALOR_TOP): that was erasing the propertylist header.
   double x = brand_monitor->GetXPosition();
   double y = brand_monitor->GetYPosition();
   double w = brand_monitor->GetBoundaryLine()->width;
@@ -1562,15 +1578,12 @@ bool XTRACEMONITOR::BrandMonitor_RepaintAfterChrome()
     }
 
   GRP2DCOLOR_RGBA8 pagecol(pr, pg, pb, 255);
-  int wi = (int)w; if(wi < 1) wi = 1;
-  int hi = (int)(bottom - top); if(hi < 1) hi = 1;
-  for(int py = 0; py < hi; py++)
-    {
-      for(int px = 0; px < wi; px++)
-        {
-          canvas->PutPixel(left + (double)px, top + (double)py, (const GRP2DCOLOR*)&pagecol);
-        }
-    }
+  GRP2DCOLOR_RGBA8 noline(0, 0, 0, 0);
+
+  canvas->SetFillColor(&pagecol);
+  canvas->SetLineColor(&noline);
+  canvas->SetLineWidth(1.0f);
+  canvas->Rectangle(left, bottom, left + w, top, true);
 
   brand_monitor->SetMustReDraw(true);
   return skin_canvas->Draw(brand_monitor);
@@ -1709,17 +1722,14 @@ bool XTRACEMONITOR::InternetStatus_WipeCluster(double left, double top, double r
       pb = (XBYTE)page->GetBlue();
     }
 
-  // PutPixel = copy_pixel (opaque). Rectangle fill can alpha-blend and leave glyph residue.
+  // Opaque page wipe every DrawFrame (after chrome). Use AGG Rectangle — PutPixel over the
+  // ~280×70 cluster alone was tens of thousands of copy_pixel calls per frame at idle.
   GRP2DCOLOR_RGBA8 pagecol(pr, pg, pb, 255);
-  int wi = (int)(right - left); if(wi < 1) wi = 1;
-  int hi = (int)(bottom - top); if(hi < 1) hi = 1;
-  for(int py = 0; py < hi; py++)
-    {
-      for(int px = 0; px < wi; px++)
-        {
-          canvas->PutPixel(left + (double)px, top + (double)py, (const GRP2DCOLOR*)&pagecol);
-        }
-    }
+  GRP2DCOLOR_RGBA8 noline(0, 0, 0, 0);
+  canvas->SetFillColor(&pagecol);
+  canvas->SetLineColor(&noline);
+  canvas->SetLineWidth(1.0f);
+  canvas->Rectangle(left, bottom, right, top, true);
   return true;
 }
 
@@ -1957,21 +1967,21 @@ bool XTRACEMONITOR::InternetStatus_Update(bool force)
   XSTRING state_line;
   if(online)
     {
-      state_line.Format(NL("Conexion a internet · %u ms"), latency);
+      state_line.Format(_L("Conexion a internet · %u ms"), latency);
     }
    else
     {
-      state_line.Set(NL("Conexion a internet"));
+      state_line.Set(_L("Conexion a internet"));
     }
 
   XSTRING ip_line;
   if(online && publicip && !publicip->IsEmpty())
     {
-      ip_line.Format(NL("IP Publica: %s"), publicip->Get());
+      ip_line.Format(_L("IP Publica: %s"), publicip->Get());
     }
    else
     {
-      ip_line.Set(NL("IP Publica: --"));
+      ip_line.Set(_L("IP Publica: --"));
     }
 
   XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
@@ -1991,11 +2001,11 @@ bool XTRACEMONITOR::InternetStatus_Update(bool force)
   XSTRING udp_line;
   if(!target_name.IsEmpty())
     {
-      udp_line.Format(NL("UDP Port: %d · %s"), udp_port, target_name.Get());
+      udp_line.Format(_L("UDP Port: %d · %s"), udp_port, target_name.Get());
     }
    else
     {
-      udp_line.Format(NL("UDP Port: %d"), udp_port);
+      udp_line.Format(_L("UDP Port: %d"), udp_port);
     }
 
   UI_SKINCANVAS* skin = NULL;
@@ -2398,7 +2408,7 @@ bool XTRACEMONITOR::Tree_UpdateInput()
 * @return     bool : true if the operation is successful; otherwise false.
 *
 *---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible)
+bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible, XCHAR* legend_element_name)
 {
   if(!element) return false;
 
@@ -2436,7 +2446,11 @@ bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible)
                   for(XDWORD k=0; k<kids->GetSize(); k++)
                     {
                       UI_ELEMENT* kid = kids->Get(k);
-                      if(kid && kid->GetType() == UI_ELEMENT_TYPE_ANIMATION) skin->DiscardAnimBackdrop(kid);
+                      if(kid && kid->GetType() == UI_ELEMENT_TYPE_ANIMATION)
+                        {
+                          skin->DiscardAnimBackdrop(kid);
+                          ((UI_ELEMENT_ANIMATION*)kid)->Stop();
+                        }
                       if(kid && kid->GetType() == UI_ELEMENT_TYPE_TEXT)      skin->DiscardTextBackdrop(kid);
                     }
                 }
@@ -2458,7 +2472,8 @@ bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible)
               double bottom = UI_BOUNDARYLINE_EdgeBottom(y, h) + pad;
 
               // Cap wipe at the shared legend top so page fill never paints through the caption.
-              UI_ELEMENT* legend = GEN_USERINTERFACE.Element_Get(NL("runstop-lbl"), UI_ELEMENT_TYPE_FORM);
+              XCHAR* legend_name = legend_element_name ? legend_element_name : NL("runstop-lbl");
+              UI_ELEMENT* legend = GEN_USERINTERFACE.Element_Get(legend_name, UI_ELEMENT_TYPE_FORM);
               if(legend && legend->GetBoundaryLine())
                 {
                   double legend_top = UI_BOUNDARYLINE_EdgeTop(legend->GetYPosition(), legend->GetBoundaryLine()->height);
@@ -2490,11 +2505,100 @@ bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible)
       return true;
     }
 
+  // Restart sprite loops on the face that becomes visible (Filtro_Figuras twin).
+  XVECTOR<UI_ELEMENT*>* compose = element->GetComposeElements();
+  if(compose)
+    {
+      for(XDWORD c=0; c<compose->GetSize(); c++)
+        {
+          UI_ELEMENT* option = compose->Get(c);
+          if(!option) continue;
+          XVECTOR<UI_ELEMENT*>* kids = option->GetComposeElements();
+          if(!kids) continue;
+          for(XDWORD k=0; k<kids->GetSize(); k++)
+            {
+              UI_ELEMENT* kid = kids->Get(k);
+              if(kid && kid->GetType() == UI_ELEMENT_TYPE_ANIMATION)
+                {
+                  UI_ELEMENT_ANIMATION* anim = (UI_ELEMENT_ANIMATION*)kid;
+                  if(anim->GetComposeElements() && anim->GetComposeElements()->GetSize() > 1)
+                    anim->Play();
+                }
+            }
+        }
+    }
+
   GEN_USERINTERFACE.Elements_SetToRedraw(element, true);
 
   return true;
 }
 
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::Filters_IsNonDefaultCommitted()
+* @brief      True when committed CFG [filters] differs from factory defaults (text on or any level off).
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::Filters_IsNonDefaultCommitted()
+{
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+
+  if(cfg.Filters_IsTextActive()) return true;
+
+  const int used = cfg.Filters_GetLevels() & (XTRACEMONITOR_CFG_FILTER_LEVEL_BLACK  |
+                                              XTRACEMONITOR_CFG_FILTER_LEVEL_PURPLE |
+                                              XTRACEMONITOR_CFG_FILTER_LEVEL_GREEN  |
+                                              XTRACEMONITOR_CFG_FILTER_LEVEL_BLUE   |
+                                              XTRACEMONITOR_CFG_FILTER_LEVEL_RED    |
+                                              XTRACEMONITOR_CFG_FILTER_LEVEL_GRAY);
+  const int all  = (XTRACEMONITOR_CFG_FILTER_LEVEL_BLACK  |
+                    XTRACEMONITOR_CFG_FILTER_LEVEL_PURPLE |
+                    XTRACEMONITOR_CFG_FILTER_LEVEL_GREEN  |
+                    XTRACEMONITOR_CFG_FILTER_LEVEL_BLUE   |
+                    XTRACEMONITOR_CFG_FILTER_LEVEL_RED    |
+                    XTRACEMONITOR_CFG_FILTER_LEVEL_GRAY);
+
+  return (used != all);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::Toolbar_ApplyFilterBtnVisibility()
+* @brief      Shows static Filtre or animated Filtro_Figuras twin from committed [filters] state.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::Toolbar_ApplyFilterBtnVisibility()
+{
+  UI_ELEMENT* filter_btn        = GEN_USERINTERFACE.Element_Get(NL("filter-btn")       , UI_ELEMENT_TYPE_MULTIOPTION);
+  UI_ELEMENT* filter_active_btn = GEN_USERINTERFACE.Element_Get(NL("filter-active-btn"), UI_ELEMENT_TYPE_MULTIOPTION);
+  UI_ELEMENT* lbl               = GEN_USERINTERFACE.Element_Get(NL("filter-lbl")       , UI_ELEMENT_TYPE_FORM);
+
+  const bool custom = Filters_IsNonDefaultCommitted();
+
+  if(custom)
+    {
+      Toolbar_SlotSetVisible(filter_btn       , false, NL("filter-lbl"));
+      Toolbar_SlotSetVisible(filter_active_btn, true , NL("filter-lbl"));
+    }
+   else
+    {
+      Toolbar_SlotSetVisible(filter_active_btn, false, NL("filter-lbl"));
+      Toolbar_SlotSetVisible(filter_btn       , true , NL("filter-lbl"));
+    }
+
+  if(lbl) lbl->SetVisible(true);
+
+  GEN_USERINTERFACE.ResetPreselect();
+
+  return (filter_btn != NULL) || (filter_active_btn != NULL);
+}
 
 
 /**-------------------------------------------------------------------------------------------------------------------
@@ -2732,7 +2836,7 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
    else
     InternetStatus_RepaintAfterChrome();
 
-  OpStatus_Log(light ? NL("Color Theme: Light.") : NL("Color Theme: Dark."));
+  OpStatus_Log(light ? _L("Color Theme: Light.") : _L("Color Theme: Dark."));
   return true;
 }
 
@@ -3194,39 +3298,39 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
   if(!name->Compare(NL("stop-btn"), true))
     {
       Toolbar_SetWorkingMode(false);
-      OpStatus_Log(NL("workingmode off (paused)."));
+      OpStatus_Log(_L("Workingmode off (paused)."));
       return true;
     }
 
   if(!name->Compare(NL("run-btn"), true))
     {
       Toolbar_SetWorkingMode(true);
-      OpStatus_Log(NL("workingmode on."));
+      OpStatus_Log(_L("Workingmode on."));
       return true;
     }
 
   if(!name->Compare(NL("clear-btn"), true))
     {
       if(consoleelement) consoleelement->Clear();
-      OpStatus_Log(NL("Clear."));
+      OpStatus_Log(_L("Clear console."));
       return true;
     }
 
   if(!name->Compare(NL("delstatus-btn"), true))
     {
-      OpStatus_Log(NL("Del status (TODO)."));
+      OpStatus_Log(_L("Del var status."));
       return true;
     }
 
   if(!name->Compare(NL("dyndns-btn"), true))
     {
-      OpStatus_Log(NL("DynDNS (TODO)."));
+      OpStatus_Log(_L("Ajusta DynDNS (TODO)."));
       return true;
     }
 
   if(!name->Compare(NL("save-btn"), true))
     {
-      OpStatus_Log(NL("Save (TODO)."));
+      OpStatus_Log(_L("Save console."));
       return true;
     }
 
@@ -3481,6 +3585,7 @@ void XTRACEMONITOR::Clean()
   valorelement           = NULL;
   valor_prevpressed      = false;
   treeelement            = NULL;
+  tree_uart_node         = NULL;
   tree_prevpressed       = false;
   opstatus_form          = NULL;
   opstatus_text          = NULL;

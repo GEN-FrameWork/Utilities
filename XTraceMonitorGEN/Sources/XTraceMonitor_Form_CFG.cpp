@@ -298,10 +298,11 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   place_child(config_modal_btn_cancel , btn_x + (btn_w + gap) * 2.0, btn_local_y, btn_w, btn_h);
 
   // Color Theme — left; DynDNS — right; same top edge + space-evenly gap rhythm.
+  // CONTENT_TOP/BOTTOM (XTraceMonitor.h) are the shared modal band; Filters anchors to them too.
   const double theme_x = XTRACEMONITOR_CONFIGMODAL_PAD;
-  const double theme_y = 316.0; // bottom trim; top/title fixed
   const double theme_w = 180.0;
   const double theme_h = 96.0;
+  const double theme_y = XTRACEMONITOR_CONFIGMODAL_CONTENT_TOP - theme_h;
   const double theme_row_h = 24.0;                       // radiobutton row height (XML)
   const double theme_gap = (theme_h - (theme_row_h * 2.0)) / 3.0;  // space-evenly gap = 16
   place_child((UI_ELEMENT*)color_theme_group, theme_x, theme_y, theme_w, theme_h);
@@ -1708,6 +1709,7 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   if(uart_ok)
     {
       uartport_committed = uartport_draft;
+      owner->Tree_UpdateUARTLabel();
       owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado y tema aplicado."));
     }
    else
