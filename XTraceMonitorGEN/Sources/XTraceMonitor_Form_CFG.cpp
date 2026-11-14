@@ -731,10 +731,14 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
 
   if(show)
     {
-      // One app modal at a time (same Element_SetModal slot as Filters).
+      // One app modal at a time (same Element_SetModal slot as Filters / About).
       if(owner->form_filters.IsVisible())
         {
           owner->form_filters.Show(false);
+        }
+      if(owner->form_about.IsVisible())
+        {
+          owner->form_about.Show(false);
         }
 
       if(!ApplyGeometry()) return false;

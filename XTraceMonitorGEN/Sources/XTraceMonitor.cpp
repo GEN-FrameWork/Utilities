@@ -333,6 +333,7 @@ bool XTRACEMONITOR::AppProc_Update()
 
           case XTRACEMONITOR_XFSMSTATE_INI    : form_cfg.Tick();
                                                 form_filters.Tick();
+                                                form_about.Tick();
 
                                                 if(!GEN_USERINTERFACE.Element_IsModalActive())
                                                   {
@@ -525,7 +526,11 @@ bool XTRACEMONITOR::UpdateInput()
 
           if(GEN_USERINTERFACE.Element_IsModalActive())
             {
-              if(!bar_owned)
+              if(form_about.IsVisible() && form_about.GenUrl_HitTest(click_x, click_y))
+                {
+                  form_about.OpenGenFrameworkPage();
+                }
+               else if(!bar_owned)
                 {
                   GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_SELECCTION, click_x, click_y);
                 }
@@ -533,6 +538,10 @@ bool XTRACEMONITOR::UpdateInput()
            else if(OpStatus_HitTest(click_x, click_y))
             {
               OpStatus_OnClick();
+            }
+           else if(form_about.BrandToolbar_HitTest(click_x, click_y))
+            {
+              form_about.Show(true);
             }
            else if(!bar_owned)
             {
@@ -949,6 +958,12 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       return false;
     }
 
+  form_about.SetOwner(this);
+  if(!form_about.Resolve())
+    {
+      return false;
+    }
+
   ApplyColorTheme(XTRACEMONITOR_CFG::GetInstance(false).GetColorTheme());
 
 
@@ -956,6 +971,9 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
 
   Toolbar_ApplyRunStopVisibility();
   Toolbar_ApplyFilterBtnVisibility();
+
+  // Seed modal group titles + fit legends/netstatus for the startup language (e.g. default chi).
+  UserInterface_AfterLanguageChange();
 
   OpStatus_Log(NL("XTraceMonitor ready."));
 
@@ -1037,7 +1055,13 @@ bool XTRACEMONITOR::DrawFrame()
               chrome->Elements_SetToRedraw();
             }
           chrome_theme_dirty = false;
+          if(netstatus_repair_frames < 5) netstatus_repair_frames = 5;
         }
+    }
+
+  if(size_relaid && (netstatus_repair_frames < 5))
+    {
+      netstatus_repair_frames = 5;
     }
 
   canvas->ReleaseDrawFramerate();
@@ -1078,7 +1102,7 @@ bool XTRACEMONITOR::DrawFrame()
 *             console; top fixed with valor), brand_monitor horizontal position. Toolbar and other chrome
 *             stay at design geometry. Custom chrome buttons track via UpdateCFGChromesButtonsPosition.
 * @param[in]  compose : When true (DrawFrame), wipe background and dirty all elements. When false
-*             (CHANGESIZE inside UpdateSize), geometry only — UpdateSize already PutBackground+Update.
+*             (CHANGESIZE inside UpdateSize), geometry only _ UpdateSize already PutBackground+Update.
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the operation is successful; otherwise false.
@@ -1201,6 +1225,11 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
       form_filters.ApplyGeometry();
     }
 
+  if(form_about.IsVisible())
+    {
+      form_about.ApplyGeometry();
+    }
+
   if(!GEN_USERINTERFACE.Element_IsModalActive())
     {
       InternetStatus_ApplyGeometry(W);
@@ -1273,7 +1302,7 @@ bool XTRACEMONITOR::Valor_Resolve()
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool XTRACEMONITOR::Valor_Seed()
-* @brief      Clears the "valor" property list (no sample rows — filled by live status later).
+* @brief      Clears the "valor" property list (no sample rows _ filled by live status later).
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the operation is successful; otherwise false.
@@ -1384,10 +1413,10 @@ bool XTRACEMONITOR::Tree_Seed()
   treeelement->Clear();
   tree_uart_node = NULL;
 
-  UI_ELEMENT_TREE_NODE* all = treeelement->AddNode(NULL, NL("All"), NL("tree_icon_all.png"));
+  UI_ELEMENT_TREE_NODE* all = treeelement->AddNode(NULL, NL("All"), NL("tree/all.png"));
   if(!all) return false;
 
-  treeelement->AddNode(all, NL("# Local (no internet)"), NL("tree_icon_local.png"));
+  treeelement->AddNode(all, NL("# Local (no internet)"), NL("tree/local.png"));
 
   XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
   const int norigins = cfg.GetOriginCount();
@@ -1415,7 +1444,7 @@ bool XTRACEMONITOR::Tree_Seed()
         }
 
      
-      XCHAR* icon = NL("tree_icon_ip.png");
+      XCHAR* icon = NL("tree/ip.png");
       if(!display_ip.IsEmpty())
         {
          
@@ -1434,7 +1463,7 @@ bool XTRACEMONITOR::Tree_Seed()
                   if((octet >= 16) && (octet <= 31)) is_local = true;
                 }
             }
-          icon = is_local ? NL("tree_icon_packet.png") : NL("tree_icon_ip.png");
+          icon = is_local ? NL("tree/packet.png") : NL("tree/ip.png");
         }
 
       treeelement->AddNode(all, label.Get(), icon);
@@ -1442,7 +1471,7 @@ bool XTRACEMONITOR::Tree_Seed()
 
   XSTRING uart_label;
   Tree_BuildUARTLabel(uart_label);
-  tree_uart_node = treeelement->AddNode(all, uart_label.Get(), NL("tree_icon_uart.png"));
+  tree_uart_node = treeelement->AddNode(all, uart_label.Get(), NL("tree/uart.png"));
 
   treeelement->Expand(all);
   treeelement->SetSelected(all);
@@ -1609,7 +1638,7 @@ bool XTRACEMONITOR::InternetStatus_Resolve()
 
   if(!netstatus_form || !netstatus_led || !netstatus_state || !netstatus_ip || !netstatus_udp) return false;
 
-  // Compact fixed box — never show scroll chrome even if form default overflow is AUTO.
+  // Compact fixed box _ never show scroll chrome even if form default overflow is AUTO.
   netstatus_form->Scroll_SetOverflow(UI_PROPERTY_SCROLLEABLE_TYPE_ALL, UI_OVERFLOW_HIDDEN);
   netstatus_form->Scroll_SetActivate(UI_PROPERTY_SCROLLEABLE_TYPE_HORIZONTAL, false);
   netstatus_form->Scroll_SetActivate(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL  , false);
@@ -1657,7 +1686,7 @@ bool XTRACEMONITOR::InternetStatus_Resolve()
   set_ink_and_plate(netstatus_ip);
   set_ink_and_plate(netstatus_udp);
 
-  // Opaque LED fill from the start — tiny forms without fill are page-wiped as "legend strips".
+  // Opaque LED fill from the start _ tiny forms without fill are page-wiped as "legend strips".
   if(netstatus_led->GetBackgroundColor())
     {
       netstatus_led->GetBackgroundColor()->SetRed(120);
@@ -1669,11 +1698,12 @@ bool XTRACEMONITOR::InternetStatus_Resolve()
     }
   netstatus_led->SetVisible(true);
   netstatus_prev_valid = false;
+  netstatus_ghost_frames = 0;
 
   if(netstatus_timer) netstatus_timer->Reset();
 
   #ifdef APPFLOW_EXTENDED_INTERNETSTATUS_ACTIVE
-  // GEN already polls connection / public IP on APPFLOW_EXTENDED's background path —
+  // GEN already polls connection / public IP on APPFLOW_EXTENDED's background path _
   // tighten cadence a bit so the LED tracks sooner than the default 30s / 3600s.
   {
     APPFLOWEXTENDED_INTERNETSTATUS* inet = APPFLOW_EXTENDED.GetInternetStatus();
@@ -1722,8 +1752,9 @@ bool XTRACEMONITOR::InternetStatus_WipeCluster(double left, double top, double r
       pb = (XBYTE)page->GetBlue();
     }
 
-  // Opaque page wipe every DrawFrame (after chrome). Use AGG Rectangle — PutPixel over the
-  // ~280×70 cluster alone was tens of thousands of copy_pixel calls per frame at idle.
+  // Opaque page wipe for netstatus repair frames only (not every idle DrawFrame).
+  // Prefer AGG Rectangle: PutPixel over the ~280x70 cluster alone was tens of thousands
+  // of copy_pixel calls per invocation.
   GRP2DCOLOR_RGBA8 pagecol(pr, pg, pb, 255);
   GRP2DCOLOR_RGBA8 noline(0, 0, 0, 0);
   canvas->SetFillColor(&pagecol);
@@ -1771,12 +1802,63 @@ bool XTRACEMONITOR::InternetStatus_RepaintAfterChrome()
   if(!netstatus_prev_valid) return false;
   if(GEN_USERINTERFACE.Element_IsModalActive()) return false;
 
-  // Same contract as BrandMonitor_RepaintAfterChrome: chrome's right-button rebuild can
-  // page-wipe this AABB after content Update, which both hid the LED and left partial
-  // glyph ink that the next latency redraw alpha-stacked on top of.
-  if(!InternetStatus_WipeCluster(netstatus_prev_l, netstatus_prev_t, netstatus_prev_r, netstatus_prev_b))
+  // Idle every-frame wipe+PaintCluster (AGG rect + form/LED + 3 text redraws) dropped FPS
+  // from ~60 to ~48. Only repair while the ES→EN ghost union is live, or a short
+  // post-resize / theme window is armed (chrome caption rebuild can stamp this AABB).
+  if((netstatus_ghost_frames <= 0) && (netstatus_repair_frames <= 0))
+    return false;
+
+  double wipe_l = netstatus_prev_l;
+  double wipe_t = netstatus_prev_t;
+  double wipe_r = netstatus_prev_r;
+  double wipe_b = netstatus_prev_b;
+  if(netstatus_ghost_frames > 0)
+    {
+      if(netstatus_ghost_l < wipe_l) wipe_l = netstatus_ghost_l;
+      if(netstatus_ghost_t < wipe_t) wipe_t = netstatus_ghost_t;
+      if(netstatus_ghost_r > wipe_r) wipe_r = netstatus_ghost_r;
+      if(netstatus_ghost_b > wipe_b) wipe_b = netstatus_ghost_b;
+      netstatus_ghost_frames--;
+    }
+  if(netstatus_repair_frames > 0) netstatus_repair_frames--;
+
+  if(!InternetStatus_WipeCluster(wipe_l, wipe_t, wipe_r, wipe_b))
     return false;
   return InternetStatus_PaintCluster();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::InternetStatus_DropStaleCaches()
+* @brief      Drop netstatus rebuild/TextBackdrop caches without restoring (language shrink path).
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::InternetStatus_DropStaleCaches()
+{
+  if(!netstatus_state) return false;
+
+  UI_LAYOUT* layout = netstatus_state->GetLayout();
+  if(!layout || !layout->GetSkin() || layout->GetSkin()->GetDrawMode() != UI_SKIN_DRAWMODE_CANVAS) return false;
+
+  UI_SKINCANVAS* skin = (UI_SKINCANVAS*)layout->GetSkin();
+
+  // PreDraw keeps an existing rebuild area even after the element moves/shrinks. Language change
+  // then dirties the layout and RebuildAllAreas PutBitmapNoAlpha's the OLD Spanish left-border
+  // column back onto the page. Drop those areas without restore while geometry is still old.
+  UI_ELEMENT* els[] = { (UI_ELEMENT*)netstatus_form, (UI_ELEMENT*)netstatus_led,
+                        (UI_ELEMENT*)netstatus_state, (UI_ELEMENT*)netstatus_ip, (UI_ELEMENT*)netstatus_udp };
+  for(XDWORD i = 0; i < (XDWORD)(sizeof(els) / sizeof(els[0])); i++)
+    {
+      if(!els[i]) continue;
+      skin->EraseElementRebuildArea(els[i]);
+    }
+
+  skin->DiscardTextBackdrop(netstatus_state);
+  skin->DiscardTextBackdrop(netstatus_ip);
+  skin->DiscardTextBackdrop(netstatus_udp);
+  return true;
 }
 
 
@@ -1830,7 +1912,7 @@ bool XTRACEMONITOR::InternetStatus_ApplyGeometry(double canvas_w)
   if(frame_right < margin + frame_w) frame_right = margin + frame_w;
   const double frame_x = frame_right - frame_w;
 
-  // Same vertical gap as valor↔console (LAYOUT_GAP): frame bottom sits GAP above valor top.
+  // Same vertical gap as valor_console (LAYOUT_GAP): frame bottom sits GAP above valor top.
   const double gap          = XTRACEMONITOR_LAYOUT_GAP;
   const double frame_bottom = XTRACEMONITOR_LAYOUT_VALOR_TOP - gap;
   const double frame_top    = frame_bottom - frame_h;
@@ -1843,18 +1925,34 @@ bool XTRACEMONITOR::InternetStatus_ApplyGeometry(double canvas_w)
   const double led_x  = frame_x + frame_pad;
   const double text_x = led_x + led + led_gap;
 
-  // Wipe previous/new frame AABB (+1 for border AA).
-  const double pad = 2.0;
+  // Wipe union of previous+new AABB. Language shrink (ES→EN) leaves the old left border /
+  // glyph overhang outside the new frame; pad must cover border AA + FreeType side bearings.
+  const double pad = 6.0;
   const double cluster_l = frame_x - pad;
   const double cluster_t = frame_top - pad;
   const double cluster_r = frame_right + pad;
   const double cluster_b = frame_bottom + pad;
 
+  auto almost_eq = [](double a, double b) -> bool
+    {
+      double d = a - b;
+      if(d < 0.0) d = -d;
+      return d < 0.5;
+    };
+
+  // Latency-only polls often keep the same AABB (same digit count). Skip DropStaleCaches /
+  // wipe / repair arm — still PaintCluster for the new glyphs.
+  bool geom_changed = !netstatus_prev_valid;
   if(netstatus_prev_valid)
     {
-      InternetStatus_WipeCluster(netstatus_prev_l, netstatus_prev_t, netstatus_prev_r, netstatus_prev_b);
+      if(!almost_eq(netstatus_prev_l, cluster_l) ||
+         !almost_eq(netstatus_prev_t, cluster_t) ||
+         !almost_eq(netstatus_prev_r, cluster_r) ||
+         !almost_eq(netstatus_prev_b, cluster_b))
+        {
+          geom_changed = true;
+        }
     }
-  InternetStatus_WipeCluster(cluster_l, cluster_t, cluster_r, cluster_b);
 
   auto place = [](UI_ELEMENT* el, double abs_x, double abs_y, double cw, double ch)
     {
@@ -1877,44 +1975,87 @@ bool XTRACEMONITOR::InternetStatus_ApplyGeometry(double canvas_w)
         }
     };
 
-  if(netstatus_form && netstatus_form->GetBoundaryLine())
-    {
-      place((UI_ELEMENT*)netstatus_form, frame_x, frame_bottom, frame_w, frame_h);
-    }
-
-  place((UI_ELEMENT*)netstatus_led  , led_x , led_y  , led   , led);
-  place((UI_ELEMENT*)netstatus_state, text_x, state_y, text_w, line_h);
-  place((UI_ELEMENT*)netstatus_ip   , text_x, ip_y   , text_w, line_h);
-  place((UI_ELEMENT*)netstatus_udp  , text_x, udp_y  , text_w, line_h);
-
-  if(netstatus_state) netstatus_state->SetTextAlign(UI_ELEMENT_TYPE_ALIGN_LEFT);
-  if(netstatus_ip)    netstatus_ip->SetTextAlign(UI_ELEMENT_TYPE_ALIGN_LEFT);
-  if(netstatus_udp)   netstatus_udp->SetTextAlign(UI_ELEMENT_TYPE_ALIGN_LEFT);
-
   // LED must stay an opaque "paintable" form (h<=28 & w<=120): otherwise RepaintCompactLegendForms
   // treats it as a toolbar legend strip and page-wipes it every frame.
-  if(netstatus_led->GetBackgroundColor())
+  auto paint_led = [&]()
     {
-      const bool online = netstatus_haveinternet;
-      netstatus_led->GetBackgroundColor()->SetRed  (online ? 63  : 248);
-      netstatus_led->GetBackgroundColor()->SetGreen(online ? 185 : 81);
-      netstatus_led->GetBackgroundColor()->SetBlue (online ? 80  : 73);
-      netstatus_led->GetBackgroundColor()->SetAlpha(255);
-      netstatus_led->GetBackgroundColor()->SetValid(true);
-      netstatus_led->SetBackgroundColorSet(true);
-    }
-  if(netstatus_led->GetColor())
-    {
-      netstatus_led->GetBackgroundColor()->CopyTo(netstatus_led->GetColor());
-      netstatus_led->GetColor()->SetValid(true);
-    }
-  netstatus_led->SetVisible(true);
+      if(netstatus_led->GetBackgroundColor())
+        {
+          const bool online = netstatus_haveinternet;
+          netstatus_led->GetBackgroundColor()->SetRed  (online ? 63  : 248);
+          netstatus_led->GetBackgroundColor()->SetGreen(online ? 185 : 81);
+          netstatus_led->GetBackgroundColor()->SetBlue (online ? 80  : 73);
+          netstatus_led->GetBackgroundColor()->SetAlpha(255);
+          netstatus_led->GetBackgroundColor()->SetValid(true);
+          netstatus_led->SetBackgroundColorSet(true);
+        }
+      if(netstatus_led->GetColor() && netstatus_led->GetBackgroundColor())
+        {
+          netstatus_led->GetBackgroundColor()->CopyTo(netstatus_led->GetColor());
+          netstatus_led->GetColor()->SetValid(true);
+        }
+      netstatus_led->SetVisible(true);
+    };
 
-  netstatus_prev_l = cluster_l;
-  netstatus_prev_t = cluster_t;
-  netstatus_prev_r = cluster_r;
-  netstatus_prev_b = cluster_b;
-  netstatus_prev_valid = true;
+  if(geom_changed)
+    {
+      // While elements still sit on the previous (often wider) AABB: drop rebuild snapshots so the
+      // next RebuildAllAreas cannot resurrect the old left border after we shrink.
+      InternetStatus_DropStaleCaches();
+
+      double wipe_l = cluster_l;
+      double wipe_t = cluster_t;
+      double wipe_r = cluster_r;
+      double wipe_b = cluster_b;
+      if(netstatus_prev_valid)
+        {
+          if(netstatus_prev_l < wipe_l) wipe_l = netstatus_prev_l;
+          if(netstatus_prev_t < wipe_t) wipe_t = netstatus_prev_t;
+          if(netstatus_prev_r > wipe_r) wipe_r = netstatus_prev_r;
+          if(netstatus_prev_b > wipe_b) wipe_b = netstatus_prev_b;
+        }
+      InternetStatus_WipeCluster(wipe_l, wipe_t, wipe_r, wipe_b);
+
+      if(netstatus_form && netstatus_form->GetBoundaryLine())
+        {
+          place((UI_ELEMENT*)netstatus_form, frame_x, frame_bottom, frame_w, frame_h);
+        }
+
+      place((UI_ELEMENT*)netstatus_led  , led_x , led_y  , led   , led);
+      place((UI_ELEMENT*)netstatus_state, text_x, state_y, text_w, line_h);
+      place((UI_ELEMENT*)netstatus_ip   , text_x, ip_y   , text_w, line_h);
+      place((UI_ELEMENT*)netstatus_udp  , text_x, udp_y  , text_w, line_h);
+
+      if(netstatus_state) netstatus_state->SetTextAlign(UI_ELEMENT_TYPE_ALIGN_LEFT);
+      if(netstatus_ip)    netstatus_ip->SetTextAlign(UI_ELEMENT_TYPE_ALIGN_LEFT);
+      if(netstatus_udp)   netstatus_udp->SetTextAlign(UI_ELEMENT_TYPE_ALIGN_LEFT);
+
+      paint_led();
+
+      // If we shrank/moved left edge rightward, remember the pre-change wipe for post-chrome frames
+      // (RebuildAllAreas / chrome can still stamp the old border column after this call returns).
+      if(netstatus_prev_valid && (netstatus_prev_l < (cluster_l - 0.5)))
+        {
+          netstatus_ghost_l = wipe_l;
+          netstatus_ghost_t = wipe_t;
+          netstatus_ghost_r = wipe_r;
+          netstatus_ghost_b = wipe_b;
+          netstatus_ghost_frames = 5;
+        }
+
+      netstatus_prev_l = cluster_l;
+      netstatus_prev_t = cluster_t;
+      netstatus_prev_r = cluster_r;
+      netstatus_prev_b = cluster_b;
+      netstatus_prev_valid = true;
+
+      // Geometry moved; arm DrawFrame repairs so chrome caption rebuild cannot leave a cropped LED.
+      if(netstatus_repair_frames < 3) netstatus_repair_frames = 3;
+    }
+   else
+    {
+      paint_led();
+    }
 
   InternetStatus_PaintCluster();
   return true;
@@ -1967,21 +2108,21 @@ bool XTRACEMONITOR::InternetStatus_Update(bool force)
   XSTRING state_line;
   if(online)
     {
-      state_line.Format(_L("Conexion a internet · %u ms"), latency);
+      state_line.Format(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_CONEXION_A_INTERNET_MS), latency);
     }
    else
     {
-      state_line.Set(_L("Conexion a internet"));
+      state_line.Set(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_CONEXION_A_INTERNET));
     }
 
   XSTRING ip_line;
   if(online && publicip && !publicip->IsEmpty())
     {
-      ip_line.Format(_L("IP Publica: %s"), publicip->Get());
+      ip_line.Format(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_IP_PUBLICA), publicip->Get());
     }
    else
     {
-      ip_line.Set(_L("IP Publica: --"));
+      ip_line.Set(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_IP_PUBLICA_2));
     }
 
   XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
@@ -2001,11 +2142,11 @@ bool XTRACEMONITOR::InternetStatus_Update(bool force)
   XSTRING udp_line;
   if(!target_name.IsEmpty())
     {
-      udp_line.Format(_L("UDP Port: %d · %s"), udp_port, target_name.Get());
+      udp_line.Format(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_UDP_PORT), udp_port, target_name.Get());
     }
    else
     {
-      udp_line.Format(_L("UDP Port: %d"), udp_port);
+      udp_line.Format(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_UDP_PORT_2), udp_port);
     }
 
   UI_SKINCANVAS* skin = NULL;
@@ -2018,8 +2159,11 @@ bool XTRACEMONITOR::InternetStatus_Update(bool force)
     {
       if(!el || !el->GetText()) return false;
       if(!force_set && !last.Compare(now.Get())) return false;
-      // Restore TextBackdrop (if any) before swapping the string — GEN Draw_Text alpha-blends.
-      if(skin) skin->PrepareTextContentChange(el);
+      // Never PrepareTextContentChange here: it PutBitmapNoAlpha's the previous language's
+      // TextBackdrop (and may restore a stale wider FormBackdrop) right before ApplyGeometry
+      // shrinks the frame — one line of Spanish ink then survives ES→EN. Opaque cluster wipe
+      // + Discard in PaintCluster is the erase path for this widget.
+      if(skin) skin->DiscardTextBackdrop(el);
       el->GetText()->Set(now.Get());
       last = now;
       el->SetMustReDraw(true);
@@ -2050,7 +2194,7 @@ bool XTRACEMONITOR::InternetStatus_Update(bool force)
         }
     }
 
-  // Content and/or LED change → remasure + right-pack (UDP/latency/IP widths differ) then repaint.
+  // Content and/or LED change _ remasure + right-pack (UDP/latency/IP widths differ) then repaint.
   if(any || online_changed || force)
     {
       if(GetMainScreen())
@@ -2230,7 +2374,7 @@ bool XTRACEMONITOR::OpStatus_ApplyGeometry(XDWORD visible_lines)
       double prev_baseline = (opstatus_last_baseline > 0.0f) ? opstatus_last_baseline : temp_baseline;
       double font_a        = content_h - spacing;
       if(font_a < 1.0f) font_a = sizefont;
-      // With estimate text_h=sizefont+spacing, last ≈ prev_baseline - sizefont + font_a.
+      // With estimate text_h=sizefont+spacing, last _ prev_baseline - sizefont + font_a.
       opstatus_last_baseline = prev_baseline - sizefont + font_a;
       opstatus_line_h        = content_h;
     }
@@ -2356,7 +2500,7 @@ bool XTRACEMONITOR::Tree_UpdateInput()
   if(pressed && !tree_prevpressed)
     {
       // GEN modal form owns the pointer: content under (tree, etc.) must not select while it is up.
-      // Redraw/update of the tree may continue — only interaction is blocked.
+      // Redraw/update of the tree may continue _ only interaction is blocked.
       if(GEN_USERINTERFACE.Element_ModalBlocksInteraction(treeelement))
         {
           tree_prevpressed = pressed;
@@ -2424,7 +2568,7 @@ bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible, XC
   if(!visible)
     {
       // MultiOption has no RestoreOnHide cache (only FORM/MENU do). Layout also has no background
-      // bitmap here, so EraseElementWithLayoutBackground is a no-op — paint the page fill over the
+      // bitmap here, so EraseElementWithLayoutBackground is a no-op _ paint the page fill over the
       // shared slot AABB or alpha Stop/Run stack (green play over leftover red STOP).
       UI_LAYOUT* layout = element->GetLayout();
       if(layout && layout->GetSkin() && layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
@@ -2635,7 +2779,7 @@ bool XTRACEMONITOR::Toolbar_ApplyRunStopVisibility()
   UI_ELEMENT*      lbl      = GEN_USERINTERFACE.Element_Get(NL("runstop-lbl"), UI_ELEMENT_TYPE_FORM);
   UI_ELEMENT_TEXT* txt      = (UI_ELEMENT_TEXT*)GEN_USERINTERFACE.Element_Get(NL("runstop-txt"), UI_ELEMENT_TYPE_TEXT);
 
-  // Hide outgoing first (restore slot), then show incoming — no transition fade.
+  // Hide outgoing first (restore slot), then show incoming _ no transition fade.
   if(workingmode)
     {
       Toolbar_SlotSetVisible(run_btn , false);
@@ -2649,7 +2793,7 @@ bool XTRACEMONITOR::Toolbar_ApplyRunStopVisibility()
 
   // Shared legend stays visible (after both buttons in XML); only the caption swaps.
   // Skip legend churn when the caption is already correct (Ini SetWorkingMode): re-Discard/
-  // wash/redraw was re-centering the glyph box and misaligning vs clear/delstatus/…
+  // wash/redraw was re-centering the glyph box and misaligning vs clear/delstatus/_
   if(lbl) lbl->SetVisible(true);
   if(txt && txt->GetText())
     {
@@ -2664,7 +2808,7 @@ bool XTRACEMONITOR::Toolbar_ApplyRunStopVisibility()
           if(layout && layout->GetSkin() && layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
             skin = (UI_SKINCANVAS*)layout->GetSkin();
 
-          // Parar↔Arrancar: GEN PrepareTextContentChange restores TextBackdrop (+ father form plate)
+          // Parar_Arrancar: GEN PrepareTextContentChange restores TextBackdrop (+ father form plate)
           // before the string swap so glyphs never stack. Do not CalculePosition / remasure.
           if(skin) skin->PrepareTextContentChange(txt);
 
@@ -2685,6 +2829,239 @@ bool XTRACEMONITOR::Toolbar_ApplyRunStopVisibility()
   GEN_USERINTERFACE.ResetPreselect();
 
   return (stop_btn != NULL) || (run_btn != NULL);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::Toolbar_RelayoutLabels()
+* @brief      Widen each toolbar legend to fit the current language string and re-center under its icon.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::Toolbar_RelayoutLabels()
+{
+  struct SLOT
+    {
+      XCHAR* btn_a;
+      XCHAR* btn_b;   // optional shared-slot sibling (run / filter-active)
+      XCHAR* lbl;
+    };
+
+  static SLOT slots[] =
+    {
+      { NL("stop-btn")  , NL("run-btn")           , NL("runstop-lbl")   },
+      { NL("clear-btn") , NULL                    , NL("clear-lbl")     },
+      { NL("delstatus-btn"), NULL                 , NL("delstatus-lbl") },
+      { NL("filter-btn"), NL("filter-active-btn") , NL("filter-lbl")    },
+      { NL("dyndns-btn"), NULL                    , NL("dyndns-lbl")    },
+      { NL("save-btn")  , NULL                    , NL("save-lbl")      },
+      { NL("config-btn"), NULL                    , NL("config-lbl")    },
+    };
+
+  UI_LAYOUT* layout = GEN_USERINTERFACE.Layouts_Get(NL("xtracemonitor"));
+  if(!layout) return false;
+
+  UI_SKINCANVAS* skin = NULL;
+  if(layout->GetSkin() && layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
+    skin = (UI_SKINCANVAS*)layout->GetSkin();
+
+  bool any = false;
+
+  for(XDWORD s=0; s<(XDWORD)(sizeof(slots)/sizeof(slots[0])); s++)
+    {
+      UI_ELEMENT* btn = GEN_USERINTERFACE.Element_Get(slots[s].btn_a, UI_ELEMENT_TYPE_MULTIOPTION);
+      if((!btn || !btn->IsVisible()) && slots[s].btn_b)
+        {
+          btn = GEN_USERINTERFACE.Element_Get(slots[s].btn_b, UI_ELEMENT_TYPE_MULTIOPTION);
+        }
+
+      UI_ELEMENT_FORM* lbl = (UI_ELEMENT_FORM*)GEN_USERINTERFACE.Element_Get(slots[s].lbl, UI_ELEMENT_TYPE_FORM);
+      if(!btn || !lbl || !btn->GetBoundaryLine() || !lbl->GetBoundaryLine()) continue;
+
+      UI_ELEMENT_TEXT* txt = NULL;
+      XVECTOR<UI_ELEMENT*>* kids = lbl->GetComposeElements();
+      if(kids)
+        {
+          for(XDWORD c=0; c<kids->GetSize(); c++)
+            {
+              UI_ELEMENT* kid = kids->Get(c);
+              if(kid && kid->GetType() == UI_ELEMENT_TYPE_TEXT)
+                {
+                  txt = (UI_ELEMENT_TEXT*)kid;
+                  break;
+                }
+            }
+        }
+      if(!txt || !txt->GetText() || txt->GetText()->IsEmpty()) continue;
+
+      XDWORD sf = txt->GetSizeFont();
+      if(sf < 1) sf = 11;
+
+      double tw = 0.0;
+      if(skin) tw = skin->GetWidthString(txt->GetText()->Get(), sf);
+      if(tw < 1.0) tw = (double)txt->GetText()->GetSize() * (double)sf * 0.55;
+
+      double new_w = tw + XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_PAD;
+      if(new_w < XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_MIN_W) new_w = XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_MIN_W;
+
+      const double btn_w = btn->GetBoundaryLine()->width;
+      const double btn_x = btn->GetXPosition();
+      // XML uses top-left of the box; center legend under the 72px icon.
+      const double btn_cx = btn_x + (btn_w * 0.5);
+      const double new_x  = btn_cx - (new_w * 0.5);
+      const double lbl_y  = lbl->GetYPosition();
+      const double lbl_h  = lbl->GetBoundaryLine()->height > 0.0 ? lbl->GetBoundaryLine()->height : 14.0;
+
+      const double old_w = lbl->GetBoundaryLine()->width;
+      const double old_x = lbl->GetXPosition();
+      double dw = old_w - new_w; if(dw < 0.0) dw = -dw;
+      double dx = old_x - new_x; if(dx < 0.0) dx = -dx;
+      if((dw < 0.5) && (dx < 0.5)) continue;
+
+      // Wipe previous legend AABB (page fill) so a wider DE string does not leave clipped glyphs.
+      if(skin && skin->GetCanvas())
+        {
+          GRP2DCANVAS* canvas = skin->GetCanvas();
+          const double pad = 2.0;
+          double left   = UI_BOUNDARYLINE_EdgeLeft  (old_x, old_w) - pad;
+          double right  = UI_BOUNDARYLINE_EdgeRight (old_x, old_w) + pad;
+          double top    = UI_BOUNDARYLINE_EdgeTop   (lbl_y, lbl_h) - pad;
+          double bottom = UI_BOUNDARYLINE_EdgeBottom(lbl_y, lbl_h) + pad;
+          // Also cover the new AABB if it grew/shifted.
+          double nleft   = UI_BOUNDARYLINE_EdgeLeft  (new_x, new_w) - pad;
+          double nright  = UI_BOUNDARYLINE_EdgeRight (new_x, new_w) + pad;
+          if(nleft  < left)  left  = nleft;
+          if(nright > right) right = nright;
+
+          XBYTE pr = 24, pg = 28, pb = 36, pa = 255;
+          if(layout->GetBackground() && layout->GetBackground()->GetColor() &&
+             layout->GetBackground()->GetColor()->IsValid())
+            {
+              UI_COLOR* page = layout->GetBackground()->GetColor();
+              pr = page->GetRed(); pg = page->GetGreen(); pb = page->GetBlue(); pa = page->GetAlpha();
+            }
+          GRP2DCOLOR_RGBA8 fill(pr, pg, pb, pa);
+          GRP2DCOLOR_RGBA8 noline(0, 0, 0, 0);
+          canvas->SetFillColor(&fill);
+          canvas->SetLineColor(&noline);
+          canvas->SetLineWidth(1.0f);
+          if(bottom > top) canvas->Rectangle(left, bottom, right, top, true);
+
+          // After opaque page wipe: drop TextBackdrop without restore (same as InternetStatus_PaintCluster).
+          skin->DiscardTextBackdrop(txt);
+        }
+
+      lbl->GetBoundaryLine()->x      = new_x;
+      lbl->GetBoundaryLine()->y      = lbl_y;
+      lbl->GetBoundaryLine()->width  = new_w;
+      lbl->GetBoundaryLine()->height = lbl_h;
+      lbl->SetIntrinsicWidth(new_w);
+      lbl->SetIntrinsicHeight(lbl_h);
+      lbl->SetXPosition(new_x);
+      lbl->SetYPosition(lbl_y);
+
+      UI_BOUNDARYLINE* vis = lbl->GetVisibleRect();
+      if(vis)
+        {
+          vis->x = new_x; vis->y = lbl_y; vis->width = new_w; vis->height = lbl_h;
+        }
+
+      // Keep the TEXT child filling the legend form (center align stays in XML).
+      if(txt->GetBoundaryLine())
+        {
+          txt->GetBoundaryLine()->width  = new_w;
+          txt->GetBoundaryLine()->height  = lbl_h;
+          txt->SetIntrinsicWidth(new_w);
+          txt->SetIntrinsicHeight(lbl_h);
+          txt->SetXPosition(new_x);
+          txt->SetYPosition(lbl_y);
+        }
+
+      txt->SetMustReDraw(true);
+      lbl->SetMustReDraw(true);
+      GEN_USERINTERFACE.Elements_SetToRedraw(lbl, true);
+      any = true;
+    }
+
+  return any;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::UserInterface_AfterLanguageChange()
+* @brief      After Layouts_ApplyTranslations: fit toolbar legends, resize netstatus, refresh content dirt.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::UserInterface_AfterLanguageChange()
+{
+  Toolbar_RelayoutLabels();
+
+  // Radiogroup titles are plain XSTRING attributes (not #[TRANSLATE] masks).
+  auto set_group_title = [](XCHAR* name, XTRACEMONITOR_TRANSLATEID id)
+    {
+      UI_ELEMENT_RADIOGROUP* group = (UI_ELEMENT_RADIOGROUP*)GEN_USERINTERFACE.Element_Get(name, UI_ELEMENT_TYPE_RADIOGROUP);
+      if(!group) return;
+      group->SetTitle(TL(id));
+      group->SetMustReDraw(true);
+      GEN_USERINTERFACE.Elements_SetToRedraw(group, true);
+    };
+  set_group_title(NL("color_theme_group") , XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_GROUP_COLOR_THEME);
+  set_group_title(NL("dyndns_group")      , XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_GROUP_DYNDNS);
+  set_group_title(NL("text_filter_group") , XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_GROUP_TEXT_FILTER);
+  set_group_title(NL("level_filter_group"), XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_GROUP_LEVEL_FILTER);
+
+  // Window / chrome caption stays at startup language unless rebuilt here.
+  if(GetMainScreen() && GetMainScreen()->GetTitle())
+    {
+      XSTRING title;
+      title  = TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_WINDOW_TITLE);
+      title += NL(" ");
+      title.AddFormat(NL("%d.%d.%d"), APPLICATION_VERSION, APPLICATION_SUBVERSION, APPLICATION_SUBVERSIONERR);
+      GetMainScreen()->GetTitle()->Set(title.Get());
+
+      UI_LAYOUT* chrome = GEN_USERINTERFACE.Layouts_Get(NL("chrome"));
+      if(!chrome && GetMainScreen()->GetCFGChromesLayout()) chrome = GetMainScreen()->GetCFGChromesLayout();
+      if(chrome)
+        {
+          UI_ELEMENT* title_el = chrome->Elements_Get(UI_ELEMENT_CHROMEROLE_TITLE);
+          if(title_el && title_el->GetType() == UI_ELEMENT_TYPE_TEXT)
+            {
+              UI_ELEMENT_TEXT* title_txt = (UI_ELEMENT_TEXT*)title_el;
+              if(chrome->GetSkin() && chrome->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
+                {
+                  ((UI_SKINCANVAS*)chrome->GetSkin())->PrepareTextContentChange(title_txt);
+                }
+              title_txt->GetText()->Set(title.Get());
+              title_txt->SetMustReDraw(true);
+              GEN_USERINTERFACE.Elements_SetToRedraw(title_txt, true);
+            }
+        }
+    }
+
+  // Dirt translated #[TRANSLATE] labels first. Netstatus remasure/wipe runs AFTER so DropStaleCaches
+  // sees the last Spanish rebuild areas and the ghost wipe covers the post-dirt RebuildAllAreas.
+  UI_LAYOUT* xtm = GEN_USERINTERFACE.Layouts_Get(NL("xtracemonitor"));
+  if(xtm) xtm->Elements_SetToRedraw();
+
+  UI_LAYOUT* cfg = GEN_USERINTERFACE.Layouts_Get(NL("config_modal"));
+  if(cfg) cfg->Elements_SetToRedraw();
+  UI_LAYOUT* flt = GEN_USERINTERFACE.Layouts_Get(NL("filters_modal"));
+  if(flt) flt->Elements_SetToRedraw();
+  UI_LAYOUT* abt = GEN_USERINTERFACE.Layouts_Get(NL("about_modal"));
+  if(abt) abt->Elements_SetToRedraw();
+
+  // TL()-driven netstatus: force refresh + remasure last (DropStaleCaches + ghost frames).
+  InternetStatus_Update(true);
+
+  BrandMonitor_RepaintAfterChrome();
+  if(!GEN_USERINTERFACE.Element_IsModalActive())
+    {
+      InternetStatus_RepaintAfterChrome();
+    }
+  return true;
 }
 
 
@@ -2736,7 +3113,8 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
 
           const bool is_app_layout = (!layout->GetNameID()->Compare(NL("xtracemonitor"), true) ||
                                       !layout->GetNameID()->Compare(NL("config_modal") , true) ||
-                                      !layout->GetNameID()->Compare(NL("filters_modal"), true));
+                                      !layout->GetNameID()->Compare(NL("filters_modal"), true) ||
+                                      !layout->GetNameID()->Compare(NL("about_modal")  , true));
           if(!is_app_layout) continue;
 
           if(layout->GetBackground() && layout->GetBackground()->GetColor())
@@ -2828,6 +3206,10 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
   chrome_theme_dirty = true;
   ApplyColorTheme_RefreshChrome(light);
 
+  // About GEN mark: white on Dark, black on Light.
+  form_about.ApplyTheme(light);
+  if(form_about.IsVisible()) form_about.ApplyGeometry();
+
   GEN_USERINTERFACE.Layout_PutBackground();
   GEN_USERINTERFACE.Elements_SetToRedraw();
   BrandMonitor_RepaintAfterChrome();
@@ -2836,7 +3218,7 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
    else
     InternetStatus_RepaintAfterChrome();
 
-  OpStatus_Log(light ? _L("Color Theme: Light.") : _L("Color Theme: Dark."));
+  OpStatus_Log(light ? TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_COLOR_THEME_LIGHT) : TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_COLOR_THEME_DARK));
   return true;
 }
 
@@ -3065,7 +3447,7 @@ bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
   const UI_ELEMENT_TYPE type = element->GetType();
 
   // Icon faces (toolbar multioption/button + PNG/SVG brand art): never recolor or
-  // SnapshotStyleVisual — that replaced animation plates and hid the glyphs.
+  // SnapshotStyleVisual _ that replaced animation plates and hid the glyphs.
   if((type == UI_ELEMENT_TYPE_IMAGE)      ||
      (type == UI_ELEMENT_TYPE_ANIMATION)  ||
      (type == UI_ELEMENT_TYPE_BUTTON)     ||
@@ -3098,7 +3480,7 @@ bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
     {
       if(!c) return false;
       if(rgb_eq(c, 200, 208, 220) || rgb_eq(c, 40, 44, 52)) return true;
-      // Named label_ink can drift a few LSB after style snapshots — treat near-tokens as theme ink.
+      // Named label_ink can drift a few LSB after style snapshots _ treat near-tokens as theme ink.
       const int r = (int)c->GetRed();
       const int g = (int)c->GetGreen();
       const int b = (int)c->GetBlue();
@@ -3187,8 +3569,8 @@ bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
                 (type == UI_ELEMENT_TYPE_MENU) || (type == UI_ELEMENT_TYPE_OPTION)) &&
                (is_theme_edit_idle(bg) || is_theme_edit_focus(bg)))
         {
-          // Keep focus/idle roles across Dark↔Light; :selected reapply will pick the live one.
-          // COMBO is an EditText subclass with its own type — Puerto UDP/UART must remap too.
+          // Keep focus/idle roles across Dark_Light; :selected reapply will pick the live one.
+          // COMBO is an EditText subclass with its own type _ Puerto UDP/UART must remap too.
           // MENU/OPTION share the edit idle plate (combo dropdowns created before theme remap).
           const bool focused = element->IsSelected();
           const bool popup   = ((type == UI_ELEMENT_TYPE_MENU) || (type == UI_ELEMENT_TYPE_OPTION));
@@ -3211,7 +3593,7 @@ bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
 
   if(changed)
     {
-      // Pseudo-class restyles restore from this snapshot — only refresh when we actually wrote colors.
+      // Pseudo-class restyles restore from this snapshot _ only refresh when we actually wrote colors.
       element->SnapshotStyleVisual();
       element->SetMustReDraw(true);
     }
@@ -3244,7 +3626,7 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
   if(!element) return false;
 
   // Custom chrome caption buttons (defaultwindowschromes.zip). Role may be on the
-  // multioption or on the pressed button child — walk fathers until a chrome role hits.
+  // multioption or on the pressed button child _ walk fathers until a chrome role hits.
   {
     UI_ELEMENT* chrome_el = element;
     while(chrome_el)
@@ -3259,6 +3641,7 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
                                                   if(GEN_XTRANSLATION.IsInitialized() && GEN_XTRANSLATION.SetActual_Next())
                                                     {
                                                       GEN_USERINTERFACE.Layouts_ApplyTranslations();
+                                                      UserInterface_AfterLanguageChange();
                                                       #ifdef APPFLOW_CFG_GENERAL_ACTIVE
                                                       APPFLOW_CFG.Language_PersistActual();
                                                       #endif
@@ -3268,7 +3651,7 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
 
             case UI_ELEMENT_CHROMEROLE_MAXIMIZE : if(GetMainScreen())
                                                     {
-                                                      // Toggle grow ↔ restore (same contract as UI_System / WindowChromes).
+                                                      // Toggle grow _ restore (same contract as UI_System / WindowChromes).
                                                       if(GetMainScreen()->IsClientSizeAtMaximum())
                                                             GetMainScreen()->Maximize(false);
                                                        else GetMainScreen()->Maximize(true);
@@ -3291,46 +3674,47 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
   XSTRING* name = element->GetName();
   if(!name) return false;
 
-  // Config / Filters modals (Accept / Cancel / Predeterminado).
+  // Config / Filters / About modals.
   if(form_cfg.HandleElementSelected(element)) return true;
   if(form_filters.HandleElementSelected(element)) return true;
+  if(form_about.HandleElementSelected(element)) return true;
 
   if(!name->Compare(NL("stop-btn"), true))
     {
       Toolbar_SetWorkingMode(false);
-      OpStatus_Log(_L("Workingmode off (paused)."));
+      OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_WORKINGMODE_OFF_PAUSED));
       return true;
     }
 
   if(!name->Compare(NL("run-btn"), true))
     {
       Toolbar_SetWorkingMode(true);
-      OpStatus_Log(_L("Workingmode on."));
+      OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_WORKINGMODE_ON));
       return true;
     }
 
   if(!name->Compare(NL("clear-btn"), true))
     {
       if(consoleelement) consoleelement->Clear();
-      OpStatus_Log(_L("Clear console."));
+      OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_CLEAR_CONSOLE));
       return true;
     }
 
   if(!name->Compare(NL("delstatus-btn"), true))
     {
-      OpStatus_Log(_L("Del var status."));
+      OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_DEL_VAR_STATUS));
       return true;
     }
 
   if(!name->Compare(NL("dyndns-btn"), true))
     {
-      OpStatus_Log(_L("Ajusta DynDNS (TODO)."));
+      OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_AJUSTA_DYNDNS_TODO));
       return true;
     }
 
   if(!name->Compare(NL("save-btn"), true))
     {
-      OpStatus_Log(_L("Save console."));
+      OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_SAVE_CONSOLE));
       return true;
     }
 
@@ -3606,6 +3990,12 @@ void XTRACEMONITOR::Clean()
   netstatus_prev_r          = 0.0;
   netstatus_prev_b          = 0.0;
   netstatus_prev_valid      = false;
+  netstatus_ghost_l         = 0.0;
+  netstatus_ghost_t         = 0.0;
+  netstatus_ghost_r         = 0.0;
+  netstatus_ghost_b         = 0.0;
+  netstatus_ghost_frames    = 0;
+  netstatus_repair_frames   = 0;
   layout_applied_w          = 0;
   layout_applied_h          = 0;
   resize_recover_frames     = 0;

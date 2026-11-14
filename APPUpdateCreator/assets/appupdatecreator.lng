@@ -1,91 +1,227 @@
-{
-  "languages"       : [ "Spanish" ,
-                        "English" ,
-                        "French"  ,
-                        "German"  ,
-                        "Chinese"
-                      ],
-
-  "translations"    : {
-
-                        "00001" : [ 0,
-                                    "   Version        : %d.\n" ,
-                                    "   Version        : %d.\n" ,
-                                    "   Version        : %d.\n" ,
-                                    "   Version        : %d.\n" ,
-                                    "   Version        : %d.\n"
-                                  ],
-
-                        "00002" : [ 0,
-                                    "   Subversion     : %d.\n" ,
-                                    "   Subversion     : %d.\n" ,
-                                    "   Subversion     : %d.\n" ,
-                                    "   Subversion     : %d.\n" ,
-                                    "   Subversion     : %d.\n"
-                                  ],
-
-                        "00003" : [ 0,
-                                    "   Error Control  : %d.\n" ,
-                                    "   Error Control  : %d.\n" ,
-                                    "   Error Control  : %d.\n" ,
-                                    "   Error Control  : %d.\n" ,
-                                    "   Error Control  : %d.\n"
-                                  ],
-
-                        "00004" : [ 0,
-                                    "   Ini Sistema    : %s.\n" ,
-                                    "   System Init    : %s.\n" ,
-                                    "   Init. système  : %s.\n" ,
-                                    "   System-Init    : %s.\n" ,
-                                    "   系统初始化      : %s.\n"
-                                  ],
-
-                        "00005" : [ 0,
-                                    "   Creando %s en [%s] ...\n" ,
-                                    "   Creating %s in [%s] ...\n" ,
-                                    "   Création de %s dans [%s] ...\n" ,
-                                    "   Erstelle %s in [%s] ...\n" ,
-                                    "   正在 [%s] 中创建 %s...\n"
-                                  ],
-
-                        "00006" : [ 0,
-                                    "   Fichero de actualizacion: %s\n" ,
-                                    "   Update file: %s\n" ,
-                                    "   Fichier de mise à jour: %s\n" ,
-                                    "   Update-Datei: %s\n" ,
-                                    "   更新文件: %s\n"
-                                  ],
-
-                        "00007" : [ 0,
-                                    "   Numero de ficheros      : %d\n" ,
-                                    "   Number of files         : %d\n" ,
-                                    "   Nombre de fichiers      : %d\n" ,
-                                    "   Anzahl der Dateien      : %d\n" ,
-                                    "   文件数量                : %d\n"
-                                  ],
-
-                        "00008" : [ 0,
-                                    "   Tamano de actualizacion : %dk\n" ,
-                                    "   Update size             : %dk\n" ,
-                                    "   Taille de mise à jour   : %dk\n" ,
-                                    "   Update-Größe            : %dk\n" ,
-                                    "   更新大小                : %dk\n"
-                                  ],
-
-                        "00009" : [ 0,
-                                    "   Error! Argumentos erroneos o invalidos.\n" ,
-                                    "   Error! Invalid or incorrect arguments.\n" ,
-                                    "   Erreur! Arguments erronés ou invalides.\n" ,
-                                    "   Fehler! Ungültige oder fehlerhafte Argumente.\n" ,
-                                    "   错误！参数错误或无效。\n"
-                                  ],
-
-                        "00010" : [ 0,
-                                    "  Pulsa una tecla para continuar... (%d)" ,
-                                    "  Press a key to continue... (%d)" ,
-                                    "  Appuyez sur une touche pour continuer... (%d)" ,
-                                    "  Drücken Sie eine Taste, um fortzufahren... (%d)" ,
-                                    "  按任意键继续... (%d)"
-                                  ]
-                      }
-}
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<lng>
+  <languages>
+    <language>Spanish</language>
+    <language>English</language>
+    <language>French</language>
+    <language>German</language>
+    <language>Chinese</language>
+  </languages>
+  <translations>
+    <sentence id="00001" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[   Version        : %d.
+]]>
+      </text>
+      <text lang="English">
+        <![CDATA[   Version        : %d.
+]]>
+      </text>
+      <text lang="French">
+        <![CDATA[   Version        : %d.
+]]>
+      </text>
+      <text lang="German">
+        <![CDATA[   Version        : %d.
+]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[   Version        : %d.
+]]>
+      </text>
+    </sentence>
+    <sentence id="00002" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[   Subversion     : %d.
+]]>
+      </text>
+      <text lang="English">
+        <![CDATA[   Subversion     : %d.
+]]>
+      </text>
+      <text lang="French">
+        <![CDATA[   Subversion     : %d.
+]]>
+      </text>
+      <text lang="German">
+        <![CDATA[   Subversion     : %d.
+]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[   Subversion     : %d.
+]]>
+      </text>
+    </sentence>
+    <sentence id="00003" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[   Error Control  : %d.
+]]>
+      </text>
+      <text lang="English">
+        <![CDATA[   Error Control  : %d.
+]]>
+      </text>
+      <text lang="French">
+        <![CDATA[   Error Control  : %d.
+]]>
+      </text>
+      <text lang="German">
+        <![CDATA[   Error Control  : %d.
+]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[   Error Control  : %d.
+]]>
+      </text>
+    </sentence>
+    <sentence id="00004" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[   Ini Sistema    : %s.
+]]>
+      </text>
+      <text lang="English">
+        <![CDATA[   System Init    : %s.
+]]>
+      </text>
+      <text lang="French">
+        <![CDATA[   Init. système  : %s.
+]]>
+      </text>
+      <text lang="German">
+        <![CDATA[   System-Init    : %s.
+]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[   系统初始化      : %s.
+]]>
+      </text>
+    </sentence>
+    <sentence id="00005" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[   Creando %s en [%s] ...
+]]>
+      </text>
+      <text lang="English">
+        <![CDATA[   Creating %s in [%s] ...
+]]>
+      </text>
+      <text lang="French">
+        <![CDATA[   Création de %s dans [%s] ...
+]]>
+      </text>
+      <text lang="German">
+        <![CDATA[   Erstelle %s in [%s] ...
+]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[   正在 [%s] 中创建 %s...
+]]>
+      </text>
+    </sentence>
+    <sentence id="00006" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[   Fichero de actualizacion: %s
+]]>
+      </text>
+      <text lang="English">
+        <![CDATA[   Update file: %s
+]]>
+      </text>
+      <text lang="French">
+        <![CDATA[   Fichier de mise à jour: %s
+]]>
+      </text>
+      <text lang="German">
+        <![CDATA[   Update-Datei: %s
+]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[   更新文件: %s
+]]>
+      </text>
+    </sentence>
+    <sentence id="00007" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[   Numero de ficheros      : %d
+]]>
+      </text>
+      <text lang="English">
+        <![CDATA[   Number of files         : %d
+]]>
+      </text>
+      <text lang="French">
+        <![CDATA[   Nombre de fichiers      : %d
+]]>
+      </text>
+      <text lang="German">
+        <![CDATA[   Anzahl der Dateien      : %d
+]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[   文件数量                : %d
+]]>
+      </text>
+    </sentence>
+    <sentence id="00008" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[   Tamano de actualizacion : %dk
+]]>
+      </text>
+      <text lang="English">
+        <![CDATA[   Update size             : %dk
+]]>
+      </text>
+      <text lang="French">
+        <![CDATA[   Taille de mise à jour   : %dk
+]]>
+      </text>
+      <text lang="German">
+        <![CDATA[   Update-Größe            : %dk
+]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[   更新大小                : %dk
+]]>
+      </text>
+    </sentence>
+    <sentence id="00009" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[   Error! Argumentos erroneos o invalidos.
+]]>
+      </text>
+      <text lang="English">
+        <![CDATA[   Error! Invalid or incorrect arguments.
+]]>
+      </text>
+      <text lang="French">
+        <![CDATA[   Erreur! Arguments erronés ou invalides.
+]]>
+      </text>
+      <text lang="German">
+        <![CDATA[   Fehler! Ungültige oder fehlerhafte Argumente.
+]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[   错误！参数错误或无效。
+]]>
+      </text>
+    </sentence>
+    <sentence id="00010" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[  Pulsa una tecla para continuar... (%d)]]>
+      </text>
+      <text lang="English">
+        <![CDATA[  Press a key to continue... (%d)]]>
+      </text>
+      <text lang="French">
+        <![CDATA[  Appuyez sur une touche pour continuer... (%d)]]>
+      </text>
+      <text lang="German">
+        <![CDATA[  Drücken Sie eine Taste, um fortzufahren... (%d)]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[  按任意键继续... (%d)]]>
+      </text>
+    </sentence>
+  </translations>
+</lng>

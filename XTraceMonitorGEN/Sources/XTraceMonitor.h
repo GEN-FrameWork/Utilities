@@ -38,6 +38,7 @@
 
 #include "XTraceMonitor_Form_CFG.h"
 #include "XTraceMonitor_Form_Filters.h"
+#include "XTraceMonitor_Form_About.h"
 
 
 
@@ -77,7 +78,7 @@ enum XTRACEMONITOR_BUTTONS
 #define APPLICATION_SUBVERSION                    1
 #define APPLICATION_SUBVERSIONERR                 0
 
-#define APPLICATION_NAMEAPP                       NL("XTraceMonitor")
+#define APPLICATION_NAMEAPP                       NL("eXtended Trace Monitor")
 #define APPLICATION_NAMEFILE                      NL("xtracemonitor")
 
 #define APPLICATION_OWNER                         NL("EndoraSoft")
@@ -101,8 +102,10 @@ enum XTRACEMONITOR_BUTTONS
 #define XTRACEMONITOR_LAYOUT_NETSTATUS_LINE_H      16.0
 #define XTRACEMONITOR_LAYOUT_NETSTATUS_LINE_GAP     2.0
 #define XTRACEMONITOR_LAYOUT_NETSTATUS_LED_GAP      6.0  // LED → "Conexion a internet"
-#define XTRACEMONITOR_LAYOUT_NETSTATUS_TEXT_PAD     0.0  // measure slack inside the frame
+#define XTRACEMONITOR_LAYOUT_NETSTATUS_TEXT_PAD    16.0  // measure slack inside the frame (long EN/DE/FR/CJK lines)
 #define XTRACEMONITOR_LAYOUT_NETSTATUS_FRAME_PAD    6.0  // inner pad LED/text ↔ frame (same chrome as valor)
+#define XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_MIN_W     86.0  // XML default legend width
+#define XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_PAD        8.0  // text ↔ legend form edges
 #define XTRACEMONITOR_NETSTATUS_POLL_MS           1000  // UI refresh from GEN-cached InternetStatus
 
 #define XTRACEMONITOR_OPSTATUS_MAXLINES           20
@@ -174,6 +177,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
 
     friend class                    XTRACEMONITOR_FORM_CFG;
     friend class                    XTRACEMONITOR_FORM_FILTERS;
+    friend class                    XTRACEMONITOR_FORM_ABOUT;
 
     bool                            UpdateInput                             ();
 
@@ -202,6 +206,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            BrandMonitor_RepaintAfterChrome         ();
 
     bool                            InternetStatus_Resolve                  ();
+    bool                            InternetStatus_DropStaleCaches          ();
     bool                            InternetStatus_ApplyGeometry            (double canvas_w);
     bool                            InternetStatus_Update                   (bool force = false);
     bool                            InternetStatus_WipeCluster              (double left, double top, double right, double bottom);
@@ -223,6 +228,8 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            Toolbar_ApplyRunStopVisibility          ();
     bool                            Toolbar_ApplyFilterBtnVisibility        ();
     bool                            Toolbar_SlotSetVisible                  (UI_ELEMENT* element, bool visible, XCHAR* legend_element_name = NULL);
+    bool                            Toolbar_RelayoutLabels                  ();
+    bool                            UserInterface_AfterLanguageChange       ();
     static bool                     Filters_IsNonDefaultCommitted           ();
 
     bool                            ApplySavedScreenGeometry                ();
@@ -286,9 +293,20 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     double                          netstatus_prev_r;
     double                          netstatus_prev_b;
     bool                            netstatus_prev_valid;
+    // After ES→EN shrink, RebuildAllAreas can restore an old left-border column outside the new
+    // AABB. Keep wiping this union for a few post-chrome frames until caches settle.
+    double                          netstatus_ghost_l;
+    double                          netstatus_ghost_t;
+    double                          netstatus_ghost_r;
+    double                          netstatus_ghost_b;
+    int                             netstatus_ghost_frames;
+    // Short post-resize / theme window for chrome caption rebuild vs netstatus AABB.
+    // Must NOT run wipe+PaintCluster every idle DrawFrame (that alone dropped ~60→48 FPS).
+    int                             netstatus_repair_frames;
 
     XTRACEMONITOR_FORM_CFG          form_cfg;
     XTRACEMONITOR_FORM_FILTERS      form_filters;
+    XTRACEMONITOR_FORM_ABOUT        form_about;
 
     int                             layout_applied_w;
     int                             layout_applied_h;

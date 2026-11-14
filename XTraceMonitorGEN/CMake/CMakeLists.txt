@@ -57,6 +57,9 @@ option(DIO_STREAMUART_FEATURE                                   "Stream UART"   
 option(CIPHER_SYMMETRIC_FEATURE                                 "Cipher Symmetric"                                        ON )
 option(CIPHER_SYMMETRIC_AES_FEATURE                             "Cipher Symmetric AES"                                    ON )
 
+# About GEN URL link opens the site via XPROCESSMANAGER::OpenURL (cross-platform).
+option(XPROCESSMANAGER_FEATURE                                  "Process Manager"                                         ON )
+
 
 # --------------------------------------------------------------------
 # Config Application Macro
@@ -91,6 +94,7 @@ list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_CFG.cpp")
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Form_CFG.cpp")
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Form_Filters.cpp")
+list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Form_About.cpp")
 
 
 # --------------------------------------------------------------------

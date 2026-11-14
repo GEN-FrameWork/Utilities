@@ -18,41 +18,43 @@
   <color name="frame_line">70,80,95,255</color>
   <color name="console_back">12,14,18,255</color>
   <color name="label_ink">200,208,220,255</color>
+  <!-- Same light blue as brand/toolbar.png GEN mark (main toolbar). -->
+  <color name="gen_ink">102,153,255,255</color>
 
 
   <stylesheet >xtracemonitor.css</stylesheet>
 
   <layout name="xtracemonitor" backgroundcolor="24,28,36">
 
-    <element name="brand_toolbar" type="image" xpos="16" ypos="126" width="104" height="86" alpha="95">brand_toolbar.png</element>
+    <element name="brand_toolbar" type="image" xpos="16" ypos="126" width="97" height="72" alpha="95">brand/toolbar.png</element>
 
     <element name="stop-btn" type="multioption" xpos="129" ypos="112" width="72" height="72">
       <element type="button" name="stop-btn" selectablestatus="active">
-        <element type="animation"><image width="72" height="72">Stop_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Stop/Active.png</image></element>
       </element>
       <element type="button" name="stop-btn" selectablestatus="preselect">
-        <element type="animation"><image width="72" height="72">Stop_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Stop/Preselected.png</image></element>
       </element>
       <element type="button" name="stop-btn" selectablestatus="selected">
-        <element type="animation"><image width="72" height="72">Stop_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Stop/Pressed.png</image></element>
       </element>
       <element type="button" name="stop-btn" selectablestatus="deactive">
-        <element type="animation"><image width="72" height="72">Stop_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Stop/Disabled.png</image></element>
       </element>
     </element>
 
     <element name="run-btn" type="multioption" xpos="129" ypos="112" width="72" height="72" visible="false">
       <element type="button" name="run-btn" selectablestatus="active">
-        <element type="animation"><image width="72" height="72">Run_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Run/Active.png</image></element>
       </element>
       <element type="button" name="run-btn" selectablestatus="preselect">
-        <element type="animation"><image width="72" height="72">Run_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Run/Preselected.png</image></element>
       </element>
       <element type="button" name="run-btn" selectablestatus="selected">
-        <element type="animation"><image width="72" height="72">Run_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Run/Pressed.png</image></element>
       </element>
       <element type="button" name="run-btn" selectablestatus="deactive">
-        <element type="animation"><image width="72" height="72">Run_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Run/Disabled.png</image></element>
       </element>
     </element>
 
@@ -62,16 +64,16 @@
 
     <element name="clear-btn" type="multioption" xpos="210" ypos="112" width="72" height="72">
       <element type="button" name="clear-btn" selectablestatus="active">
-        <element type="animation"><image width="72" height="72">Clear_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Clear/Active.png</image></element>
       </element>
       <element type="button" name="clear-btn" selectablestatus="preselect">
-        <element type="animation"><image width="72" height="72">Clear_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Clear/Preselected.png</image></element>
       </element>
       <element type="button" name="clear-btn" selectablestatus="selected">
-        <element type="animation"><image width="72" height="72">Clear_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Clear/Pressed.png</image></element>
       </element>
       <element type="button" name="clear-btn" selectablestatus="deactive">
-        <element type="animation"><image width="72" height="72">Clear_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Clear/Disabled.png</image></element>
       </element>
     </element>
     <element name="clear-lbl" type="form" xpos="203" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
@@ -80,16 +82,16 @@
 
     <element name="delstatus-btn" type="multioption" xpos="291" ypos="112" width="72" height="72">
       <element type="button" name="delstatus-btn" selectablestatus="active">
-        <element type="animation"><image width="72" height="72">Del_Status_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Del_Status/Active.png</image></element>
       </element>
       <element type="button" name="delstatus-btn" selectablestatus="preselect">
-        <element type="animation"><image width="72" height="72">Del_Status_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Del_Status/Preselected.png</image></element>
       </element>
       <element type="button" name="delstatus-btn" selectablestatus="selected">
-        <element type="animation"><image width="72" height="72">Del_Status_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Del_Status/Pressed.png</image></element>
       </element>
       <element type="button" name="delstatus-btn" selectablestatus="deactive">
-        <element type="animation"><image width="72" height="72">Del_Status_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Del_Status/Disabled.png</image></element>
       </element>
     </element>
     <element name="delstatus-lbl" type="form" xpos="284" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
@@ -99,226 +101,226 @@
     <!-- After Del status: Filtro, then DynDNS, Save, Configuracion (pitch 81). -->
     <element name="filter-btn" type="multioption" xpos="372" ypos="112" width="72" height="72">
       <element type="button" name="filter-btn" selectablestatus="active">
-        <element type="animation"><image width="72" height="72">Filtros_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Filtros/Active.png</image></element>
       </element>
       <element type="button" name="filter-btn" selectablestatus="preselect">
-        <element type="animation"><image width="72" height="72">Filtros_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Filtros/Preselected.png</image></element>
       </element>
       <element type="button" name="filter-btn" selectablestatus="selected">
-        <element type="animation"><image width="72" height="72">Filtros_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Filtros/Pressed.png</image></element>
       </element>
       <element type="button" name="filter-btn" selectablestatus="deactive">
-        <element type="animation"><image width="72" height="72">Filtros_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Filtros/Disabled.png</image></element>
       </element>
     </element>
 
     <element name="filter-active-btn" type="multioption" xpos="372" ypos="112" width="72" height="72" visible="false">
       <element type="button" name="filter-active-btn" selectablestatus="active">
         <element type="animation" state="play" timedelay="10">
-          <image width="72" height="72">Filtro_Figuras_Active01.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active02.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active03.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active04.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active05.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active06.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active07.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active08.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active09.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active10.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active11.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active12.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active13.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active14.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active15.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active16.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active17.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active18.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active19.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active20.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active21.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active22.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active23.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active24.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active25.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active26.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active27.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active28.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active29.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active30.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active31.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active32.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active33.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active34.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active35.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active36.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active37.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active38.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active39.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active40.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active41.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active42.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active43.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active44.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active45.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active46.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active47.png</image>
-          <image width="72" height="72">Filtro_Figuras_Active48.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active01.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active02.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active03.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active04.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active05.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active06.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active07.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active08.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active09.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active10.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active11.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active12.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active13.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active14.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active15.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active16.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active17.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active18.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active19.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active20.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active21.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active22.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active23.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active24.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active25.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active26.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active27.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active28.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active29.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active30.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active31.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active32.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active33.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active34.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active35.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active36.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active37.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active38.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active39.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active40.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active41.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active42.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active43.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active44.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active45.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active46.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active47.png</image>
+          <image width="72" height="72">Filtro_Figuras/Active48.png</image>
         </element>
       </element>
       <element type="button" name="filter-active-btn" selectablestatus="preselect">
         <element type="animation" state="play" timedelay="10">
-          <image width="72" height="72">Filtro_Figuras_Preselected01.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected02.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected03.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected04.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected05.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected06.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected07.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected08.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected09.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected10.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected11.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected12.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected13.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected14.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected15.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected16.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected17.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected18.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected19.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected20.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected21.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected22.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected23.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected24.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected25.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected26.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected27.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected28.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected29.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected30.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected31.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected32.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected33.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected34.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected35.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected36.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected37.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected38.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected39.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected40.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected41.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected42.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected43.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected44.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected45.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected46.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected47.png</image>
-          <image width="72" height="72">Filtro_Figuras_Preselected48.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected01.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected02.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected03.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected04.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected05.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected06.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected07.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected08.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected09.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected10.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected11.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected12.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected13.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected14.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected15.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected16.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected17.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected18.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected19.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected20.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected21.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected22.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected23.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected24.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected25.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected26.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected27.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected28.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected29.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected30.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected31.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected32.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected33.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected34.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected35.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected36.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected37.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected38.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected39.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected40.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected41.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected42.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected43.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected44.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected45.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected46.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected47.png</image>
+          <image width="72" height="72">Filtro_Figuras/Preselected48.png</image>
         </element>
       </element>
       <element type="button" name="filter-active-btn" selectablestatus="selected">
         <element type="animation" state="play" timedelay="10">
-          <image width="72" height="72">Filtro_Figuras_Pressed01.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed02.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed03.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed04.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed05.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed06.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed07.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed08.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed09.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed10.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed11.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed12.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed13.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed14.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed15.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed16.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed17.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed18.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed19.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed20.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed21.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed22.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed23.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed24.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed25.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed26.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed27.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed28.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed29.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed30.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed31.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed32.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed33.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed34.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed35.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed36.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed37.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed38.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed39.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed40.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed41.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed42.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed43.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed44.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed45.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed46.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed47.png</image>
-          <image width="72" height="72">Filtro_Figuras_Pressed48.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed01.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed02.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed03.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed04.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed05.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed06.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed07.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed08.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed09.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed10.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed11.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed12.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed13.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed14.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed15.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed16.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed17.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed18.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed19.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed20.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed21.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed22.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed23.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed24.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed25.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed26.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed27.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed28.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed29.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed30.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed31.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed32.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed33.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed34.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed35.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed36.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed37.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed38.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed39.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed40.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed41.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed42.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed43.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed44.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed45.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed46.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed47.png</image>
+          <image width="72" height="72">Filtro_Figuras/Pressed48.png</image>
         </element>
       </element>
       <element type="button" name="filter-active-btn" selectablestatus="deactive">
         <element type="animation" state="play" timedelay="10">
-          <image width="72" height="72">Filtro_Figuras_Disabled01.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled02.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled03.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled04.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled05.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled06.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled07.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled08.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled09.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled10.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled11.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled12.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled13.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled14.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled15.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled16.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled17.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled18.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled19.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled20.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled21.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled22.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled23.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled24.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled25.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled26.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled27.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled28.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled29.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled30.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled31.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled32.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled33.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled34.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled35.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled36.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled37.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled38.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled39.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled40.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled41.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled42.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled43.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled44.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled45.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled46.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled47.png</image>
-          <image width="72" height="72">Filtro_Figuras_Disabled48.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled01.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled02.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled03.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled04.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled05.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled06.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled07.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled08.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled09.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled10.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled11.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled12.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled13.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled14.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled15.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled16.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled17.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled18.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled19.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled20.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled21.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled22.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled23.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled24.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled25.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled26.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled27.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled28.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled29.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled30.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled31.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled32.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled33.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled34.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled35.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled36.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled37.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled38.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled39.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled40.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled41.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled42.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled43.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled44.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled45.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled46.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled47.png</image>
+          <image width="72" height="72">Filtro_Figuras/Disabled48.png</image>
         </element>
       </element>
     </element>
@@ -328,16 +330,16 @@
 
     <element name="dyndns-btn" type="multioption" xpos="453" ypos="112" width="72" height="72">
       <element type="button" name="dyndns-btn" selectablestatus="active">
-        <element type="animation"><image width="72" height="72">DynDNS_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">DynDNS/Active.png</image></element>
       </element>
       <element type="button" name="dyndns-btn" selectablestatus="preselect">
-        <element type="animation"><image width="72" height="72">DynDNS_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">DynDNS/Preselected.png</image></element>
       </element>
       <element type="button" name="dyndns-btn" selectablestatus="selected">
-        <element type="animation"><image width="72" height="72">DynDNS_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">DynDNS/Pressed.png</image></element>
       </element>
       <element type="button" name="dyndns-btn" selectablestatus="deactive">
-        <element type="animation"><image width="72" height="72">DynDNS_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">DynDNS/Disabled.png</image></element>
       </element>
     </element>
     <element name="dyndns-lbl" type="form" xpos="446" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
@@ -346,16 +348,16 @@
 
     <element name="save-btn" type="multioption" xpos="534" ypos="112" width="72" height="72">
       <element type="button" name="save-btn" selectablestatus="active">
-        <element type="animation"><image width="72" height="72">Save_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Save/Active.png</image></element>
       </element>
       <element type="button" name="save-btn" selectablestatus="preselect">
-        <element type="animation"><image width="72" height="72">Save_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Save/Preselected.png</image></element>
       </element>
       <element type="button" name="save-btn" selectablestatus="selected">
-        <element type="animation"><image width="72" height="72">Save_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Save/Pressed.png</image></element>
       </element>
       <element type="button" name="save-btn" selectablestatus="deactive">
-        <element type="animation"><image width="72" height="72">Save_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Save/Disabled.png</image></element>
       </element>
     </element>
     <element name="save-lbl" type="form" xpos="527" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
@@ -364,16 +366,16 @@
 
     <element name="config-btn" type="multioption" xpos="615" ypos="112" width="72" height="72">
       <element type="button" name="config-btn" selectablestatus="active">
-        <element type="animation"><image width="72" height="72">Configuracion_Active.png</image></element>
+        <element type="animation"><image width="72" height="72">Configuracion/Active.png</image></element>
       </element>
       <element type="button" name="config-btn" selectablestatus="preselect">
-        <element type="animation"><image width="72" height="72">Configuracion_Preselected.png</image></element>
+        <element type="animation"><image width="72" height="72">Configuracion/Preselected.png</image></element>
       </element>
       <element type="button" name="config-btn" selectablestatus="selected">
-        <element type="animation"><image width="72" height="72">Configuracion_Pressed.png</image></element>
+        <element type="animation"><image width="72" height="72">Configuracion/Pressed.png</image></element>
       </element>
       <element type="button" name="config-btn" selectablestatus="deactive">
-        <element type="animation"><image width="72" height="72">Configuracion_Disabled.png</image></element>
+        <element type="animation"><image width="72" height="72">Configuracion/Disabled.png</image></element>
       </element>
     </element>
     <element name="config-lbl" type="form" xpos="608" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
@@ -423,79 +425,79 @@
              roundrect="8" border-width="1" border-color="frame_line" bckgrdcolor="24,28,36"
              overflow-y="hidden" overflow-x="hidden">
       <element name="config_modal_title" type="text" class="form-title" xpos="16" ypos="486" width="400" height="28"
-               sizefont="18" color="label_ink">Configuracion</element>
+               sizefont="18" color="label_ink">#[TRANSLATE_146]</element>
 
       <element name="color_theme_group" type="radiogroup" class="radio-group" title="Color Theme"
                xpos="24" ypos="316" width="180" height="96">
         <element name="theme_light" type="radiobutton" class="radio-button" width="156" height="24"
                  allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
           <element name="theme_light_anim" type="animation" width="16" height="16">
-            <image width="16" height="16">radio_off.png</image>
-            <image width="16" height="16">radio_on.png</image>
+            <image width="16" height="16">controls/radio_off.png</image>
+            <image width="16" height="16">controls/radio_on.png</image>
           </element>
-          <element name="theme_light_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Light theme</element>
+          <element name="theme_light_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_128]</element>
         </element>
         <element name="theme_dark" type="radiobutton" class="radio-button" width="156" height="24"
                  allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
           <element name="theme_dark_anim" type="animation" width="16" height="16">
-            <image width="16" height="16">radio_off.png</image>
-            <image width="16" height="16">radio_on.png</image>
+            <image width="16" height="16">controls/radio_off.png</image>
+            <image width="16" height="16">controls/radio_on.png</image>
           </element>
-          <element name="theme_dark_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Dark theme</element>
+          <element name="theme_dark_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_129]</element>
         </element>
       </element>
 
       <element name="chk_savescreenposition" type="checkbox" class="config-check" xpos="244" ypos="400" width="280" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_savescreenposition_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_savescreenposition_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Guardar posicion de la ventana</element>
+        <element name="chk_savescreenposition_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_130]</element>
       </element>
       <element name="chk_savescreensize" type="checkbox" class="config-check" xpos="244" ypos="364" width="280" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_savescreensize_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_savescreensize_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Guardar tamano de la ventana</element>
+        <element name="chk_savescreensize_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_131]</element>
       </element>
 
       <element name="chk_adddatetimeconsole" type="checkbox" class="config-check" xpos="24" ypos="270" width="320" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_adddatetimeconsole_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_adddatetimeconsole_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Anadir Fecha y hora en la linea</element>
+        <element name="chk_adddatetimeconsole_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_132]</element>
       </element>
       <element name="chk_addipconsole" type="checkbox" class="config-check" xpos="24" ypos="234" width="320" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_addipconsole_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_addipconsole_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Anadir IP en la Linea</element>
+        <element name="chk_addipconsole_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_133]</element>
       </element>
       <element name="chk_texttracking" type="checkbox" class="config-check" xpos="24" ypos="198" width="320" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_texttracking_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_texttracking_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Seguimiento de texto</element>
+        <element name="chk_texttracking_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_134]</element>
       </element>
 
       <element name="lbl_udplistenport" type="text" class="config-label" xpos="24" ypos="186" width="320" height="18"
-               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Puerto UDP</element>
+               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_152]</element>
       <element name="edit_udplistenport" type="combo" class="config-edit" xpos="24" ypos="152" width="320" height="28"
                sizefont="13" maxsizetext="5" inputmode="numeric" valuemin="1" valuemax="65535" valuestep="1"
                selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
                bckgrdcolor="64,72,84" color="label_ink">10001</element>
 
       <element name="lbl_uartport" type="text" class="config-label" xpos="496" ypos="186" width="320" height="18"
-               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Puerto UART</element>
+               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_153]</element>
       <element name="edit_uartport" type="combo" class="config-edit" xpos="496" ypos="152" width="320" height="28"
                sizefont="13" maxsizetext="48"
                selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
@@ -506,19 +508,19 @@
       <element name="chk_dyndns_active" type="checkbox" class="config-check" xpos="496" ypos="308" width="320" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_dyndns_active_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_dyndns_active_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Activar DynDNS</element>
+        <element name="chk_dyndns_active_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_135]</element>
       </element>
       <element name="lbl_dyndns_login" type="text" class="config-label" xpos="496" ypos="270" width="200" height="18"
-               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Login</element>
+               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_154]</element>
       <element name="edit_dyndns_login" type="edittext" class="config-edit" xpos="496" ypos="236" width="320" height="28"
                sizefont="13" maxsizetext="64"
                selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
                bckgrdcolor="64,72,84" color="label_ink"></element>
       <element name="lbl_dyndns_password" type="text" class="config-label" xpos="496" ypos="192" width="200" height="18"
-               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Password</element>
+               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_155]</element>
       <element name="edit_dyndns_password" type="edittext" class="config-edit" xpos="496" ypos="158" width="320" height="28"
                sizefont="13" maxsizetext="64" inputmode="password"
                selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
@@ -526,58 +528,58 @@
 
       <element name="config_modal_btn_default" type="multioption" xpos="262" ypos="16" width="160" height="53">
         <element type="button" name="config_modal_btn_default" selectablestatus="active" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Active.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_136]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado/Active.png</image></element>
         </element>
         <element type="button" name="config_modal_btn_default" selectablestatus="preselect" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Preselected.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_136]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado/Preselected.png</image></element>
         </element>
         <element type="button" name="config_modal_btn_default" selectablestatus="selected" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Pressed.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_136]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado/Pressed.png</image></element>
         </element>
         <element type="button" name="config_modal_btn_default" selectablestatus="deactive" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Disabled.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_136]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado/Disabled.png</image></element>
         </element>
       </element>
 
       <element name="config_modal_btn_accept" type="multioption" xpos="438" ypos="16" width="160" height="53">
         <element type="button" name="config_modal_btn_accept" selectablestatus="active" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Active.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Active.png</image></element>
         </element>
         <element type="button" name="config_modal_btn_accept" selectablestatus="preselect" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Preselected.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Preselected.png</image></element>
         </element>
         <element type="button" name="config_modal_btn_accept" selectablestatus="selected" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Pressed.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Pressed.png</image></element>
         </element>
         <element type="button" name="config_modal_btn_accept" selectablestatus="deactive" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Disabled.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Disabled.png</image></element>
         </element>
       </element>
 
       <element name="config_modal_btn_cancel" type="multioption" xpos="614" ypos="16" width="160" height="53">
         <element type="button" name="config_modal_btn_cancel" selectablestatus="active" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Active.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_138]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar/Active.png</image></element>
         </element>
         <element type="button" name="config_modal_btn_cancel" selectablestatus="preselect" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Preselected.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_138]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar/Preselected.png</image></element>
         </element>
         <element type="button" name="config_modal_btn_cancel" selectablestatus="selected" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Pressed.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_138]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar/Pressed.png</image></element>
         </element>
         <element type="button" name="config_modal_btn_cancel" selectablestatus="deactive" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Disabled.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_138]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar/Disabled.png</image></element>
         </element>
       </element>
     </element>
@@ -590,17 +592,17 @@
              roundrect="8" border-width="1" border-color="frame_line" bckgrdcolor="24,28,36"
              overflow-y="hidden" overflow-x="hidden">
       <element name="filters_modal_title" type="text" class="form-title" xpos="16" ypos="486" width="400" height="28"
-               sizefont="18" color="label_ink">Filtros</element>
+               sizefont="18" color="label_ink">#[TRANSLATE_147]</element>
 
       <element name="text_filter_group" type="radiogroup" class="radio-group" title="Text Filter"
                xpos="24" ypos="430" width="320" height="110"></element>
       <element name="chk_textfilter_active" type="checkbox" class="config-check" xpos="40" ypos="400" width="280" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_textfilter_active_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_textfilter_active_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">Enable text filter</element>
+        <element name="chk_textfilter_active_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_139]</element>
       </element>
       <element name="edit_textfilter" type="edittext" class="config-edit" xpos="40" ypos="364" width="260" height="24"
                sizefont="12" maxsizetext="128"
@@ -613,106 +615,156 @@
       <element name="chk_level_0" type="checkbox" class="config-check" xpos="40" ypos="330" width="200" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_level_0_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_level_0_txt" type="text" sizefont="12" color="200,208,220" backgroundcolor="0,0,0,0">0 - Black</element>
+        <element name="chk_level_0_txt" type="text" sizefont="12" color="200,208,220" backgroundcolor="0,0,0,0">#[TRANSLATE_140]</element>
       </element>
       <element name="chk_level_1" type="checkbox" class="config-check" xpos="40" ypos="294" width="200" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_level_1_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_level_1_txt" type="text" sizefont="12" color="80,160,255" backgroundcolor="0,0,0,0">1 - Blue</element>
+        <element name="chk_level_1_txt" type="text" sizefont="12" color="80,160,255" backgroundcolor="0,0,0,0">#[TRANSLATE_141]</element>
       </element>
       <element name="chk_level_2" type="checkbox" class="config-check" xpos="40" ypos="258" width="200" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_level_2_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_level_2_txt" type="text" sizefont="12" color="80,200,100" backgroundcolor="0,0,0,0">2 - Green</element>
+        <element name="chk_level_2_txt" type="text" sizefont="12" color="80,200,100" backgroundcolor="0,0,0,0">#[TRANSLATE_142]</element>
       </element>
       <element name="chk_level_3" type="checkbox" class="config-check" xpos="260" ypos="330" width="200" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_level_3_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_level_3_txt" type="text" sizefont="12" color="180,120,220" backgroundcolor="0,0,0,0">3 - Purple</element>
+        <element name="chk_level_3_txt" type="text" sizefont="12" color="180,120,220" backgroundcolor="0,0,0,0">#[TRANSLATE_143]</element>
       </element>
       <element name="chk_level_4" type="checkbox" class="config-check" xpos="260" ypos="294" width="200" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_level_4_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_level_4_txt" type="text" sizefont="12" color="230,80,80" backgroundcolor="0,0,0,0">4 - Red</element>
+        <element name="chk_level_4_txt" type="text" sizefont="12" color="230,80,80" backgroundcolor="0,0,0,0">#[TRANSLATE_144]</element>
       </element>
       <element name="chk_level_5" type="checkbox" class="config-check" xpos="260" ypos="258" width="200" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
         <element name="chk_level_5_anim" type="animation" width="16" height="16">
-          <image width="16" height="16">checkbox_off.png</image>
-          <image width="16" height="16">checkbox_on.png</image>
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
-        <element name="chk_level_5_txt" type="text" sizefont="12" color="140,148,160" backgroundcolor="0,0,0,0">5 - Gray</element>
+        <element name="chk_level_5_txt" type="text" sizefont="12" color="140,148,160" backgroundcolor="0,0,0,0">#[TRANSLATE_145]</element>
       </element>
 
       <element name="filters_modal_btn_default" type="multioption" xpos="262" ypos="16" width="160" height="53">
         <element type="button" name="filters_modal_btn_default" selectablestatus="active" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Active.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_136]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado/Active.png</image></element>
         </element>
         <element type="button" name="filters_modal_btn_default" selectablestatus="preselect" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Preselected.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_136]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado/Preselected.png</image></element>
         </element>
         <element type="button" name="filters_modal_btn_default" selectablestatus="selected" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Pressed.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_136]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado/Pressed.png</image></element>
         </element>
         <element type="button" name="filters_modal_btn_default" selectablestatus="deactive" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Predeterminado</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado_Disabled.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_136]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Predeterminado/Disabled.png</image></element>
         </element>
       </element>
 
       <element name="filters_modal_btn_accept" type="multioption" xpos="438" ypos="16" width="160" height="53">
         <element type="button" name="filters_modal_btn_accept" selectablestatus="active" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Active.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Active.png</image></element>
         </element>
         <element type="button" name="filters_modal_btn_accept" selectablestatus="preselect" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Preselected.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Preselected.png</image></element>
         </element>
         <element type="button" name="filters_modal_btn_accept" selectablestatus="selected" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Pressed.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Pressed.png</image></element>
         </element>
         <element type="button" name="filters_modal_btn_accept" selectablestatus="deactive" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Aceptar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar_Disabled.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Disabled.png</image></element>
         </element>
       </element>
 
       <element name="filters_modal_btn_cancel" type="multioption" xpos="614" ypos="16" width="160" height="53">
         <element type="button" name="filters_modal_btn_cancel" selectablestatus="active" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Active.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_138]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar/Active.png</image></element>
         </element>
         <element type="button" name="filters_modal_btn_cancel" selectablestatus="preselect" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Preselected.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_138]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar/Preselected.png</image></element>
         </element>
         <element type="button" name="filters_modal_btn_cancel" selectablestatus="selected" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Pressed.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_138]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar/Pressed.png</image></element>
         </element>
         <element type="button" name="filters_modal_btn_cancel" selectablestatus="deactive" width="160" height="53">
-          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">Cancelar</element>
-          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar_Disabled.png</image></element>
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_138]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar/Disabled.png</image></element>
+        </element>
+      </element>
+    </element>
+
+  </layout>
+
+  <layout name="about_modal">
+
+    <element name="about_modal" type="form" class="about-modal" xpos="340" ypos="595" width="520" height="490" visible="0"
+             roundrect="8" border-width="1" border-color="frame_line" bckgrdcolor="24,28,36"
+             overflow-y="hidden" overflow-x="hidden">
+      <element name="about_modal_title" type="text" class="form-title" xpos="16" ypos="446" width="488" height="28"
+               sizefont="18" color="label_ink">#[TRANSLATE_156]</element>
+
+      <element name="about_brand" type="image" xpos="212" ypos="330" width="96" height="96" alpha="90">brand/about.png</element>
+
+      <element name="about_app_name" type="text" xpos="24" ypos="292" width="472" height="22"
+               sizefont="16" color="label_ink" text-align="center" backgroundcolor="0,0,0,0">eXtended Trace Monitor</element>
+      <element name="about_version" type="text" xpos="24" ypos="268" width="472" height="20"
+               sizefont="13" color="gen_ink" text-align="center" backgroundcolor="0,0,0,0">0.1.0</element>
+
+      <element name="about_gen_tagline" type="text" xpos="24" ypos="220" width="472" height="20"
+               sizefont="12" color="label_ink" text-align="center" backgroundcolor="0,0,0,0">#[TRANSLATE_157]</element>
+
+      <!-- GEN Framework mark: white (dark theme) / black (light theme). Visibility swapped in Form_About::ApplyTheme. -->
+      <element name="about_gen_dark"  type="image" xpos="218" ypos="140" width="84" height="70" alpha="95">brand/gen_dark.png</element>
+      <element name="about_gen_light" type="image" xpos="218" ypos="140" width="84" height="70" alpha="95" visible="0">brand/gen_light.png</element>
+
+      <element name="about_gen_url" type="text" xpos="24" ypos="112" width="472" height="18"
+               sizefont="12" color="gen_ink" text-align="center" backgroundcolor="0,0,0,0">http://www.genframework.com</element>
+
+      <element name="about_copyright" type="text" xpos="24" ypos="70" width="472" height="20"
+               sizefont="12" color="label_ink" text-align="center" backgroundcolor="0,0,0,0">Copyright (c) EndoraSoft S.L.</element>
+
+      <element name="about_modal_btn_accept" type="multioption" xpos="180" ypos="16" width="160" height="53">
+        <element type="button" name="about_modal_btn_accept" selectablestatus="active" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Active.png</image></element>
+        </element>
+        <element type="button" name="about_modal_btn_accept" selectablestatus="preselect" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Preselected.png</image></element>
+        </element>
+        <element type="button" name="about_modal_btn_accept" selectablestatus="selected" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Pressed.png</image></element>
+        </element>
+        <element type="button" name="about_modal_btn_accept" selectablestatus="deactive" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Disabled.png</image></element>
         </element>
       </element>
     </element>

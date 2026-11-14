@@ -52,6 +52,7 @@
 #include "XLanguage_ISO_639_3.h"
 #include "XTranslation_GEN.h"
 #include "XTranslation.h"
+#include "XFileXML.h"
 #include "APPFlowConsole.h"
 #include "APPFlowExtended.h"
 
@@ -1459,6 +1460,52 @@ static void TRANSLATESCAN_Report(int color, XCHAR* mask, ...);
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         static void TRANSLATESCAN_RestoreChunkEdgeWhitespace(XSTRING& original, XSTRING& translated)
+* @brief      Keep leading/trailing whitespace of a printf-split chunk after MT (avoids "scan%s").
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static void TRANSLATESCAN_RestoreChunkEdgeWhitespace(XSTRING& original, XSTRING& translated)
+{
+  int osize;
+  int lead  = 0;
+  int trail = 0;
+
+  if(original.IsEmpty() || translated.IsEmpty()) return;
+
+  osize = (int)original.GetSize();
+
+  while(lead < osize)
+    {
+      XCHAR ch = original.Get()[lead];
+      if((ch != _C(' ')) && (ch != _C('\t')) && (ch != _C('\r')) && (ch != _C('\n'))) break;
+      lead++;
+    }
+
+  while(trail < osize)
+    {
+      XCHAR ch = original.Get()[osize - 1 - trail];
+      if((ch != _C(' ')) && (ch != _C('\t')) && (ch != _C('\r')) && (ch != _C('\n'))) break;
+      trail++;
+    }
+
+  if((lead == 0) && (trail == 0)) return;
+
+  translated.DeleteNoCharacters(NL(" \t\r\n"), 0, XSTRINGCONTEXT_FROM_FIRST);
+  translated.DeleteNoCharacters(NL(" \t\r\n"), 0, XSTRINGCONTEXT_TO_END);
+
+  XSTRING fixed;
+
+  for(int c=0; c<lead; c++)  fixed.Add(original.Get()[c]);
+  fixed.Add(translated);
+  for(int c=0; c<trail; c++) fixed.Add(original.Get()[osize - trail + c]);
+
+  translated = fixed;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         static bool TRANSLATESCAN_SegmentNeedsTranslation(XSTRING& segment)
 * @brief      True when the segment has letters worth sending to the web translator.
 * @ingroup    APPLICATION
@@ -1575,6 +1622,7 @@ static bool TRANSLATESCAN_TranslatePreservingMasks(DIOSCRAPERWEBTRANSLATION& scr
 
                       part = result.GetTranslation();
                       if(part.IsEmpty()) return false;
+                      TRANSLATESCAN_RestoreChunkEdgeWhitespace(chunk, part);
 
                       if(detected && !havedetected && result.GetSourceLanguage())
                         {
@@ -1623,6 +1671,7 @@ static bool TRANSLATESCAN_TranslatePreservingMasks(DIOSCRAPERWEBTRANSLATION& scr
 
           part = result.GetTranslation();
           if(part.IsEmpty()) return false;
+          TRANSLATESCAN_RestoreChunkEdgeWhitespace(chunk, part);
 
           if(detected && !havedetected && result.GetSourceLanguage())
             {
@@ -2689,17 +2738,37 @@ class TRANSLATESCAN_APPEXISTING
     TRANSLATESCAN_APPEXISTING()
     {
       idnumber       = 0;
+      fixed          = 0;
       ntext          = 0;
       original_ntext = 0;
-      endbracket     = -1;
     }
 
     int     idnumber;
     XSTRING idname;
+    int     fixed;
     XSTRING text[16];
     int     ntext;
     int     original_ntext;
-    int     endbracket;
+};
+
+
+class TRANSLATESCAN_LNGDOC
+{
+  public:
+    TRANSLATESCAN_LNGDOC()
+    {
+      nlang = 0;
+    }
+
+   ~TRANSLATESCAN_LNGDOC()
+    {
+      sentences.DeleteContents();
+      sentences.DeleteAll();
+    }
+
+    XSTRING                             languages[16];
+    int                                 nlang;
+    XVECTOR<TRANSLATESCAN_APPEXISTING*> sentences;
 };
 
 
@@ -4130,28 +4199,278 @@ static bool TRANSLATESCAN_CreateMinTranslateIDHeader(XPATH& idheader, XSTRING& a
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         static void TRANSLATESCAN_LngElementText(XFILEXMLELEMENT* element, XSTRING& out)
+* @brief      Gather element value plus direct CDATA/unnamed child text (XFILEXML CDATA model).
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static void TRANSLATESCAN_LngElementText(XFILEXMLELEMENT* element, XSTRING& out)
+{
+  out.Empty();
+  if(!element) return;
+  element->GetText(out, false);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static void TRANSLATESCAN_LngSanitizeCDATA(XSTRING& text)
+* @brief      Break ]]> so a single CDATA section stays well-formed.
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static void TRANSLATESCAN_LngSanitizeCDATA(XSTRING& text)
+{
+  int at = 0;
+
+  while((at = text.Find(NL("]]>"), true, at)) != XSTRING_NOTFOUND)
+    {
+      text.DeleteCharacters((XDWORD)(at + 2), 1);
+      text.Insert(NL(" "), (XDWORD)(at + 2));
+      at += 3;
+    }
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_LngLoad(XPATH& lngpath, TRANSLATESCAN_LNGDOC& doc)
+* @brief      Load an XML .lng catalogue into doc (languages + sentences).
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_LngLoad(XPATH& lngpath, TRANSLATESCAN_LNGDOC& doc)
+{
+  XFILEXML xml;
+
+  doc.nlang = 0;
+  doc.sentences.DeleteContents();
+  doc.sentences.DeleteAll();
+
+  if(!xml.Open(lngpath)) return false;
+  if(!xml.ReadAndDecodeAllLines())
+    {
+      xml.Close();
+      return false;
+    }
+
+  XFILEXMLELEMENT* root = xml.GetRoot();
+  if(!root || root->GetName().Compare(NL("lng")))
+    {
+      xml.Close();
+      return false;
+    }
+
+  XFILEXMLELEMENT* languages    = NULL;
+  XFILEXMLELEMENT* translations = NULL;
+
+  for(int c=0; c<root->GetNElements(); c++)
+    {
+      XFILEXMLELEMENT* child = root->GetElement(c);
+      if(!child || (child->GetType() != XFILEXMLELEMENTTYPE_NORMAL)) continue;
+      if(!child->GetName().Compare(NL("languages")))    languages = child;
+      if(!child->GetName().Compare(NL("translations"))) translations = child;
+    }
+
+  if(languages)
+    {
+      for(int c=0; c<languages->GetNElements(); c++)
+        {
+          XFILEXMLELEMENT* language = languages->GetElement(c);
+          XSTRING          name;
+
+          if(!language || (language->GetType() != XFILEXMLELEMENTTYPE_NORMAL)) continue;
+          if(language->GetName().Compare(NL("language"))) continue;
+
+          if(!language->GetText(name, true) || name.IsEmpty())
+            {
+              language->GetValueAttribute(NL("name"), name);
+              name.DeleteNoCharacters(NL(" \t\r\n"), 0, XSTRINGCONTEXT_FROM_FIRST);
+              name.DeleteNoCharacters(NL(" \t\r\n"), 0, XSTRINGCONTEXT_TO_END);
+            }
+          if(name.IsEmpty() || (doc.nlang >= 16)) continue;
+
+          doc.languages[doc.nlang] = name;
+          doc.nlang++;
+        }
+    }
+
+  if(translations)
+    {
+      for(int c=0; c<translations->GetNElements(); c++)
+        {
+          XFILEXMLELEMENT*           sentence = translations->GetElement(c);
+          TRANSLATESCAN_APPEXISTING* entry    = NULL;
+          XSTRING                    idstr;
+
+          if(!sentence || (sentence->GetType() != XFILEXMLELEMENTTYPE_NORMAL)) continue;
+          if(sentence->GetName().Compare(NL("sentence"))) continue;
+
+          sentence->GetValueAttribute(NL("id"), idstr);
+          if(idstr.IsEmpty()) continue;
+
+          entry = GEN_NEW TRANSLATESCAN_APPEXISTING();
+          if(!entry) continue;
+
+          entry->idnumber = (int)idstr.ConvertToDWord();
+          entry->fixed    = sentence->GetIntValueAttribute(NL("fixed"));
+
+          for(int t=0; t<sentence->GetNElements(); t++)
+            {
+              XFILEXMLELEMENT* text = sentence->GetElement(t);
+              XSTRING          lang;
+              XSTRING          content;
+
+              if(!text || (text->GetType() != XFILEXMLELEMENTTYPE_NORMAL)) continue;
+              if(text->GetName().Compare(NL("text"))) continue;
+
+              text->GetValueAttribute(NL("lang"), lang);
+              TRANSLATESCAN_LngElementText(text, content);
+
+              int slot = -1;
+              for(int l=0; l<doc.nlang; l++)
+                {
+                  if(!lang.IsEmpty() && !doc.languages[l].Compare(lang.Get()))
+                    {
+                      slot = l;
+                      break;
+                    }
+                }
+
+              if(slot >= 0)
+                {
+                  entry->text[slot] = content;
+                  if(entry->ntext <= slot) entry->ntext = slot + 1;
+                }
+               else if(entry->ntext < 16)
+                {
+                  entry->text[entry->ntext] = content;
+                  entry->ntext++;
+                }
+            }
+
+          if(entry->ntext < doc.nlang) entry->ntext = doc.nlang;
+
+          doc.sentences.Add(entry);
+        }
+    }
+
+  xml.Close();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         static bool TRANSLATESCAN_LngSave(XPATH& lngpath, TRANSLATESCAN_LNGDOC& doc)
+* @brief      Write doc as UTF-8 XML .lng without BOM (CRLF).
+* @ingroup    APPLICATION
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+static bool TRANSLATESCAN_LngSave(XPATH& lngpath, TRANSLATESCAN_LNGDOC& doc)
+{
+  XFILEXML           xml;
+  XFILEXMLELEMENT*   root;
+  XFILEXMLELEMENT*   languages;
+  XFILEXMLELEMENT*   translations;
+  XFILEXMLATTRIBUTE* cfg;
+
+  root = GEN_NEW XFILEXMLELEMENT(NL("lng"));
+  if(!root) return false;
+  xml.SetRoot(root);
+
+  cfg = GEN_NEW XFILEXMLATTRIBUTE(NL("version"), NL("1.0"));
+  if(cfg) xml.GetCFGAtributes()->Add(cfg);
+  cfg = GEN_NEW XFILEXMLATTRIBUTE(NL("encoding"), NL("UTF-8"));
+  if(cfg) xml.GetCFGAtributes()->Add(cfg);
+
+  languages = root->AddElement(NL("languages"));
+  if(!languages) return false;
+
+  for(int c=0; c<doc.nlang; c++)
+    {
+      languages->AddElement(NL("language"), doc.languages[c].Get());
+    }
+
+  translations = root->AddElement(NL("translations"));
+  if(!translations) return false;
+
+  for(XDWORD s=0; s<doc.sentences.GetSize(); s++)
+    {
+      TRANSLATESCAN_APPEXISTING* entry = doc.sentences.Get(s);
+      XFILEXMLELEMENT*           sentence;
+      XSTRING                    idstr;
+      XSTRING                    fixedstr;
+
+      if(!entry) continue;
+
+      idstr.Format(NL("%05d"), entry->idnumber);
+      fixedstr.Format(NL("%d"), entry->fixed);
+
+      sentence = translations->AddElement(NL("sentence"));
+      if(!sentence) continue;
+      sentence->AddAtribute(NL("id"), idstr.Get());
+      sentence->AddAtribute(NL("fixed"), fixedstr.Get());
+
+      int n = entry->ntext;
+      if(n > doc.nlang) n = doc.nlang;
+      if(n < 0) n = 0;
+
+      for(int t=0; t<n; t++)
+        {
+          XSTRING          safe = entry->text[t];
+          XFILEXMLELEMENT* text;
+          XFILEXMLELEMENT* cdata;
+          XCHAR*           langname;
+
+          if((t < doc.nlang) && !doc.languages[t].IsEmpty()) langname = doc.languages[t].Get();
+           else langname = NL("Unknown");
+
+          TRANSLATESCAN_LngSanitizeCDATA(safe);
+
+          text = sentence->AddElement(NL("text"));
+          if(!text) continue;
+          text->AddAtribute(NL("lang"), langname);
+
+          cdata = text->AddElement();
+          if(!cdata) continue;
+          cdata->SetType(XFILEXMLELEMENTTYPE_CDATA);
+          cdata->SetValue(safe);
+        }
+    }
+
+  // UTF-8 with BOM so XFILETXT::ReadAllFile detects UTF-8 (no-BOM falls back to ASCII).
+  if(!xml.Create(lngpath, XFILETXTFORMATCHAR_UTF8, XFILETXTTYPELF_0D0A)) return false;
+  if(!xml.WriteAndEncodeAllLines(true))
+    {
+      xml.Close();
+      return false;
+    }
+  xml.Close();
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         static bool TRANSLATESCAN_CreateMinLng(XPATH& lngpath)
-* @brief      Write a minimal five-language .lng catalogue.
+* @brief      Write a minimal five-language XML .lng catalogue.
 * @ingroup    APPLICATION
 *
 *---------------------------------------------------------------------------------------------------------------------*/
 static bool TRANSLATESCAN_CreateMinLng(XPATH& lngpath)
 {
-  XFILETXT text;
+  TRANSLATESCAN_LNGDOC doc;
 
-  text.AddLine(NL("{"));
-  text.AddLine(NL("  \"languages\"       : [ \"Spanish\" ,"));
-  text.AddLine(NL("                        \"English\" ,"));
-  text.AddLine(NL("                        \"French\"  ,"));
-  text.AddLine(NL("                        \"German\"  ,"));
-  text.AddLine(NL("                        \"Chinese\""));
-  text.AddLine(NL("                      ],"));
-  text.AddLine(NL(""));
-  text.AddLine(NL("  \"translations\"    : {"));
-  text.AddLine(NL("                      }"));
-  text.AddLine(NL("}"));
+  doc.languages[0] = NL("Spanish");
+  doc.languages[1] = NL("English");
+  doc.languages[2] = NL("French");
+  doc.languages[3] = NL("German");
+  doc.languages[4] = NL("Chinese");
+  doc.nlang = 5;
 
-  if(!TRANSLATESCAN_WriteLinesUTF8(lngpath, text))
+  if(!TRANSLATESCAN_LngSave(lngpath, doc))
     {
       TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP could not create  %s"), lngpath.Get());
       return false;
@@ -4171,107 +4490,34 @@ static bool TRANSLATESCAN_CreateMinLng(XPATH& lngpath)
 *---------------------------------------------------------------------------------------------------------------------*/
 static bool TRANSLATESCAN_UpgradeAppLngLanguages(XPATH& lngpath)
 {
-  XFILETXT lng;
-  int      translationsline = -1;
-  int      firstlangline    = -1;
-  int      lastlangline     = -1;
-  int      nlang            = 0;
-  bool     langseen[5];
-  bool     inlanguages      = false;
-  bool     languagesnamed   = false;
+  TRANSLATESCAN_LNGDOC doc;
+  bool                 langseen[5];
+  bool                 missing = false;
 
   for(int c=0; c<5; c++) langseen[c] = false;
 
-  if(!lng.Open(lngpath, false) || !lng.ReadAllFile()) return false;
+  if(!TRANSLATESCAN_LngLoad(lngpath, doc)) return false;
 
-  for(int c=0; c<(int)lng.GetNLines(); c++)
+  for(int c=0; c<doc.nlang; c++)
     {
-      XSTRING* line = lng.GetLine(c);
-      if(line && (line->Find(NL("\"translations\""), false) != XSTRING_NOTFOUND))
-        {
-          translationsline = c;
-          break;
-        }
+      int slot = TRANSLATESCAN_AppLanguageSlot(doc.languages[c]);
+      if((slot >= 0) && (slot < 5)) langseen[slot] = true;
     }
 
-  if(translationsline < 0)
+  for(int c=0; c<5; c++)
     {
-      lng.Close();
-      return false;
+      if(!langseen[c]) missing = true;
     }
+  if(!missing && (doc.nlang >= 5)) return true;
 
-  for(int c=0; c<translationsline; c++)
-    {
-      XSTRING* line   = lng.GetLine(c);
-      int      cursor = 0;
+  doc.languages[0] = NL("Spanish");
+  doc.languages[1] = NL("English");
+  doc.languages[2] = NL("French");
+  doc.languages[3] = NL("German");
+  doc.languages[4] = NL("Chinese");
+  doc.nlang = 5;
 
-      if(!line) continue;
-      if(!inlanguages && (line->Find(NL("\"languages\""), false) != XSTRING_NOTFOUND))
-        {
-          inlanguages   = true;
-          firstlangline = c;
-        }
-      if(!inlanguages) continue;
-
-      do{ XSTRING raw;
-          int     next = TRANSLATESCAN_ReadJSONString(*line, cursor, raw);
-
-          if(next == XSTRING_NOTFOUND) break;
-
-          if(!languagesnamed && (raw.Compare(NL("languages"), true) == 0))
-            {
-              languagesnamed = true;
-            }
-          else if(languagesnamed)
-            {
-              int slot = TRANSLATESCAN_AppLanguageSlot(raw);
-              if((slot >= 0) && (slot < 5)) langseen[slot] = true;
-              nlang++;
-            }
-
-          cursor = next;
-        } while(cursor != XSTRING_NOTFOUND);
-
-      if(TRANSLATESCAN_FirstChar(line) == _C(']'))
-        {
-          lastlangline = c;
-          break;
-        }
-    }
-
-  {
-    bool complete = true;
-
-    for(int c=0; c<5; c++)
-      {
-        if(!langseen[c]) complete = false;
-      }
-
-    if(complete && (nlang >= 5))
-      {
-        lng.Close();
-        return true;
-      }
-  }
-
-  if((firstlangline < 0) || (lastlangline < 0) || (lastlangline < firstlangline))
-    {
-      lng.Close();
-      return false;
-    }
-
-  for(int c=lastlangline; c>=firstlangline; c--) lng.DeleteLine(c);
-
-  lng.InsertLine(firstlangline    , NL("  \"languages\"       : [ \"Spanish\" ,"));
-  lng.InsertLine(firstlangline + 1, NL("                        \"English\" ,"));
-  lng.InsertLine(firstlangline + 2, NL("                        \"French\"  ,"));
-  lng.InsertLine(firstlangline + 3, NL("                        \"German\"  ,"));
-  lng.InsertLine(firstlangline + 4, NL("                        \"Chinese\""));
-  lng.InsertLine(firstlangline + 5, NL("                      ],"));
-
-  lng.Close();
-
-  if(!TRANSLATESCAN_WriteLinesUTF8(lngpath, lng))
+  if(!TRANSLATESCAN_LngSave(lngpath, doc))
     {
       TRANSLATESCAN_Report(XTRACE_COLOR_RED, NL("APP could not update languages in %s"), lngpath.Get());
       return false;
@@ -4322,13 +4568,9 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
   int                    nlang      = 0;
   int                    langorder[16];
   bool                   langseen[5];
-  int                    keyindent      = -1;
-  int                    sentenceindent = -1;
-  int                    bracketindent  = -1;
-  int                    lastbracket    = -1;
-  int                    translationsline = -1;
   int                    failed = 0;
   bool                   status = true;
+  TRANSLATESCAN_LNGDOC   lngdoc;
   static const XCHAR*    alpha2[5] = { NL("en"), NL("es"), NL("fr"), NL("de"), NL("zh") };
 
   for(int c=0; c<5; c++) langseen[c] = false;
@@ -4555,140 +4797,56 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
   idprefix.Add(_C('_'));
 
   {
-    XFILETXT lng;
-    bool     inlanguages = false;
-
-    if(!lng.Open(lngpath, true) || !lng.ReadAllFile()) return false;
-
-    for(int c=0; c<(int)lng.GetNLines(); c++)
+    if(!TRANSLATESCAN_LngLoad(lngpath, lngdoc))
       {
-        XSTRING* line = lng.GetLine(c);
-        if(line && (line->Find(NL("\"translations\""), false) != XSTRING_NOTFOUND))
-          {
-            translationsline = c;
-            break;
-          }
-      }
-
-    if(translationsline < 0)
-      {
-        lng.Close();
         TRANSLATESCAN_Report(XTRACE_COLOR_RED, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_APP_LANGUAGE_FILE_HAS_NO_TRANSLATIONS_IN), lngpath.Get());
         return false;
       }
 
-    bool languagesnamed = false;
-
-    for(int c=0; c<translationsline; c++)
+    nlang = lngdoc.nlang;
+    for(int c=0; c<nlang; c++)
       {
-        XSTRING* line   = lng.GetLine(c);
-        int      cursor = 0;
-
-        if(!line) continue;
-        if(!inlanguages && (line->Find(NL("\"languages\""), false) != XSTRING_NOTFOUND)) inlanguages = true;
-        if(!inlanguages) continue;
-
-        do{ XSTRING raw;
-            int     next = TRANSLATESCAN_ReadJSONString(*line, cursor, raw);
-
-            if(next == XSTRING_NOTFOUND) break;
-
-            if(!languagesnamed && (raw.Compare(NL("languages"), true) == 0))
-              {
-                languagesnamed = true;
-              }
-            else if(languagesnamed && (nlang < 16))
-              {
-                int slot = TRANSLATESCAN_AppLanguageSlot(raw);
-                langorder[nlang] = slot;
-                if((slot >= 0) && (slot < 5)) langseen[slot] = true;
-                nlang++;
-              }
-
-            cursor = next;
-          } while(cursor != XSTRING_NOTFOUND);
-
-        if(TRANSLATESCAN_FirstChar(line) == _C(']')) break;
+        int slot = TRANSLATESCAN_AppLanguageSlot(lngdoc.languages[c]);
+        langorder[c] = slot;
+        if((slot >= 0) && (slot < 5)) langseen[slot] = true;
       }
 
     for(int c=0; c<5; c++)
       {
         if(!langseen[c])
           {
-            lng.Close();
             TRANSLATESCAN_Report(XTRACE_COLOR_RED, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_APP_LANGUAGE_FILE_MUST_LIST_ENGLISH_SPANISH_FREN));
             return false;
           }
       }
 
-    {
-      TRANSLATESCAN_APPEXISTING* current = NULL;
+    for(XDWORD s=0; s<lngdoc.sentences.GetSize(); s++)
+      {
+        TRANSLATESCAN_APPEXISTING* src = lngdoc.sentences.Get(s);
+        TRANSLATESCAN_APPEXISTING* dst;
 
-      for(int c=translationsline; c<(int)lng.GetNLines(); c++)
-        {
-          XSTRING* line   = lng.GetLine(c);
-          int      cursor = 0;
-          bool     gotkey = false;
-          XCHAR    first;
+        if(!src) continue;
+        dst = GEN_NEW TRANSLATESCAN_APPEXISTING();
+        if(!dst) continue;
 
-          if(!line) continue;
+        dst->idnumber = src->idnumber;
+        dst->fixed    = src->fixed;
+        dst->ntext    = src->ntext;
+        for(int t=0; t<src->ntext && t<16; t++) dst->text[t] = src->text[t];
 
-          first = TRANSLATESCAN_FirstChar(line);
-          if(first == _C('}')) break;
+        for(XDWORD e=0; e<scope.enums.GetSize(); e++)
+          {
+            TRANSLATESCAN_APPENUM* enumerator = scope.enums.Get(e);
+            if(enumerator && (enumerator->idnumber == dst->idnumber))
+              {
+                dst->idname = enumerator->idname;
+                break;
+              }
+          }
 
-          do{ XSTRING raw;
-              int     next = TRANSLATESCAN_ReadJSONString(*line, cursor, raw);
-              bool    iskey;
-
-              if(next == XSTRING_NOTFOUND) break;
-
-              iskey = TRANSLATESCAN_AllDigits(raw) && TRANSLATESCAN_NextIs(*line, next, _C(':'));
-              if(iskey)
-                {
-                  current = GEN_NEW TRANSLATESCAN_APPEXISTING();
-                  gotkey  = true;
-                  if(current)
-                    {
-                      current->idnumber = (int)raw.ConvertToDWord();
-                      for(XDWORD e=0; e<scope.enums.GetSize(); e++)
-                        {
-                          TRANSLATESCAN_APPENUM* enumerator = scope.enums.Get(e);
-                          if(enumerator && (enumerator->idnumber == current->idnumber))
-                            {
-                              current->idname = enumerator->idname;
-                              break;
-                            }
-                        }
-                      scope.existing.Add(current);
-                    }
-                }
-              else if(current && (current->ntext < 16))
-                {
-                  TRANSLATESCAN_Unescape(raw, current->text[current->ntext]);
-                  current->ntext++;
-                }
-
-              cursor = next;
-            } while(cursor != XSTRING_NOTFOUND);
-
-          if(gotkey && (c != translationsline) && (keyindent < 0)) keyindent = TRANSLATESCAN_Indent(line);
-          if(current && (current->ntext > 0) && (sentenceindent < 0) && !gotkey) sentenceindent = TRANSLATESCAN_Indent(line);
-
-          if(first == _C(']'))
-            {
-              lastbracket = c;
-              if(bracketindent < 0) bracketindent = TRANSLATESCAN_Indent(line);
-              current = NULL;
-            }
-        }
-    }
-
-    lng.Close();
+        scope.existing.Add(dst);
+      }
   }
-
-  if(keyindent < 0)      keyindent = 24;
-  if(sentenceindent < 0) sentenceindent = keyindent + 12;
-  if(bracketindent < 0)  bracketindent = keyindent + 10;
 
   for(XDWORD f=0; f<scope.files.GetSize(); f++)
     {
@@ -4712,7 +4870,7 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
           XSTRING* line = filetxt.GetLine(nline);
           if(!line) continue;
 
-          XCHAR* search[2] = { NL("TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_NL)FL(") };
+          XCHAR* search[2] = { NL("_L("), NL("FL(") };
 
           for(int s=0; s<2; s++)
             {
@@ -5376,97 +5534,41 @@ bool TRANSLATESCAN_MANAGER::Operation_TranslateAPP(XPATH& operationdir)
 
     if((newlng > 0) && status)
       {
-        XFILETXT lng;
-        int      produced = 0;
+        int produced = 0;
 
-        if(!lng.Open(lngpath, false) || !lng.ReadAllFile())
+        for(XDWORD t=0; t<scope.texts.GetSize(); t++)
           {
-            TRANSLATESCAN_Report(XTRACE_COLOR_RED, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_APP_COULD_NOT_OPEN), lngpath.Get());
-            TRANSLATESCAN_ApplyLToNLPlaces(scope.ltonl, status);
-            return false;
-          }
+            TRANSLATESCAN_APPTEXT*    entry = scope.texts.Get(t);
+            TRANSLATESCAN_APPEXISTING* row;
+            XSTRING                  key;
 
-        lastbracket = -1;
-        for(int c=translationsline; c<(int)lng.GetNLines(); c++)
-          {
-            XSTRING* line = lng.GetLine(c);
-            if(!line) continue;
-            if(TRANSLATESCAN_FirstChar(line) == _C(']')) lastbracket = c;
-            if(TRANSLATESCAN_FirstChar(line) == _C('}')) break;
-          }
+            if(!entry || !entry->ready || !entry->addtolng) continue;
 
-        if(lastbracket >= 0)
-          {
-            XSTRING* bracket = lng.GetLine(lastbracket);
-            XSTRING  updated;
+            row = GEN_NEW TRANSLATESCAN_APPEXISTING();
+            if(!row) continue;
 
-            if(bracket) updated = bracket->Get();
-            if(updated.Find(NL(","), false) == XSTRING_NOTFOUND) updated.Add(_C(','));
-            lng.DeleteLine(lastbracket);
-            lng.InsertLine(lastbracket, updated);
-          }
+            row->idnumber = entry->idnumber;
+            row->idname   = entry->idname;
+            row->fixed    = entry->fixed;
+            row->ntext    = nlang;
 
-        {
-          int insertat = (lastbracket >= 0) ? (lastbracket + 1) : (translationsline + 1);
-
-          for(XDWORD t=0; t<scope.texts.GetSize(); t++)
-            {
-              TRANSLATESCAN_APPTEXT* entry = scope.texts.Get(t);
-              XSTRING                key;
-              XSTRING                line;
-              XSTRING                blank;
-              bool                   lastentry;
-
-              if(!entry || !entry->ready || !entry->addtolng) continue;
-
-              produced++;
-              lastentry = (produced == newlng);
-
-              blank.Empty();
-              lng.InsertLine(insertat, blank);
-              insertat++;
-
-              key.Format(NL("%05d"), entry->idnumber);
-              TRANSLATESCAN_Pad(line, keyindent);
+            for(int n=0; n<nlang; n++)
               {
-                XSTRING rest;
-                rest.Format(NL("\"%s\" : [ %d,"), key.Get(), entry->fixed);
-                line.Add(rest);
+                int slot = langorder[n];
+                if((slot >= 0) && (slot < 5)) row->text[n] = entry->sentence[slot];
+                 else row->text[n] = entry->sentence[0];
               }
-              lng.InsertLine(insertat, line);
-              insertat++;
 
-              for(int n=0; n<nlang; n++)
-                {
-                  int     slot = langorder[n];
-                  XSTRING sentence;
-                  XSTRING escaped;
+            lngdoc.sentences.Add(row);
+            produced++;
 
-                  if((slot >= 0) && (slot < 5)) sentence = entry->sentence[slot];
-                  else sentence = entry->sentence[0];
+            key.Format(NL("%05d"), entry->idnumber);
+            TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_LNG), key.Get(), entry->idname.Get());
+          }
 
-                  TRANSLATESCAN_EscapeForJSON(sentence, escaped);
-                  TRANSLATESCAN_Pad(line, sentenceindent);
-                  line.Add(_C('"'));
-                  line.Add(escaped);
-                  if((n + 1) < nlang) line.Add(NL("\" ,"));
-                  else                line.Add(_C('"'));
-                  lng.InsertLine(insertat, line);
-                  insertat++;
-                }
+        (void)produced;
 
-              TRANSLATESCAN_Pad(line, bracketindent);
-              line.Add(_C(']'));
-              if(!lastentry) line.Add(_C(','));
-              lng.InsertLine(insertat, line);
-              insertat++;
-
-              TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_LNG), key.Get(), entry->idname.Get());
-            }
-        }
-
-        lng.Close();
-        if(!TRANSLATESCAN_WriteLinesUTF8(lngpath, lng))
+        if(!TRANSLATESCAN_LngSave(lngpath, lngdoc))
           {
             TRANSLATESCAN_Report(XTRACE_COLOR_RED, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_APP_WRITE_FAILED), lngpath.Get());
             TRANSLATESCAN_ApplyLToNLPlaces(scope.ltonl, status);
@@ -5770,7 +5872,7 @@ bool TRANSLATESCAN_MANAGER::Operation_ViewLiteralStrings(XPATH& operationdir)
           XSTRING* line = filetxt.GetLine(nline);
           if(!line) continue;
 
-          XCHAR* search[3] = { NL("TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_NL)NL("), NL("FL(") };
+          XCHAR* search[3] = { NL("_L("), NL("NL("), NL("FL(") };
 
           for(int s=0; s<3; s++)
             {
@@ -6116,7 +6218,11 @@ TRANSLATESCAN_LITERALMACRO TRANSLATESCAN_MANAGER::Operation_LiteralStrings_GetMa
       XCHAR previous = text[index - 1];
 
       // Reject identifier/_ continuation so "_NL(" / "name_L(" / "fooNL(" are ignored.
+      // Also reject a preceding quote: that is string *content* (e.g. NL("_L(")), not a call site.
+      // Without this, APP/VIEW can rewrite TranslateScan's own search needles into TL(...).
       if((previous == _C('_')) ||
+         (previous == _C('"')) ||
+         (previous == _C('\'')) ||
          ((previous >= _C('A')) && (previous <= _C('Z'))) ||
          ((previous >= _C('a')) && (previous <= _C('z'))) ||
          ((previous >= _C('0')) && (previous <= _C('9'))))
@@ -6983,20 +7089,13 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
   XPATH                      root;
   XPATH                      lngpath;
   TRANSLATESCAN_APPSCOPE     scope;
-  XFILETXT                   lng;
-  int                        translationsline = -1;
-  int                        firstlangline    = -1;
-  int                        lastlangline     = -1;
+  TRANSLATESCAN_LNGDOC       lngdoc;
   int                        nlang            = 0;
   int                        langorder[16];
   int                        engslot          = -1;
-  int                        keyindent        = -1;
-  int                        sentenceindent   = -1;
   int                        failed           = 0;
   bool                       already          = false;
   bool                       status           = true;
-  bool                       inlanguages      = false;
-  bool                       languagesnamed   = false;
 
   for(int c=0; c<16; c++) langorder[c] = -1;
 
@@ -7051,139 +7150,33 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
   TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_APP_ADDLNG), codealpha2.Get(), englishname.Get());
   TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_APP), lngpath.Get());
 
-  if(!lng.Open(lngpath, false) || !lng.ReadAllFile())
+  if(!TRANSLATESCAN_LngLoad(lngpath, lngdoc))
     {
       TRANSLATESCAN_Report(XTRACE_COLOR_RED, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_APP_COULD_NOT_OPEN), lngpath.Get());
       return false;
     }
 
-  for(int c=0; c<(int)lng.GetNLines(); c++)
+  nlang = lngdoc.nlang;
+  for(int c=0; c<nlang; c++)
     {
-      XSTRING* line = lng.GetLine(c);
-      if(line && (line->Find(NL("\"translations\""), false) != XSTRING_NOTFOUND))
-        {
-          translationsline = c;
-          break;
-        }
-    }
-
-  if(translationsline < 0)
-    {
-      lng.Close();
-      TRANSLATESCAN_Report(XTRACE_COLOR_RED, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_APP_LANGUAGE_FILE_HAS_NO_TRANSLATIONS_IN), lngpath.Get());
-      return false;
-    }
-
-  for(int c=0; c<translationsline; c++)
-    {
-      XSTRING* line   = lng.GetLine(c);
-      int      cursor = 0;
-
-      if(!line) continue;
-      if(!inlanguages && (line->Find(NL("\"languages\""), false) != XSTRING_NOTFOUND))
-        {
-          inlanguages   = true;
-          firstlangline = c;
-        }
-      if(!inlanguages) continue;
-
-      do{ XSTRING raw;
-          int     next = TRANSLATESCAN_ReadJSONString(*line, cursor, raw);
-
-          if(next == XSTRING_NOTFOUND) break;
-
-          if(!languagesnamed && (raw.Compare(NL("languages"), true) == 0))
-            {
-              languagesnamed = true;
-            }
-          else if(languagesnamed && (nlang < 16))
-            {
-              int slot = TRANSLATESCAN_AppLanguageSlot(raw);
-
-              langorder[nlang] = slot;
-              if(slot == 0) engslot = nlang;
-              if(raw.Compare(englishname, false) == 0) already = true;
-              nlang++;
-            }
-
-          cursor = next;
-        } while(cursor != XSTRING_NOTFOUND);
-
-      if(TRANSLATESCAN_FirstChar(line) == _C(']'))
-        {
-          lastlangline = c;
-          break;
-        }
+      int slot = TRANSLATESCAN_AppLanguageSlot(lngdoc.languages[c]);
+      langorder[c] = slot;
+      if(slot == 0) engslot = c;
+      if(!lngdoc.languages[c].Compare(englishname.Get())) already = true;
     }
 
   if(already)
     {
-      lng.Close();
       TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_APP_ADDLNG_LANGUAGE_ALREADY_PRESENT_NOTHING_TO_D), englishname.Get());
       return true;
     }
 
-  if((firstlangline < 0) || (lastlangline < 0) || (nlang <= 0))
+  if(nlang <= 0)
     {
-      lng.Close();
       TRANSLATESCAN_Report(XTRACE_COLOR_RED, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_APP_LANGUAGES_LIST_WAS_NOT_FOUND_IN), lngpath.Get());
       return false;
     }
 
-  {
-    TRANSLATESCAN_APPEXISTING* current = NULL;
-
-    for(int c=translationsline; c<(int)lng.GetNLines(); c++)
-      {
-        XSTRING* line   = lng.GetLine(c);
-        int      cursor = 0;
-        bool     gotkey = false;
-        XCHAR    first;
-
-        if(!line) continue;
-
-        first = TRANSLATESCAN_FirstChar(line);
-        if(first == _C('}')) break;
-
-        do{ XSTRING raw;
-            int     next = TRANSLATESCAN_ReadJSONString(*line, cursor, raw);
-            bool    iskey;
-
-            if(next == XSTRING_NOTFOUND) break;
-
-            iskey = TRANSLATESCAN_AllDigits(raw) && TRANSLATESCAN_NextIs(*line, next, _C(':'));
-            if(iskey)
-              {
-                current = GEN_NEW TRANSLATESCAN_APPEXISTING();
-                gotkey  = true;
-                if(current)
-                  {
-                    current->idnumber = (int)raw.ConvertToDWord();
-                    scope.existing.Add(current);
-                  }
-              }
-            else if(current && (current->ntext < 16))
-              {
-                TRANSLATESCAN_Unescape(raw, current->text[current->ntext]);
-                current->ntext++;
-              }
-
-            cursor = next;
-          } while(cursor != XSTRING_NOTFOUND);
-
-        if(gotkey && (c != translationsline) && (keyindent < 0)) keyindent = TRANSLATESCAN_Indent(line);
-        if(current && (current->ntext > 0) && (sentenceindent < 0) && !gotkey) sentenceindent = TRANSLATESCAN_Indent(line);
-
-        if(first == _C(']'))
-          {
-            if(current) current->endbracket = c;
-            current = NULL;
-          }
-      }
-  }
-
-  if(keyindent < 0)      keyindent = 24;
-  if(sentenceindent < 0) sentenceindent = keyindent + 12;
   if(engslot < 0)
     {
       for(int c=0; c<nlang; c++)
@@ -7192,9 +7185,9 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
         }
     }
 
-  for(XDWORD e=0; e<scope.existing.GetSize(); e++)
+  for(XDWORD e=0; e<lngdoc.sentences.GetSize(); e++)
     {
-      TRANSLATESCAN_APPEXISTING* entry = scope.existing.Get(e);
+      TRANSLATESCAN_APPEXISTING* entry = lngdoc.sentences.Get(e);
       if(entry) entry->original_ntext = entry->ntext;
     }
 
@@ -7203,7 +7196,7 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
     XSTRING                  sourcecode;
     XSTRING                  targetcode;
     static const XCHAR*      slotalpha2[5] = { NL("en"), NL("es"), NL("fr"), NL("de"), NL("zh") };
-    int                      pending = (int)scope.existing.GetSize();
+    int                      pending = (int)lngdoc.sentences.GetSize();
     int                      current = 0;
 
     sourcecode = NL("en");
@@ -7211,9 +7204,9 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
 
     TRANSLATESCAN_Report(XTRACE_COLOR_GREEN, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_APP_ADDLNG_TRANSLATING_SENTENCE_S_TO), pending, targetcode.Get());
 
-    for(XDWORD e=0; e<scope.existing.GetSize(); e++)
+    for(XDWORD e=0; e<lngdoc.sentences.GetSize(); e++)
       {
-        TRANSLATESCAN_APPEXISTING* entry = scope.existing.Get(e);
+        TRANSLATESCAN_APPEXISTING* entry = lngdoc.sentences.Get(e);
         XSTRING                    human;
         XSTRING                    translation;
         int                        srcindex;
@@ -7232,7 +7225,6 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
 
         human = entry->text[srcindex];
 
-        // Incomplete rows (legacy) must be padded to the current languages list before appending.
         while(entry->ntext < nlang)
           {
             int     missingslot = langorder[entry->ntext];
@@ -7257,7 +7249,6 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
         if(!TRANSLATESCAN_TranslatePreservingMasks(scraper, human, sourcecode, targetcode, translation) ||
            translation.IsEmpty())
           {
-            // Keep a non-empty placeholder so every language column stays aligned.
             failed++;
             translation = NL("--");
             TRANSLATESCAN_Report(XTRACE_COLOR_RED, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_FAILED_ID), entry->idnumber);
@@ -7271,98 +7262,14 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
       }
   }
 
-  // Add language name after the last listed language.
-  {
-    XSTRING* lastlang = lng.GetLine(lastlangline - 1);
-    XSTRING  updated;
-    XSTRING  newline;
-
-    // lastlangline is the closing "]" line; previous content line holds the last language name.
-    if(lastlang && (TRANSLATESCAN_FirstChar(lastlang) != _C(']')))
-      {
-        updated = lastlang->Get();
-        if(updated.Find(NL(","), false) == XSTRING_NOTFOUND) updated.Add(NL(" ,"));
-        lng.DeleteLine(lastlangline - 1);
-        lng.InsertLine(lastlangline - 1, updated);
-      }
-
-    TRANSLATESCAN_Pad(newline, 24);
+  if(lngdoc.nlang < 16)
     {
-      XSTRING rest;
-      rest.Format(NL("\"%s\""), englishname.Get());
-      newline.Add(rest);
-    }
-    lng.InsertLine(lastlangline, newline);
-
-    for(XDWORD e=0; e<scope.existing.GetSize(); e++)
-      {
-        TRANSLATESCAN_APPEXISTING* entry = scope.existing.Get(e);
-        if(entry && (entry->endbracket >= lastlangline)) entry->endbracket++;
-      }
-  }
-
-  // Append padded + new translations after the last on-disk sentence (before "]").
-  for(int i=(int)scope.existing.GetSize()-1; i>=0; i--)
-    {
-      TRANSLATESCAN_APPEXISTING* entry = scope.existing.Get((XDWORD)i);
-      int                        endline;
-      XSTRING*                   prev;
-      XSTRING                    updated;
-      int                        firstnew;
-
-      if(!entry || (entry->ntext <= 0) || (entry->endbracket < 0)) continue;
-      if(entry->ntext <= entry->original_ntext) continue;
-
-      endline  = entry->endbracket;
-      firstnew = entry->original_ntext;
-      prev     = lng.GetLine(endline - 1);
-      if(prev)
-        {
-          updated = prev->Get();
-          if(updated.Find(NL(","), false) == XSTRING_NOTFOUND)
-            {
-              int    lastq = -1;
-              XCHAR* text  = updated.Get();
-
-              for(int p=(int)updated.GetSize()-1; p>=0; p--)
-                {
-                  if(text[p] == _C('"')) { lastq = p; break; }
-                }
-
-              if(lastq >= 0)
-                {
-                  XSTRING left;
-                  XSTRING right;
-
-                  updated.Copy(0, lastq + 1, left);
-                  updated.Copy(lastq + 1, right);
-                  updated = left;
-                  updated.Add(NL(" ,"));
-                  updated.Add(right);
-                  lng.DeleteLine(endline - 1);
-                  lng.InsertLine(endline - 1, updated);
-                }
-            }
-        }
-
-      for(int t=firstnew; t<entry->ntext; t++)
-        {
-          XSTRING newline;
-          XSTRING escaped;
-
-          TRANSLATESCAN_EscapeForJSON(entry->text[t], escaped);
-          TRANSLATESCAN_Pad(newline, sentenceindent);
-          newline.Add(_C('"'));
-          newline.Add(escaped);
-          if((t + 1) < entry->ntext) newline.Add(NL("\" ,"));
-           else                      newline.Add(_C('"'));
-          lng.InsertLine(endline + (t - firstnew), newline);
-        }
+      lngdoc.languages[lngdoc.nlang] = englishname;
+      lngdoc.nlang++;
+      nlang = lngdoc.nlang;
     }
 
-  lng.Close();
-
-  if(!TRANSLATESCAN_WriteLinesUTF8(lngpath, lng))
+  if(!TRANSLATESCAN_LngSave(lngpath, lngdoc))
     {
       TRANSLATESCAN_Report(XTRACE_COLOR_RED, TL(TRANSLATESCAN_TRANSLATEID_TRANSLATESCAN_MANAGER_APP_WRITE_FAILED), lngpath.Get());
       return false;
@@ -7376,6 +7283,7 @@ bool TRANSLATESCAN_MANAGER::Operation_AddLanguageAPP(XPATH& operationdir, XSTRIN
 
   #endif
 }
+
 
 
 /**-------------------------------------------------------------------------------------------------------------------

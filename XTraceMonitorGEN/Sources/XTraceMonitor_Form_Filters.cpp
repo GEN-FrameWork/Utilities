@@ -656,6 +656,10 @@ bool XTRACEMONITOR_FORM_FILTERS::Show(bool show)
         {
           owner->form_cfg.Show(false);
         }
+      if(owner->form_about.IsVisible())
+        {
+          owner->form_about.Show(false);
+        }
 
       if(!ApplyGeometry()) return false;
 

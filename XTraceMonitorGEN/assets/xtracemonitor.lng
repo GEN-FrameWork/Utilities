@@ -1,99 +1,974 @@
-{
-  "languages"       : [ "Spanish" ,
-                        "English" ,
-                        "French"  ,
-                        "German"  ,
-                        "Chinese"
-                      ],
-
-
-  "translations": {
-    "00102" : [ 0,
-      "eXtended Trace Monitor" ,
-      "eXtended Trace Monitor" ,
-      "eXtended Trace Monitor" ,
-      "eXtended Trace Monitor" ,
-      "eXtended Trace Monitor"
-    ],
-
-    "00103" : [ 0,
-      "eXtended Trace Monitor" ,
-      "eXtended Trace Monitor" ,
-      "eXtended Trace Monitor" ,
-      "eXtended Trace Monitor" ,
-      "eXtended Trace Monitor"
-    ],
-
-    "00104" : [ 0,
-      "Salir" ,
-      "Exit" ,
-      "Quitter" ,
-      "Beenden" ,
-      "退出"
-    ],
-
-    "00105" : [ 0,
-      "Parar" ,
-      "Stop" ,
-      "Arreter" ,
-      "Stopp" ,
-      "停止"
-    ],
-
-    "00106" : [ 0,
-      "Arrancar" ,
-      "Run" ,
-      "Demarrer" ,
-      "Start" ,
-      "运行"
-    ],
-
-    "00107" : [ 0,
-      "Limpiar" ,
-      "Clear" ,
-      "Effacer" ,
-      "Leeren" ,
-      "清除"
-    ],
-
-    "00108" : [ 0,
-      "Del status" ,
-      "Del status" ,
-      "Del status" ,
-      "Del status" ,
-      "删除状态"
-    ],
-
-    "00109" : [ 0,
-      "DynDNS" ,
-      "DynDNS" ,
-      "DynDNS" ,
-      "DynDNS" ,
-      "DynDNS"
-    ],
-
-    "00110" : [ 0,
-      "Guardar" ,
-      "Save" ,
-      "Enregistrer" ,
-      "Speichern" ,
-      "保存"
-    ],
-
-    "00111" : [ 0,
-      "Filtro" ,
-      "Filter" ,
-      "Filtre" ,
-      "Filter" ,
-      "过滤"
-    ],
-
-    "00112" : [ 0,
-      "Configuracion" ,
-      "Settings" ,
-      "Configuration" ,
-      "Einstellungen" ,
-      "设置"
-    ]
-  }
-}
+<?xml version="1.0" encoding="UTF-8" ?>
+<lng>
+  <languages>
+    <language>
+      Spanish
+    </language>
+    <language>
+      English
+    </language>
+    <language>
+      French
+    </language>
+    <language>
+      German
+    </language>
+    <language>
+      Chinese
+    </language>
+  </languages>
+  <translations>
+    <sentence id="00102" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[eXtended Trace Monitor]]>
+      </text>
+      <text lang="English">
+        <![CDATA[eXtended Trace Monitor]]>
+      </text>
+      <text lang="French">
+        <![CDATA[eXtended Trace Monitor]]>
+      </text>
+      <text lang="German">
+        <![CDATA[eXtended Trace Monitor]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[eXtended Trace Monitor]]>
+      </text>
+    </sentence>
+    <sentence id="00103" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[eXtended Trace Monitor]]>
+      </text>
+      <text lang="English">
+        <![CDATA[eXtended Trace Monitor]]>
+      </text>
+      <text lang="French">
+        <![CDATA[eXtended Trace Monitor]]>
+      </text>
+      <text lang="German">
+        <![CDATA[eXtended Trace Monitor]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[eXtended Trace Monitor]]>
+      </text>
+    </sentence>
+    <sentence id="00104" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Salir]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Exit]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Quitter]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Beenden]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[退出]]>
+      </text>
+    </sentence>
+    <sentence id="00105" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Parar]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Stop]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Arreter]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Stopp]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[停止]]>
+      </text>
+    </sentence>
+    <sentence id="00106" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Arrancar]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Run]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Demarrer]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Start]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[运行]]>
+      </text>
+    </sentence>
+    <sentence id="00107" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Limpiar]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Clear]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Effacer]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Leeren]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[清除]]>
+      </text>
+    </sentence>
+    <sentence id="00108" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Borrar estado]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Clear status]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Effacer l'état]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Status löschen]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[清除状态]]>
+      </text>
+    </sentence>
+    <sentence id="00109" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[DynDNS]]>
+      </text>
+      <text lang="English">
+        <![CDATA[DynDNS]]>
+      </text>
+      <text lang="French">
+        <![CDATA[DynDNS]]>
+      </text>
+      <text lang="German">
+        <![CDATA[DynDNS]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[DynDNS]]>
+      </text>
+    </sentence>
+    <sentence id="00110" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Guardar]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Save]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Enregistrer]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Speichern]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[保存]]>
+      </text>
+    </sentence>
+    <sentence id="00111" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Filtro]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Filter]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Filtre]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Filter]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[过滤]]>
+      </text>
+    </sentence>
+    <sentence id="00112" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Configuracion]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Settings]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Configuration]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Einstellungen]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[设置]]>
+      </text>
+    </sentence>
+    <sentence id="00113" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Conexión a internet · %u ms]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Internet connection · %u ms]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Connexion Internet · %u ms]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Internetverbindung · %u ms]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[互联网连接 · %u ms]]>
+      </text>
+    </sentence>
+    <sentence id="00114" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Conexión a internet]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Internet connection]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Connexion Internet]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Internetverbindung]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[互联网连接]]>
+      </text>
+    </sentence>
+    <sentence id="00115" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[IP pública: %s]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Public IP: %s]]>
+      </text>
+      <text lang="French">
+        <![CDATA[IP publique : %s]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Öffentliche IP: %s]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[公网 IP：%s]]>
+      </text>
+    </sentence>
+    <sentence id="00116" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[IP pública: --]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Public IP: --]]>
+      </text>
+      <text lang="French">
+        <![CDATA[IP publique : --]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Öffentliche IP: --]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[公网 IP：--]]>
+      </text>
+    </sentence>
+    <sentence id="00117" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Puerto UDP: %d · %s]]>
+      </text>
+      <text lang="English">
+        <![CDATA[UDP Port: %d · %s]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Port UDP : %d · %s]]>
+      </text>
+      <text lang="German">
+        <![CDATA[UDP-Port: %d · %s]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[UDP 端口：%d · %s]]>
+      </text>
+    </sentence>
+    <sentence id="00118" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Puerto UDP: %d]]>
+      </text>
+      <text lang="English">
+        <![CDATA[UDP Port: %d]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Port UDP : %d]]>
+      </text>
+      <text lang="German">
+        <![CDATA[UDP-Port: %d]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[UDP 端口：%d]]>
+      </text>
+    </sentence>
+    <sentence id="00119" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Tema de color: Claro.]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Color Theme: Light.]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Thème de couleur : Clair.]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Farbthema: Hell.]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[颜色主题：浅色。]]>
+      </text>
+    </sentence>
+    <sentence id="00120" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Tema de color: Oscuro.]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Color Theme: Dark.]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Thème de couleur : Sombre.]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Farbthema: Dunkel.]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[颜色主题：深色。]]>
+      </text>
+    </sentence>
+    <sentence id="00121" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Modo de trabajo apagado (en pausa).]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Working mode off (paused).]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Mode de travail désactivé (en pause).]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Arbeitsmodus aus (pausiert).]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[工作模式关闭（暂停）。]]>
+      </text>
+    </sentence>
+    <sentence id="00122" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Modo de trabajo activado.]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Working mode on.]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Mode de travail activé.]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Arbeitsmodus an.]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[工作模式开启。]]>
+      </text>
+    </sentence>
+    <sentence id="00123" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Limpiar consola.]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Clear console.]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Effacer la console.]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Konsole leeren.]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[清除控制台。]]>
+      </text>
+    </sentence>
+    <sentence id="00124" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Borrar estado de variables.]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Clear variable status.]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Effacer l'état des variables.]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Variablenstatus löschen.]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[清除变量状态。]]>
+      </text>
+    </sentence>
+    <sentence id="00125" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Ajustar DynDNS (TODO).]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Adjust DynDNS (TODO).]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Ajuster DynDNS (TODO).]]>
+      </text>
+      <text lang="German">
+        <![CDATA[DynDNS anpassen (TODO).]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[调整 DynDNS (TODO)。]]>
+      </text>
+    </sentence>
+    <sentence id="00126" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Guardar consola.]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Save console.]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Enregistrer la console.]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Konsole speichern.]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[保存控制台。]]>
+      </text>
+    </sentence>
+    <sentence id="00127" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Título]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Title]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Titre]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Titel]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[标题]]>
+      </text>
+    </sentence>
+    <sentence id="00128" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Tema claro]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Light theme]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Thème clair]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Helles Thema]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[浅色主题]]>
+      </text>
+    </sentence>
+    <sentence id="00129" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Tema oscuro]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Dark theme]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Thème sombre]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Dunkles Thema]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[深色主题]]>
+      </text>
+    </sentence>
+    <sentence id="00130" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Guardar posición de la ventana]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Save window position]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Enregistrer la position de la fenêtre]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Fensterposition speichern]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[保存窗口位置]]>
+      </text>
+    </sentence>
+    <sentence id="00131" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Guardar tamaño de la ventana]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Save window size]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Enregistrer la taille de la fenêtre]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Fenstergröße speichern]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[保存窗口大小]]>
+      </text>
+    </sentence>
+    <sentence id="00132" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Añadir fecha y hora en la línea]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Add date and time to the line]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Ajouter date et heure à la ligne]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Datum und Uhrzeit in der Zeile hinzufügen]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[在行中添加日期和时间]]>
+      </text>
+    </sentence>
+    <sentence id="00133" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Añadir IP en la línea]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Add IP to the line]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Ajouter l'IP à la ligne]]>
+      </text>
+      <text lang="German">
+        <![CDATA[IP in der Zeile hinzufügen]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[在行中添加 IP]]>
+      </text>
+    </sentence>
+    <sentence id="00134" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Seguimiento de texto]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Text tracking]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Suivi du texte]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Textverfolgung]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[文本跟踪]]>
+      </text>
+    </sentence>
+    <sentence id="00135" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Activar DynDNS]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Enable DynDNS]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Activer DynDNS]]>
+      </text>
+      <text lang="German">
+        <![CDATA[DynDNS aktivieren]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[启用 DynDNS]]>
+      </text>
+    </sentence>
+    <sentence id="00136" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Predeterminado]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Default]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Par défaut]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Standard]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[默认]]>
+      </text>
+    </sentence>
+    <sentence id="00137" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Aceptar]]>
+      </text>
+      <text lang="English">
+        <![CDATA[OK]]>
+      </text>
+      <text lang="French">
+        <![CDATA[OK]]>
+      </text>
+      <text lang="German">
+        <![CDATA[OK]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[确定]]>
+      </text>
+    </sentence>
+    <sentence id="00138" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Cancelar]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Cancel]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Annuler]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Abbrechen]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[取消]]>
+      </text>
+    </sentence>
+    <sentence id="00139" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Habilitar filtro de texto]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Enable text filter]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Activer le filtre de texte]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Textfilter aktivieren]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[启用文本过滤器]]>
+      </text>
+    </sentence>
+    <sentence id="00140" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[0 - Negro]]>
+      </text>
+      <text lang="English">
+        <![CDATA[0 - Black]]>
+      </text>
+      <text lang="French">
+        <![CDATA[0 - Noir]]>
+      </text>
+      <text lang="German">
+        <![CDATA[0 - Schwarz]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[0 - 黑色]]>
+      </text>
+    </sentence>
+    <sentence id="00141" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[1 - Azul]]>
+      </text>
+      <text lang="English">
+        <![CDATA[1 - Blue]]>
+      </text>
+      <text lang="French">
+        <![CDATA[1 - Bleu]]>
+      </text>
+      <text lang="German">
+        <![CDATA[1 - Blau]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[1 - 蓝色]]>
+      </text>
+    </sentence>
+    <sentence id="00142" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[2 - Verde]]>
+      </text>
+      <text lang="English">
+        <![CDATA[2 - Green]]>
+      </text>
+      <text lang="French">
+        <![CDATA[2 - Vert]]>
+      </text>
+      <text lang="German">
+        <![CDATA[2 - Grün]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[2 - 绿色]]>
+      </text>
+    </sentence>
+    <sentence id="00143" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[3 - Púrpura]]>
+      </text>
+      <text lang="English">
+        <![CDATA[3 - Purple]]>
+      </text>
+      <text lang="French">
+        <![CDATA[3 - Violet]]>
+      </text>
+      <text lang="German">
+        <![CDATA[3 - Lila]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[3 - 紫色]]>
+      </text>
+    </sentence>
+    <sentence id="00144" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[4 - Rojo]]>
+      </text>
+      <text lang="English">
+        <![CDATA[4 - Red]]>
+      </text>
+      <text lang="French">
+        <![CDATA[4 - Rouge]]>
+      </text>
+      <text lang="German">
+        <![CDATA[4 - Rot]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[4 - 红色]]>
+      </text>
+    </sentence>
+    <sentence id="00145" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[5 - Gris]]>
+      </text>
+      <text lang="English">
+        <![CDATA[5 - Gray]]>
+      </text>
+      <text lang="French">
+        <![CDATA[5 - Gris]]>
+      </text>
+      <text lang="German">
+        <![CDATA[5 - Grau]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[5 - 灰色]]>
+      </text>
+    </sentence>
+    <sentence id="00146" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Configuración]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Settings]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Configuration]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Einstellungen]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[设置]]>
+      </text>
+    </sentence>
+    <sentence id="00147" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Filtros]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Filters]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Filtres]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Filter]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[过滤器]]>
+      </text>
+    </sentence>
+    <sentence id="00148" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Tema de color]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Color Theme]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Thème de couleur]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Farbthema]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[颜色主题]]>
+      </text>
+    </sentence>
+    <sentence id="00149" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[DynDNS]]>
+      </text>
+      <text lang="English">
+        <![CDATA[DynDNS]]>
+      </text>
+      <text lang="French">
+        <![CDATA[DynDNS]]>
+      </text>
+      <text lang="German">
+        <![CDATA[DynDNS]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[DynDNS]]>
+      </text>
+    </sentence>
+    <sentence id="00150" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Filtro de texto]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Text Filter]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Filtre de texte]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Textfilter]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[文本过滤]]>
+      </text>
+    </sentence>
+    <sentence id="00151" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Filtro de nivel]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Level Filter]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Filtre de niveau]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Levelfilter]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[级别过滤]]>
+      </text>
+    </sentence>
+    <sentence id="00152" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Puerto UDP]]>
+      </text>
+      <text lang="English">
+        <![CDATA[UDP Port]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Port UDP]]>
+      </text>
+      <text lang="German">
+        <![CDATA[UDP-Port]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[UDP 端口]]>
+      </text>
+    </sentence>
+    <sentence id="00153" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Puerto UART]]>
+      </text>
+      <text lang="English">
+        <![CDATA[UART Port]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Port UART]]>
+      </text>
+      <text lang="German">
+        <![CDATA[UART-Port]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[UART 端口]]>
+      </text>
+    </sentence>
+    <sentence id="00154" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Usuario]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Login]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Identifiant]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Benutzer]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[用户名]]>
+      </text>
+    </sentence>
+    <sentence id="00155" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Contraseña]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Password]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Mot de passe]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Passwort]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[密码]]>
+      </text>
+    </sentence>
+    <sentence id="00156" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Acerca de]]>
+      </text>
+      <text lang="English">
+        <![CDATA[About]]>
+      </text>
+      <text lang="French">
+        <![CDATA[À propos]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Info]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[关于]]>
+      </text>
+    </sentence>
+    <sentence id="00157" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Herramienta incluida dentro de la arquitectura del:]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Tool included within the architecture of:]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Outil inclus dans l'architecture de:]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Werkzeug innerhalb der Architektur von:]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[本工具包含于以下架构：]]>
+      </text>
+    </sentence>
+  </translations>
+</lng>

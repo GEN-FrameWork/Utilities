@@ -20,9 +20,10 @@
   --root-font-size: 16;
 }
 
-/* Config / Filters dialog panels (XML still owns size / visibility; CSS owns chrome tokens). */
+/* Config / Filters / About dialog panels (XML still owns size / visibility; CSS owns chrome tokens). */
 form.config-modal,
-form.filters-modal {
+form.filters-modal,
+form.about-modal {
   background-color: var(--page-bg);
   border-width:     1;
   border-color:     var(--frame-line);

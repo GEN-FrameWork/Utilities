@@ -22,6 +22,7 @@ option(XTRACE_NOINTERNET_FEATURE                                "No need for tra
 option(USE_CLANG_COMPILER_FEATURE                               "Use Clang Compiler"                                      ON )
                     
 option(DIO_FEATURE                                              "Data Input/Output"                                       ON )
+option(XFILE_XML_FEATURE                                        "XFile XML format (.lng catalogues)"                      ON )
 option(SCRIPT_FEATURE                                           "Activate Scripts"                                        ON )
 option(SCRIPT_G_FEATURE                                         "Activate Script G Language"                              ON )
 option(SCRIPT_LIB_WEBCLIENT_FEATURE                             "Script Lib WebClient"                                    ON )
