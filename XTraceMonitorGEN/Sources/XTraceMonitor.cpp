@@ -50,11 +50,13 @@
 #include "XFSMachine.h"
 
 #include "GRP2DCanvas.h"
+#include "GRPFrameRate.h"
 #include "GRPScreenCFGChromes.h"
 #include "GRPScreen.h"
 #include "GRPViewPort.h"
 
 #include <stdio.h>
+#include <stdarg.h>
 #ifdef WINDOWS
 #include <windows.h>
 #endif
@@ -79,6 +81,7 @@
 #include "UI_Element_Image.h"
 #include "UI_Element_Option.h"
 #include "UI_Element_Animation.h"
+#include "UI_Element_Tooltip.h"
 #include "UI_Skin.h"
 #include "UI_SkinCanvas.h"
 #include "UI_BoundaryLine.h"
@@ -86,6 +89,10 @@
 #include "UI_Style.h"
 #include "UI_StyleSheet.h"
 #include "GRP2DColor.h"
+
+// Temporary A/B FPS probe (auto phases → fps_probe.log). Keep off unless measuring.
+// Use #if XTM_FPS_PROBE (not #ifdef) — a defined-0 macro still passes #ifdef.
+#define XTM_FPS_PROBE 0
 
 #include "APPFlowLog.h"
 #include "APPFlowExtended.h"
@@ -110,6 +117,303 @@
 /*---- GENERAL VARIABLE ----------------------------------------------------------------------------------------------*/
 
  APPLICATIONCREATEINSTANCE(XTRACEMONITOR, xtracemonitor)
+
+#if XTM_FPS_PROBE
+enum
+{
+  XTM_PROBE_PHASE_IDLE = 0,
+  XTM_PROBE_PHASE_CLEAR_ALL_DIRT,
+  XTM_PROBE_PHASE_TIP_MAP_DIRTY,
+  XTM_PROBE_PHASE_GEO_FORMAT,
+  XTM_PROBE_PHASE_DONE
+};
+
+static const int   XTM_PROBE_FRAMES_PER_PHASE = 120;
+static const char* XTM_PROBE_PHASE_NAME[] =
+{
+  "IDLE",
+  "CLEAR_ALL_DIRT_BEFORE_DRAW",
+  "TIP_MAP_DIRTY_EVERY_FRAME",
+  "GEO_FORMAT_EVERY_FRAME",
+  "DONE"
+};
+
+static FILE*         xtm_probe_fp              = NULL;
+static LARGE_INTEGER xtm_probe_freq            = {};
+static int           xtm_probe_phase           = XTM_PROBE_PHASE_IDLE;
+static int           xtm_probe_frames_in_phase = 0;
+static int           xtm_probe_frames_total    = 0;
+static double        xtm_probe_sum_fps         = 0.0;
+static double        xtm_probe_sum_ms_input    = 0.0;
+static double        xtm_probe_sum_ms_draw     = 0.0;
+static double        xtm_probe_sum_ms_brand    = 0.0;
+static double        xtm_probe_sum_ms_net      = 0.0;
+static double        xtm_probe_sum_ms_geo      = 0.0;
+static int           xtm_probe_sum_dirty_tip   = 0;
+static int           xtm_probe_sum_dirty_tree  = 0;
+static int           xtm_probe_sum_dirty_console = 0;
+static int           xtm_probe_sum_dirty_brand = 0;
+static int           xtm_probe_sum_dirty_net   = 0;
+static int           xtm_probe_sum_dirty_total = 0;
+static double        xtm_probe_sum_ms_rebuild = 0.0;
+static double        xtm_probe_sum_ms_uiupd   = 0.0;
+static double        xtm_probe_sum_ms_canvas  = 0.0;
+static bool          xtm_probe_oneshot_done    = false;
+static bool          xtm_probe_skip_brand      = false;
+static bool          xtm_probe_tip_armed       = false;
+static int           xtm_probe_warmup_left     = 90;
+static int           xtm_probe_sample_dirty_tip     = 0;
+static int           xtm_probe_sample_dirty_tree    = 0;
+static int           xtm_probe_sample_dirty_console = 0;
+static int           xtm_probe_sample_dirty_brand   = 0;
+static int           xtm_probe_sample_dirty_net     = 0;
+static int           xtm_probe_sample_dirty_total   = 0;
+static double        xtm_probe_ms_brand          = 0.0;
+static double        xtm_probe_ms_net            = 0.0;
+static double        xtm_probe_ms_rebuild        = 0.0;
+static double        xtm_probe_ms_uiupd          = 0.0;
+static double        xtm_probe_ms_canvas         = 0.0;
+static char          xtm_probe_dirty_names[512] = "";
+
+static double XTM_ProbeNowMs()
+{
+  LARGE_INTEGER now;
+  QueryPerformanceCounter(&now);
+  return 1000.0 * (double)now.QuadPart / (double)xtm_probe_freq.QuadPart;
+}
+
+static void XTM_ProbeLog(const char* fmt, ...)
+{
+  if(!xtm_probe_fp) return;
+  va_list args;
+  va_start(args, fmt);
+  vfprintf(xtm_probe_fp, fmt, args);
+  va_end(args);
+  fflush(xtm_probe_fp);
+}
+
+static int XTM_ProbeDirty(XCHAR* name, UI_ELEMENT_TYPE type)
+{
+  UI_ELEMENT* el = GEN_USERINTERFACE.Element_Get(name, type);
+  if(!el || !el->IsVisible()) return 0;
+  return el->MustReDraw() ? 1 : 0;
+}
+
+static UI_ELEMENT_TOOLTIP* XTM_ProbeTip()
+{
+  return (UI_ELEMENT_TOOLTIP*)GEN_USERINTERFACE.Element_Get(NL("tree_geo_tip"), UI_ELEMENT_TYPE_TOOLTIP);
+}
+
+static void XTM_ProbeResetPhaseStats()
+{
+  xtm_probe_frames_in_phase     = 0;
+  xtm_probe_sum_fps             = 0.0;
+  xtm_probe_sum_ms_input        = 0.0;
+  xtm_probe_sum_ms_draw         = 0.0;
+  xtm_probe_sum_ms_brand        = 0.0;
+  xtm_probe_sum_ms_net          = 0.0;
+  xtm_probe_sum_ms_geo          = 0.0;
+  xtm_probe_sum_dirty_tip       = 0;
+  xtm_probe_sum_dirty_tree      = 0;
+  xtm_probe_sum_dirty_console   = 0;
+  xtm_probe_sum_dirty_brand     = 0;
+  xtm_probe_sum_dirty_net       = 0;
+  xtm_probe_sum_dirty_total     = 0;
+  xtm_probe_sum_ms_rebuild      = 0.0;
+  xtm_probe_sum_ms_uiupd        = 0.0;
+  xtm_probe_sum_ms_canvas       = 0.0;
+  xtm_probe_tip_armed           = false;
+  xtm_probe_dirty_names[0]      = 0;
+}
+
+static void XTM_ProbeFlushPhase(GRPSCREEN* screen)
+{
+  if(xtm_probe_frames_in_phase < 1) return;
+  const double n = (double)xtm_probe_frames_in_phase;
+  XTM_ProbeLog("PHASE %s | frames=%d | avg_fps=%.2f | ms_input=%.3f | ms_draw=%.3f (canvas=%.3f rebuildUI=%.3f update=%.3f brand=%.3f net=%.3f) | ms_geo=%.3f | dirty_avg=%.1f | dirty(%%) tip=%.0f tree=%.0f console=%.0f brand=%.0f net=%.0f | names_sample=%s\n",
+               XTM_PROBE_PHASE_NAME[xtm_probe_phase],
+               xtm_probe_frames_in_phase,
+               xtm_probe_sum_fps / n,
+               xtm_probe_sum_ms_input / n,
+               xtm_probe_sum_ms_draw / n,
+               xtm_probe_sum_ms_canvas / n,
+               xtm_probe_sum_ms_rebuild / n,
+               xtm_probe_sum_ms_uiupd / n,
+               xtm_probe_sum_ms_brand / n,
+               xtm_probe_sum_ms_net / n,
+               xtm_probe_sum_ms_geo / n,
+               (double)xtm_probe_sum_dirty_total / n,
+               100.0 * (double)xtm_probe_sum_dirty_tip / n,
+               100.0 * (double)xtm_probe_sum_dirty_tree / n,
+               100.0 * (double)xtm_probe_sum_dirty_console / n,
+               100.0 * (double)xtm_probe_sum_dirty_brand / n,
+               100.0 * (double)xtm_probe_sum_dirty_net / n,
+               xtm_probe_dirty_names);
+  (void)screen;
+}
+
+static int XTM_ProbeCountAllDirty(char* out_names, int out_cap)
+{
+  int total = 0;
+  int used  = 0;
+  if(out_names && out_cap > 0) out_names[0] = 0;
+
+  XVECTOR<UI_LAYOUT*>* all = GEN_USERINTERFACE.Layouts_GetAll();
+  if(!all) return 0;
+
+  for(XDWORD li = 0; li < all->GetSize(); li++)
+    {
+      UI_LAYOUT* layout = all->Get(li);
+      if(!layout || !layout->Elements_Get()) continue;
+      XVECTOR<UI_ELEMENT*>* roots = layout->Elements_Get();
+      for(XDWORD i = 0; i < roots->GetSize(); i++)
+        {
+          UI_ELEMENT* el = roots->Get(i);
+          if(!el || !el->IsVisible() || !el->MustReDraw()) continue;
+          total++;
+          if(out_names && out_cap > 8 && el->GetName() && el->GetName()->Get())
+            {
+              char tmp[64];
+              tmp[0] = 0;
+              WideCharToMultiByte(CP_UTF8, 0, (LPCWSTR)el->GetName()->Get(), -1, tmp, (int)sizeof(tmp), NULL, NULL);
+              int n = (int)strlen(tmp);
+              if(n > 0 && used + n + 2 < out_cap)
+                {
+                  if(used) out_names[used++] = ',';
+                  memcpy(out_names + used, tmp, (size_t)n);
+                  used += n;
+                  out_names[used] = 0;
+                }
+            }
+        }
+    }
+  return total;
+}
+
+static void XTM_ProbeClearAllDirt()
+{
+  XVECTOR<UI_LAYOUT*>* all = GEN_USERINTERFACE.Layouts_GetAll();
+  if(!all) return;
+  for(XDWORD li = 0; li < all->GetSize(); li++)
+    {
+      UI_LAYOUT* layout = all->Get(li);
+      if(!layout || !layout->Elements_Get()) continue;
+      XVECTOR<UI_ELEMENT*>* roots = layout->Elements_Get();
+      for(XDWORD i = 0; i < roots->GetSize(); i++)
+        {
+          UI_ELEMENT* el = roots->Get(i);
+          if(!el) continue;
+          el->SetMustReDraw(false);
+          for(XDWORD c = 0; c < el->GetComposeElements()->GetSize(); c++)
+            {
+              UI_ELEMENT* ch = el->GetComposeElements()->Get(c);
+              if(ch) ch->SetMustReDraw(false);
+            }
+        }
+    }
+}
+
+static void XTM_ProbeApplyTipActions()
+{
+  UI_ELEMENT_TOOLTIP* tip = XTM_ProbeTip();
+  xtm_probe_skip_brand = false;
+  if(!tip) return;
+
+  if((xtm_probe_phase == XTM_PROBE_PHASE_IDLE) ||
+     (xtm_probe_phase == XTM_PROBE_PHASE_CLEAR_ALL_DIRT) ||
+     (xtm_probe_phase == XTM_PROBE_PHASE_GEO_FORMAT))
+    {
+      if(tip->IsVisible()) tip->Hide();
+      tip->SetMustReDraw(false);
+      return;
+    }
+
+  if(xtm_probe_phase == XTM_PROBE_PHASE_TIP_MAP_DIRTY)
+    {
+      const double tip_x = 40.0;
+      const double tip_y = 280.0;
+      XSTRING body;
+      body.Format(NL("![IMAGE %s]\n8.8.8.8\nMadrid, ES\nOperador: probe-map"),
+                  NL("staticmaps/map_-2.2038_-79.8819_240x140_z11.png"));
+      if(tip->GetBoundaryLine())
+        {
+          tip->GetBoundaryLine()->width  = 240.0 + 12.0;
+          tip->GetBoundaryLine()->height = 6.0 + 140.0 + 68.0 + 6.0;
+        }
+      tip->SetContent(body);
+      GEN_USERINTERFACE.Element_PutToLastPositionLayout(tip);
+      tip->SetMustReDraw(true);
+      GEN_USERINTERFACE.Elements_SetToRedraw(tip);
+      tip->ShowAt(tip_x, tip_y);
+    }
+}
+
+static void XTM_ProbeBegin()
+{
+  if(xtm_probe_fp) return;
+  QueryPerformanceFrequency(&xtm_probe_freq);
+  xtm_probe_fp = fopen("fps_probe.log", "w");
+  if(!xtm_probe_fp) return;
+  XTM_ProbeLog("XTM FPS probe start\n");
+  XTM_ProbeResetPhaseStats();
+  XTM_ProbeLog("Entering phase %s\n", XTM_PROBE_PHASE_NAME[xtm_probe_phase]);
+}
+
+static bool XTM_ProbeFrameEnd(GRPSCREEN* screen,
+                              double ms_input, double ms_draw, double ms_brand, double ms_net, double ms_geo)
+{
+  if(!xtm_probe_fp || !screen) return false;
+
+  if(xtm_probe_warmup_left > 0)
+    {
+      xtm_probe_warmup_left--;
+      if(xtm_probe_warmup_left == 0)
+        {
+          XTM_ProbeResetPhaseStats();
+          XTM_ProbeLog("Warmup done — entering phase %s\n", XTM_PROBE_PHASE_NAME[xtm_probe_phase]);
+        }
+      return false;
+    }
+
+  float fps = 0.0f;
+  if(screen->GetFrameRate()) fps = screen->GetFrameRate()->Get();
+
+  xtm_probe_sum_dirty_tip     += xtm_probe_sample_dirty_tip;
+  xtm_probe_sum_dirty_tree    += xtm_probe_sample_dirty_tree;
+  xtm_probe_sum_dirty_console += xtm_probe_sample_dirty_console;
+  xtm_probe_sum_dirty_brand   += xtm_probe_sample_dirty_brand;
+  xtm_probe_sum_dirty_net     += xtm_probe_sample_dirty_net;
+  xtm_probe_sum_dirty_total   += xtm_probe_sample_dirty_total;
+
+  xtm_probe_frames_in_phase++;
+  xtm_probe_frames_total++;
+  xtm_probe_sum_fps        += (double)fps;
+  xtm_probe_sum_ms_input   += ms_input;
+  xtm_probe_sum_ms_draw    += ms_draw;
+  xtm_probe_sum_ms_brand   += ms_brand;
+  xtm_probe_sum_ms_net     += ms_net;
+  xtm_probe_sum_ms_geo     += ms_geo;
+  xtm_probe_sum_ms_rebuild += xtm_probe_ms_rebuild;
+  xtm_probe_sum_ms_uiupd   += xtm_probe_ms_uiupd;
+  xtm_probe_sum_ms_canvas  += xtm_probe_ms_canvas;
+
+  if(xtm_probe_frames_in_phase >= XTM_PROBE_FRAMES_PER_PHASE)
+    {
+      XTM_ProbeFlushPhase(screen);
+      xtm_probe_phase++;
+      if(xtm_probe_phase >= XTM_PROBE_PHASE_DONE)
+        {
+          XTM_ProbeLog("PROBE COMPLETE after %d frames\n", xtm_probe_frames_total);
+          fclose(xtm_probe_fp);
+          xtm_probe_fp = NULL;
+          return true; // caller should exit
+        }
+      XTM_ProbeResetPhaseStats();
+      XTM_ProbeLog("Entering phase %s\n", XTM_PROBE_PHASE_NAME[xtm_probe_phase]);
+    }
+  return false;
+}
+#endif
 
 
 
@@ -212,6 +516,7 @@ bool XTRACEMONITOR::AppProc_Ini()
   GEN_XPATHSMANAGER.AddPathSection(XPATHSMANAGERSECTIONTYPE_GRAPHICS, APPFLOW_DEFAULT_DIRECTORY_GRAPHICS);
   GEN_XPATHSMANAGER.AddPathSection(XPATHSMANAGERSECTIONTYPE_FONTS, APPFLOW_DEFAULT_DIRECTORY_FONTS);
   GEN_XPATHSMANAGER.AddPathSection(XPATHSMANAGERSECTIONTYPE_UI_LAYOUTS, APPFLOW_DEFAULT_DIRECTORY_UI_LAYOUTS);
+  GEN_XPATHSMANAGER.AddPathSection(XPATHSMANAGERSECTIONTYPE_SCRAPERS, APPFLOW_DEFAULT_DIRECTORY_SCRAPERS);
 
   GEN_XPATHSMANAGER.CreateAllPathSectionOnDisk();
 
@@ -331,29 +636,92 @@ bool XTRACEMONITOR::AppProc_Update()
         {
           case XTRACEMONITOR_XFSMSTATE_NONE   : break;
 
-          case XTRACEMONITOR_XFSMSTATE_INI    : form_cfg.Tick();
-                                                form_filters.Tick();
-                                                form_about.Tick();
+          case XTRACEMONITOR_XFSMSTATE_INI    :
+                                                {
+                                                  form_cfg.Tick();
+                                                  form_filters.Tick();
+                                                  form_about.Tick();
 
-                                                traceserver.Pump();
+                                                  traceserver.Pump();
 
-                                                if(!GEN_USERINTERFACE.Element_IsModalActive())
-                                                  {
-                                                    InternetStatus_Update(false);
-                                                  }
+#if XTM_FPS_PROBE
+                                                  XTM_ProbeBegin();
+                                                  if(!xtm_probe_oneshot_done)
+                                                    {
+                                                      xtm_probe_oneshot_done = true;
+                                                      XSTRING body;
+                                                      const double t0 = XTM_ProbeNowMs();
+                                                      for(int i = 0; i < 500; i++) geoip.FormatTooltipText(0x08080808, body);
+                                                      const double t1 = XTM_ProbeNowMs();
+                                                      XTM_ProbeLog("ONESHOT FormatTooltipText(missingIP) x500 = %.3f ms (%.3f us/call)\n", t1 - t0, (t1 - t0) * 1000.0 / 500.0);
 
-                                                UpdateInput();
-                                                DrawFrame();
-                                                GetMainScreen()->UpdateViewports();
+                                                      UI_ELEMENT_TOOLTIP* tip = XTM_ProbeTip();
+                                                      if(tip)
+                                                        {
+                                                          XSTRING text_body; text_body = NL("8.8.8.8\nMadrid, ES\nOperador: probe");
+                                                          const double a0 = XTM_ProbeNowMs();
+                                                          for(int i = 0; i < 200; i++) tip->SetContent(text_body);
+                                                          const double a1 = XTM_ProbeNowMs();
+                                                          XTM_ProbeLog("ONESHOT Tip.SetContent(text) x200 = %.3f ms (%.3f us/call)\n", a1 - a0, (a1 - a0) * 1000.0 / 200.0);
 
-                                                if(exitapp)
-                                                  {
-                                                    PersistScreenGeometryToCFG();
-                                                    screen_geometry_persisted = true;
-                                                    SetExitType(APPFLOWBASE_EXITTYPE_BY_USER);
-                                                    exitapp = false;
-                                                  }
+                                                          XSTRING map_body;
+                                                          map_body.Format(NL("![IMAGE %s]\n8.8.8.8\nMadrid, ES\nOperador: probe"),
+                                                                          NL("staticmaps/map_-2.2038_-79.8819_240x140_z11.png"));
+                                                          const double b0 = XTM_ProbeNowMs();
+                                                          for(int i = 0; i < 50; i++) tip->SetContent(map_body);
+                                                          const double b1 = XTM_ProbeNowMs();
+                                                          XTM_ProbeLog("ONESHOT Tip.SetContent(map markup) x50 = %.3f ms (%.3f us/call)\n", b1 - b0, (b1 - b0) * 1000.0 / 50.0);
+                                                          tip->Hide();
+                                                          tip->SetMustReDraw(false);
+                                                        }
+                                                    }
+                                                  double ms_geo = 0.0;
+                                                  if(xtm_probe_phase == XTM_PROBE_PHASE_GEO_FORMAT)
+                                                    {
+                                                      XSTRING body;
+                                                      const double g0 = XTM_ProbeNowMs();
+                                                      geoip.FormatTooltipText(0x08080808, body);
+                                                      ms_geo = XTM_ProbeNowMs() - g0;
+                                                    }
+                                                  XTM_ProbeApplyTipActions();
+#endif
 
+                                                  if(!GEN_USERINTERFACE.Element_IsModalActive())
+                                                    {
+                                                      InternetStatus_Update(false);
+                                                    }
+
+#if XTM_FPS_PROBE
+                                                  const double t_input0 = XTM_ProbeNowMs();
+#endif
+                                                  UpdateInput();
+#if XTM_FPS_PROBE
+                                                  const double ms_input = XTM_ProbeNowMs() - t_input0;
+                                                  // Re-apply tip after UpdateGeoTooltip so probe owns tip state.
+                                                  XTM_ProbeApplyTipActions();
+                                                  const double t_draw0 = XTM_ProbeNowMs();
+#endif
+                                                  DrawFrame();
+#if XTM_FPS_PROBE
+                                                  const double ms_draw = XTM_ProbeNowMs() - t_draw0;
+#endif
+                                                  GetMainScreen()->UpdateViewports();
+
+#if XTM_FPS_PROBE
+                                                  if(XTM_ProbeFrameEnd(GetMainScreen(), ms_input, ms_draw, xtm_probe_ms_brand, xtm_probe_ms_net, ms_geo))
+                                                    {
+                                                      exitapp = true;
+                                                    }
+#endif
+
+                                                  if(exitapp)
+                                                    {
+                                                      PersistScreenGeometryToCFG();
+                                                      screen_geometry_persisted = true;
+                                                      SetExitType(APPFLOWBASE_EXITTYPE_BY_USER);
+                                                      exitapp = false;
+                                                    }
+                                                }
                                                 break;
 
           case XTRACEMONITOR_XFSMSTATE_END    : break;
@@ -406,6 +774,7 @@ bool XTRACEMONITOR::AppProc_End()
   //--------------------------------------------------------------------------------------
 
   traceserver.End();
+  geoip.End();
 
   Ini_UserInterface(false);
 
@@ -547,6 +916,10 @@ bool XTRACEMONITOR::UpdateInput()
             {
               form_about.Show(true);
             }
+           else if(gui_tree.HandleClick(click_x, click_y))
+            {
+              // Tree owns the click (select / expand); do not forward as generic UI selection.
+            }
            else if(!bar_owned)
             {
               GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_SELECCTION, click_x, click_y);
@@ -579,8 +952,13 @@ bool XTRACEMONITOR::UpdateInput()
 
   if(!GEN_USERINTERFACE.ScrollBar_IsDragging())
     {
-      Valor_UpdateSplitter();
-      Tree_UpdateInput();
+      gui_varstatus.UpdateSplitter();
+    }
+
+  // Public-IP geo tooltip: stay while over the IP row or the tip; hide on leave / click.
+  if(cursor && !GEN_USERINTERFACE.Element_IsModalActive())
+    {
+      gui_tree.UpdateGeoTooltip(now_cursor_x, now_cursor_y, false);
     }
 
   if(button[XTRACEMONITOR_BUTTON_ESC])
@@ -838,10 +1216,9 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
 {
   if(!on)
     {
-      consoleelement            = NULL;
-      valorelement              = NULL;
-      treeelement               = NULL;
-      tree_uart_node            = NULL;
+      gui_console.Detach();
+      gui_varstatus.Detach();
+      gui_tree.Detach();
       opstatus_form             = NULL;
       opstatus_text             = NULL;
       brand_monitor             = NULL;
@@ -902,34 +1279,54 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
   GEN_USERINTERFACE.Layout_PutBackground();
   GEN_USERINTERFACE.Elements_SetToRedraw();
 
-  if(!Console_Resolve())
+  gui_console.SetOwner(this);
+  if(!gui_console.Resolve())
     {
       return false;
     }
 
-  if(!Console_SeedStartupLines())
+  if(!gui_console.SeedStartupLines())
     {
       return false;
     }
 
-  if(!Valor_Resolve())
+  gui_varstatus.SetOwner(this);
+  if(!gui_varstatus.Resolve())
     {
       return false;
     }
 
-  if(!Valor_Seed())
+  if(!gui_varstatus.Seed())
     {
       return false;
     }
 
-  if(!Tree_Resolve())
+  gui_tree.SetOwner(this);
+  if(!gui_tree.Resolve())
     {
       return false;
     }
 
-  if(!Tree_Seed())
+  if(!gui_tree.Seed())
     {
       return false;
+    }
+
+  if(!gui_tree.Stats_Resolve())
+    {
+      return false;
+    }
+
+  if(!gui_tree.Tooltip_Resolve())
+    {
+      return false;
+    }
+
+  geoip.SetOwner(this);
+  if(XTRACEMONITOR_CFG::GetInstance(false).GetGeolocalizationPublicIP())
+    {
+      geoip.Ini();
+      origins.QueuePublicIPGeolocation();
     }
 
   BrandMonitor_Resolve();
@@ -1072,21 +1469,80 @@ bool XTRACEMONITOR::DrawFrame()
       netstatus_repair_frames = 5;
     }
 
+#ifdef DEBUG_ACTIVE
   canvas->ReleaseDrawFramerate();
+#endif
 
+#if XTM_FPS_PROBE
+  const double t_canvas0 = XTM_ProbeNowMs();
+#endif
   if(!size_relaid) canvas->RebuildAllAreas();
+#if XTM_FPS_PROBE
+  xtm_probe_ms_canvas = XTM_ProbeNowMs() - t_canvas0;
+#endif
 
-  canvas->DrawFramerate(screen, 5.0, (double)(screen->GetHeight() - 7));
+#ifdef DEBUG_ACTIVE
+  // Right edge, 6 px margin; same baseline height as before (screen height - 7).
+  canvas->DrawFramerate(screen, GRP2DCANVASTYPE_DRAWFRAMERATE_ADJUSTSCREEN, (double)(screen->GetHeight() - 7));
+#endif
 
+#if XTM_FPS_PROBE
+  if((xtm_probe_frames_in_phase == 0) && (xtm_probe_warmup_left == 0) &&
+     ((xtm_probe_phase == XTM_PROBE_PHASE_IDLE) || (xtm_probe_phase == XTM_PROBE_PHASE_CLEAR_ALL_DIRT)))
+    {
+      char before_names[512];
+      const int before_n = XTM_ProbeCountAllDirty(before_names, (int)sizeof(before_names));
+      XTM_ProbeLog("%s pre-propagate dirty_count=%d names=%s\n", XTM_PROBE_PHASE_NAME[xtm_probe_phase], before_n, before_names);
+    }
+  if(xtm_probe_phase == XTM_PROBE_PHASE_CLEAR_ALL_DIRT)
+    {
+      XTM_ProbeClearAllDirt();
+    }
+  const double t_rebuild0 = XTM_ProbeNowMs();
+#endif
   GEN_USERINTERFACE.Elements_RebuildDrawAreas();
+#if XTM_FPS_PROBE
+  xtm_probe_ms_rebuild = XTM_ProbeNowMs() - t_rebuild0;
+  xtm_probe_sample_dirty_tip     = XTM_ProbeDirty(NL("tree_geo_tip"), UI_ELEMENT_TYPE_TOOLTIP);
+  xtm_probe_sample_dirty_tree    = XTM_ProbeDirty(NL("tree")        , UI_ELEMENT_TYPE_TREE);
+  xtm_probe_sample_dirty_console = XTM_ProbeDirty(NL("log_console"), UI_ELEMENT_TYPE_CONSOLE);
+  xtm_probe_sample_dirty_brand   = XTM_ProbeDirty(NL("brand_monitor"), UI_ELEMENT_TYPE_IMAGE);
+  xtm_probe_sample_dirty_net     = XTM_ProbeDirty(NL("netstatus"), UI_ELEMENT_TYPE_FORM);
+  xtm_probe_sample_dirty_total   = XTM_ProbeCountAllDirty(xtm_probe_dirty_names, (int)sizeof(xtm_probe_dirty_names));
+  if((xtm_probe_frames_in_phase == 0) && (xtm_probe_warmup_left == 0) &&
+     ((xtm_probe_phase == XTM_PROBE_PHASE_IDLE) || (xtm_probe_phase == XTM_PROBE_PHASE_CLEAR_ALL_DIRT)))
+    {
+      XTM_ProbeLog("%s post-propagate dirty_count=%d names=%s\n", XTM_PROBE_PHASE_NAME[xtm_probe_phase], xtm_probe_sample_dirty_total, xtm_probe_dirty_names);
+    }
+  const double t_uiupd0 = XTM_ProbeNowMs();
+#endif
   if(size_relaid) GEN_USERINTERFACE.Elements_SetToRedraw();
   GEN_USERINTERFACE.Update();
+#if XTM_FPS_PROBE
+  xtm_probe_ms_uiupd = XTM_ProbeNowMs() - t_uiupd0;
+#endif
 
+#if XTM_FPS_PROBE
+  const double t_brand0 = XTM_ProbeNowMs();
+  if(!xtm_probe_skip_brand)
+    {
+      BrandMonitor_RepaintAfterChrome();
+    }
+  xtm_probe_ms_brand = XTM_ProbeNowMs() - t_brand0;
+
+  const double t_net0 = XTM_ProbeNowMs();
+  if(!GEN_USERINTERFACE.Element_IsModalActive())
+    {
+      InternetStatus_RepaintAfterChrome();
+    }
+  xtm_probe_ms_net = XTM_ProbeNowMs() - t_net0;
+#else
   BrandMonitor_RepaintAfterChrome();
   if(!GEN_USERINTERFACE.Element_IsModalActive())
     {
       InternetStatus_RepaintAfterChrome();
     }
+#endif
 
   {
     UI_LAYOUT* xtm = GEN_USERINTERFACE.Layouts_Get(NL("xtracemonitor"));
@@ -1161,36 +1617,17 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
 
   opstatus_foot_y = foot_y;
 
-  double tree_h = console_bot - valor_top;
+  // Same foot band as opstatus: margin from window edge, GAP above the strip (matches console→opstatus).
+  const double treestats_h = XTRACEMONITOR_LAYOUT_TREESTATS_H;
+  const double tree_w      = XTRACEMONITOR_LAYOUT_PANELS_X - margin - gap; // 210 at design size
+  double tree_bot = console_bot;
+  double tree_h   = tree_bot - valor_top;
   if(tree_h < 1.0) tree_h = 1.0;
 
-  if(treeelement && treeelement->GetBoundaryLine())
-    {
-      treeelement->GetBoundaryLine()->height = tree_h;
-      treeelement->GetBoundaryLine()->y      = console_bot;
-      treeelement->SetIntrinsicHeight(tree_h);
-      treeelement->SetYPosition(console_bot);
-    }
-
-  if(valorelement && valorelement->GetBoundaryLine())
-    {
-      valorelement->GetBoundaryLine()->width  = panel_w;
-      valorelement->GetBoundaryLine()->height = valor_h;
-      valorelement->GetBoundaryLine()->y      = valor_y;
-      valorelement->SetIntrinsicWidth(panel_w);
-      valorelement->SetIntrinsicHeight(valor_h);
-      valorelement->SetYPosition(valor_y);
-    }
-
-  if(consoleelement && consoleelement->GetBoundaryLine())
-    {
-      consoleelement->GetBoundaryLine()->width  = panel_w;
-      consoleelement->GetBoundaryLine()->height = console_h;
-      consoleelement->GetBoundaryLine()->y      = console_bot;
-      consoleelement->SetIntrinsicWidth(panel_w);
-      consoleelement->SetIntrinsicHeight(console_h);
-      consoleelement->SetYPosition(console_bot);
-    }
+  gui_tree.ApplyLayoutGeometry(margin, tree_w, tree_h, tree_bot);
+  gui_tree.Stats_ApplyGeometry(foot_y, margin, tree_w);
+  gui_varstatus.ApplyLayoutGeometry(panel_w, valor_h, valor_y);
+  gui_console.ApplyLayoutGeometry(panel_w, console_h, console_bot);
 
   if(opstatus_form && opstatus_form->GetBoundaryLine())
     {
@@ -1248,305 +1685,6 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
   GEN_USERINTERFACE.Layout_PutBackground();
   GEN_USERINTERFACE.Elements_SetToRedraw();
 
-  return true;
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::Console_Resolve()
-* @brief      Resolves the layout console element pointer.
-* @ingroup    UTILITIES
-*
-* @return     bool : true if the operation is successful; otherwise false.
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::Console_Resolve()
-{
-  consoleelement = (UI_ELEMENT_CONSOLE*)GEN_USERINTERFACE.Element_Get(NL("log_console"), UI_ELEMENT_TYPE_CONSOLE);
-  if(!consoleelement) return false;
-
-  return true;
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::Console_SeedStartupLines()
-* @brief      Seeds initial lines into the graphical console.
-* @ingroup    UTILITIES
-*
-* @return     bool : true if the operation is successful; otherwise false.
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::Console_SeedStartupLines()
-{
-  if(!consoleelement) return false;
-
-  consoleelement->Clear();
-
-  return true;
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::Valor_Resolve()
-* @brief      Resolves the layout "valor" property list element pointer.
-* @ingroup    UTILITIES
-*
-* @return     bool : true if the operation is successful; otherwise false.
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::Valor_Resolve()
-{
-  valorelement = (UI_ELEMENT_PROPERTYLIST*)GEN_USERINTERFACE.Element_Get(NL("valor"), UI_ELEMENT_TYPE_PROPERTYLIST);
-  if(!valorelement) return false;
-
-  return true;
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::Valor_Seed()
-* @brief      Clears the "valor" property list (no sample rows _ filled by live status later).
-* @ingroup    UTILITIES
-*
-* @return     bool : true if the operation is successful; otherwise false.
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::Valor_Seed()
-{
-  if(!valorelement) return false;
-
-  valorelement->Clear();
-  GEN_USERINTERFACE.Elements_SetToRedraw(valorelement);
-
-  return true;
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::Valor_UpdateSplitter()
-* @brief      Drives the "valor" column splitter drag from the mouse button state.
-* @ingroup    UTILITIES
-*
-* @return     bool : true if the operation is successful; otherwise false.
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::Valor_UpdateSplitter()
-{
-  if(!valorelement || !cursor || !button[XTRACEMONITOR_BUTTON_MOUSE]) return false;
-
-  if(GEN_USERINTERFACE.Element_ModalBlocksInteraction(valorelement))
-    {
-      if(valorelement->IsSplitDragging()) valorelement->Split_EndDrag();
-      valor_prevpressed = button[XTRACEMONITOR_BUTTON_MOUSE]->IsPressed();
-      return true;
-    }
-
-  bool   pressed = button[XTRACEMONITOR_BUTTON_MOUSE]->IsPressed();
-  int    cursor_x = (int)cursor->GetX();
-  int    cursor_y = (int)GetMainScreen()->GetHeight() - (int)cursor->GetY();
-  double local_x  = 0.0f;
-  double local_y  = 0.0f;
-
-  if(!valorelement->ScreenToLocal(cursor_x, cursor_y, local_x, local_y)) return false;
-
-  if(valorelement->IsSplitDragging())
-    {
-      if(pressed)
-        {
-          double before = valorelement->GetNameColumnWidth();
-
-          valorelement->Split_DragTo(local_x);
-
-          if(before != valorelement->GetNameColumnWidth()) GEN_USERINTERFACE.Elements_SetToRedraw(valorelement);
-        }
-       else
-        {
-          valorelement->Split_EndDrag();
-        }
-    }
-   else
-    {
-      if(pressed && !valor_prevpressed)
-        {
-          if(valorelement->HitTestSplitter(local_x, local_y, valorelement->GetBoundaryLine()->width, valorelement->GetBoundaryLine()->height))
-            {
-              valorelement->Split_BeginDrag();
-            }
-        }
-    }
-
-  valor_prevpressed = pressed;
-
-  return true;
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::Tree_Resolve()
-* @brief      Resolves the layout "tree" element pointer.
-* @ingroup    UTILITIES
-*
-* @return     bool : true if the operation is successful; otherwise false.
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::Tree_Resolve()
-{
-  treeelement = (UI_ELEMENT_TREE*)GEN_USERINTERFACE.Element_Get(NL("tree"), UI_ELEMENT_TYPE_TREE);
-  if(!treeelement) return false;
-
-  return true;
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::Tree_Seed()
-* @brief      Seeds the tree with All, Local (no internet), CFG [origins], and one UART node.
-* @ingroup    UTILITIES
-*
-* @return     bool : true if the operation is successful; otherwise false.
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::Tree_Seed()
-{
-  if(!treeelement) return false;
-
-  treeelement->Clear();
-  tree_uart_node = NULL;
-
-  UI_ELEMENT_TREE_NODE* all = treeelement->AddNode(NULL, NL("All"), NL("tree/all.png"));
-  if(!all) return false;
-
-  treeelement->AddNode(all, NL("# Local (no internet)"), NL("tree/local.png"));
-
-  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
-  const int norigins = cfg.GetOriginCount();
-
-  for(int i=0; i<norigins; i++)
-    {
-      XTRACEMONITOR_CFG_ORIGIN origin;
-      if(!cfg.GetOrigin(i, origin)) continue;
-      if(origin.name.IsEmpty()) continue;
-
-      XSTRING display_ip = origin.ip;
-      if(display_ip.IsEmpty() && !origin.url.IsEmpty())
-        {
-          DIOIP resolved;
-          if(GEN_DIODNSRESOLVER.ResolveURL(origin.url.Get(), resolved))
-            {
-              resolved.GetXString(display_ip);
-            }
-        }
-
-      XSTRING label = origin.name;
-      if(origin.showip && !display_ip.IsEmpty())
-        {
-          label.Format(NL("%s (%s)"), origin.name.Get(), display_ip.Get());
-        }
-
-     
-      XCHAR* icon = NL("tree/ip.png");
-      if(!display_ip.IsEmpty())
-        {
-         
-          bool is_local = (display_ip.Find(NL("192.168."), 0, true) == 0) ||
-                          (display_ip.Find(NL("10.")     , 0, true) == 0) ||
-                          (display_ip.Find(NL("127.")    , 0, true) == 0);
-          if(!is_local && (display_ip.Find(NL("172."), 0, true) == 0))
-            {            
-              XSTRING second;
-              int     dot1 = display_ip.Find(NL("."), 0, true);
-              int     dot2 = (dot1 >= 0) ? display_ip.Find(NL("."), dot1 + 1, true) : -1;
-              if((dot1 >= 0) && (dot2 > dot1))
-                {
-                  display_ip.Copy(dot1 + 1, dot2, second);
-                  int octet = second.ConvertToInt();
-                  if((octet >= 16) && (octet <= 31)) is_local = true;
-                }
-            }
-          icon = is_local ? NL("tree/packet.png") : NL("tree/ip.png");
-        }
-
-      treeelement->AddNode(all, label.Get(), icon);
-    }
-
-  XSTRING uart_label;
-  Tree_BuildUARTLabel(uart_label);
-  tree_uart_node = treeelement->AddNode(all, uart_label.Get(), NL("tree/uart.png"));
-
-  treeelement->Expand(all);
-  treeelement->SetSelected(all);
-
-  GEN_USERINTERFACE.Elements_SetToRedraw(treeelement);
-
-  return true;
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::Tree_BuildUARTLabel(XSTRING& out)
-* @brief      Builds the single UART tree label from the active uartport vs [target] type UART.
-* @ingroup    UTILITIES
-*
-* @param[out] out : "UART" or "UART <TargetName>" when the serial line matches a Target.
-*
-* @return     bool : true always (out is always filled).
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::Tree_BuildUARTLabel(XSTRING& out)
-{
-  out = NL("UART");
-
-  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
-  XSTRING* uart = cfg.GetUARTPort();
-  if(!uart || uart->IsEmpty()) return true;
-
-  const int ntargets = cfg.GetTargetCount();
-  for(int i=0; i<ntargets; i++)
-    {
-      XTRACEMONITOR_CFG_TARGET target;
-
-      if(!cfg.GetTarget(i, target)) continue;
-      if(target.type != XTRACEMONITOR_CFG_TARGETTYPE_UART) continue;
-      if(target.name.IsEmpty() || target.uartconfig.IsEmpty()) continue;
-     
-      if(uart->Compare(target.uartconfig.Get()) != 0) continue;
-
-      out.Format(NL("UART %s"), target.name.Get());
-      return true;
-    }
-
-  return true;
-}
-
-
-/**-------------------------------------------------------------------------------------------------------------------
-*
-* @fn         bool XTRACEMONITOR::Tree_UpdateUARTLabel()
-* @brief      Refreshes the single UART tree node label after uartport / Target changes.
-* @ingroup    UTILITIES
-*
-* @return     bool : true if the node was updated; otherwise false.
-*
-*---------------------------------------------------------------------------------------------------------------------*/
-bool XTRACEMONITOR::Tree_UpdateUARTLabel()
-{
-  if(!treeelement || !tree_uart_node) return false;
-
-  XSTRING label;
-  Tree_BuildUARTLabel(label);
-  if(!tree_uart_node->text.Compare(label.Get())) return true;
-
-  tree_uart_node->text.Set(label.Get());
-  GEN_USERINTERFACE.Elements_SetToRedraw(treeelement);
   return true;
 }
 
@@ -2318,7 +2456,7 @@ bool XTRACEMONITOR::OpStatus_Refresh()
   if(opstatus_expanded && (opstatus_count > 1)) GEN_USERINTERFACE.Element_PutToLastPositionLayout(opstatus_form);
 
   GEN_USERINTERFACE.Elements_SetToRedraw(opstatus_form);
-  if(consoleelement) GEN_USERINTERFACE.Elements_SetToRedraw(consoleelement);
+  gui_console.SetToRedraw();
 
   return true;
 }
@@ -2495,56 +2633,6 @@ bool XTRACEMONITOR::OpStatus_UpdateInput()
   // Double-click is handled on IsPressedWithRelease in UpdateInput (same edge as SELECCTION).
   // Keep this hook for symmetry with tree/valor input helpers.
   return (opstatus_form != NULL);
-}
-
-
-bool XTRACEMONITOR::Tree_UpdateInput()
-{
-  if(!treeelement || !cursor || !button[XTRACEMONITOR_BUTTON_MOUSE]) return false;
-
-  bool pressed = button[XTRACEMONITOR_BUTTON_MOUSE]->IsPressed();
-
-  // Act only on the press transition.
-  if(pressed && !tree_prevpressed)
-    {
-      // GEN modal form owns the pointer: content under (tree, etc.) must not select while it is up.
-      // Redraw/update of the tree may continue _ only interaction is blocked.
-      if(GEN_USERINTERFACE.Element_ModalBlocksInteraction(treeelement))
-        {
-          tree_prevpressed = pressed;
-          return true;
-        }
-
-      int    cursor_x = (int)cursor->GetX();
-      int    cursor_y = (int)GetMainScreen()->GetHeight() - (int)cursor->GetY();
-      double local_x  = 0.0f;
-      double local_y  = 0.0f;
-
-      // Foot form owns the click when the pointer is over it (including expanded overlap).
-      if(OpStatus_HitTest(cursor_x, cursor_y))
-        {
-          tree_prevpressed = pressed;
-          return true;
-        }
-
-      if(treeelement->ScreenToLocal(cursor_x, cursor_y, local_x, local_y))
-        {
-          double box_w = treeelement->GetBoundaryLine()->width;
-          double box_h = treeelement->GetBoundaryLine()->height;
-
-          if((local_x >= 0.0f) && (local_x < box_w) && (local_y >= 0.0f) && (local_y < box_h))
-            {
-              if(treeelement->ClickAt(local_x, local_y))
-                {
-                  GEN_USERINTERFACE.Elements_SetToRedraw(treeelement);
-                }
-            }
-        }
-    }
-
-  tree_prevpressed = pressed;
-
-  return true;
 }
 
 
@@ -3092,7 +3180,8 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
 
   // Keep in sync with xtracemonitor.css :root tokens (var() is parse-time; runtime remaps below).
   // UI_COLOR CSV 4th field is alpha PERCENT (0-100), not 0-255.
-  XCHAR* page_bg     = light ? NL("236,238,242,100") : NL("24,28,36,100");
+  // Light page = classic Windows BTNFACE / old XTM toolbar fill (240,240,240).
+  XCHAR* page_bg     = light ? NL("240,240,240,100") : NL("24,28,36,100");
   XCHAR* console_bg  = light ? NL("250,250,252,100") : NL("12,14,18,100");
   // Light frame slightly darker than page so panel edges stay visible on white washes.
   XCHAR* frame_line  = light ? NL("140,150,165,100") : NL("70,80,95,100");
@@ -3246,7 +3335,7 @@ bool XTRACEMONITOR::ApplyColorTheme_RefreshChrome(bool light)
   // Chrome caption bar (= Windows custom chrome toolbar) matches the app page in every scheme.
   // Opaque page fill so SVG soft edges never composite onto a leftover black AnimBackdrop plate.
   // UI_COLOR CSV 4th field is alpha PERCENT (0-100), not 0-255.
-  XCHAR* caption_fill = light ? NL("236,238,242,100") : NL("24,28,36,100");
+  XCHAR* caption_fill = light ? NL("240,240,240,100") : NL("24,28,36,100");
 
   auto apply_caption = [&](UI_ELEMENT* element) -> void
     {
@@ -3352,7 +3441,8 @@ bool XTRACEMONITOR::ApplyColorTheme_PatchStyleBag(UI_STYLE& style, bool light)
       // Bidirectional so Accept can toggle either way after a previous theme.
       if(light)
         {
-          value.Replace(NL("24,28,36")    , NL("236,238,242"));
+          value.Replace(NL("24,28,36")    , NL("240,240,240"));
+          value.Replace(NL("236,238,242") , NL("240,240,240")); // prior Light page
           value.Replace(NL("12,14,18")    , NL("250,250,252"));
           value.Replace(NL("64,72,84")    , NL("210,214,220")); // edit idle
           value.Replace(NL("8,10,12")     , NL("248,250,252")); // edit focus
@@ -3368,7 +3458,8 @@ bool XTRACEMONITOR::ApplyColorTheme_PatchStyleBag(UI_STYLE& style, bool light)
         }
        else
         {
-          value.Replace(NL("236,238,242") , NL("24,28,36"));
+          value.Replace(NL("240,240,240") , NL("24,28,36"));
+          value.Replace(NL("236,238,242") , NL("24,28,36")); // prior Light page
           value.Replace(NL("250,250,252") , NL("12,14,18"));
           value.Replace(NL("210,214,220") , NL("64,72,84"));   // edit idle
           value.Replace(NL("248,250,252") , NL("8,10,12"));    // edit focus
@@ -3403,7 +3494,7 @@ bool XTRACEMONITOR::ApplyColorTheme_PatchStyleSheet(UI_STYLESHEET* sheet, bool l
 
   if(light)
     {
-      sheet->Variables().Set(NL("--page-bg")        , NL("236,238,242"));
+      sheet->Variables().Set(NL("--page-bg")        , NL("240,240,240"));
       sheet->Variables().Set(NL("--console-bg")     , NL("250,250,252"));
       sheet->Variables().Set(NL("--frame-line")     , NL("140,150,165"));
       sheet->Variables().Set(NL("--label-ink")      , NL("40,44,52"));
@@ -3454,6 +3545,9 @@ bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
 
   const UI_ELEMENT_TYPE type = element->GetType();
 
+  // Geo tip keeps its own pastel plate / black ink (not Dark/Light chrome).
+  if(type == UI_ELEMENT_TYPE_TOOLTIP) return true;
+
   // Icon faces (toolbar multioption/button + PNG/SVG brand art): never recolor or
   // SnapshotStyleVisual _ that replaced animation plates and hid the glyphs.
   if((type == UI_ELEMENT_TYPE_IMAGE)      ||
@@ -3470,7 +3564,7 @@ bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
     }
 
   // CSV 4th field is alpha PERCENT (0-100).
-  XCHAR* page_bg    = light ? NL("236,238,242,100") : NL("24,28,36,100");
+  XCHAR* page_bg    = light ? NL("240,240,240,100") : NL("24,28,36,100");
   XCHAR* console_bg = light ? NL("250,250,252,100") : NL("12,14,18,100");
   XCHAR* frame_line = light ? NL("140,150,165,100") : NL("70,80,95,100");
   XCHAR* edit_idle  = light ? NL("210,214,220,100") : NL("64,72,84,100");
@@ -3502,7 +3596,7 @@ bool XTRACEMONITOR::ApplyColorTheme_Element(UI_ELEMENT* element, bool light)
     };
   auto is_theme_page = [&](UI_COLOR* c) -> bool
     {
-      return rgb_eq(c, 24, 28, 36) || rgb_eq(c, 236, 238, 242);
+      return rgb_eq(c, 24, 28, 36) || rgb_eq(c, 240, 240, 240) || rgb_eq(c, 236, 238, 242);
     };
   auto is_theme_console = [&](UI_COLOR* c) -> bool
     {
@@ -3703,13 +3797,14 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
 
   if(!name->Compare(NL("clear-btn"), true))
     {
-      if(consoleelement) consoleelement->Clear();
+      origins.ClearSelectedHistory();
       OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_CLEAR_CONSOLE));
       return true;
     }
 
   if(!name->Compare(NL("delstatus-btn"), true))
     {
+      origins.ClearSelectedStatus();
       OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_DEL_VAR_STATUS));
       return true;
     }
@@ -3973,12 +4068,6 @@ void XTRACEMONITOR::Clean()
 {
   xtimer                 = NULL;
   cursor                 = NULL;
-  consoleelement         = NULL;
-  valorelement           = NULL;
-  valor_prevpressed      = false;
-  treeelement            = NULL;
-  tree_uart_node         = NULL;
-  tree_prevpressed       = false;
   opstatus_form          = NULL;
   opstatus_text          = NULL;
   opstatus_count         = 0;

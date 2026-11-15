@@ -970,5 +970,22 @@
         <![CDATA[本工具包含于以下架构：]]>
       </text>
     </sentence>
+    <sentence id="00158" fixed="0">
+      <text lang="Spanish">
+        <![CDATA[Geolocalizar IPs públicas]]>
+      </text>
+      <text lang="English">
+        <![CDATA[Geolocate public IPs]]>
+      </text>
+      <text lang="French">
+        <![CDATA[Géolocaliser les IP publiques]]>
+      </text>
+      <text lang="German">
+        <![CDATA[Öffentliche IPs geolokalisieren]]>
+      </text>
+      <text lang="Chinese">
+        <![CDATA[定位公网 IP]]>
+      </text>
+    </sentence>
   </translations>
 </lng>

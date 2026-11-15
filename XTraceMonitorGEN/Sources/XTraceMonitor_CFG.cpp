@@ -219,6 +219,8 @@ bool XTRACEMONITOR_CFG::DoVariableMapping()
            NL("Save main window position on exit"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
   AddValue(XFILECFG_VALUETYPE_BOOLEAN, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_SAVESCREENSIZE, &savescreensize,
            NL("Save main window size on exit"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_BOOLEAN, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP, &geolocalizationpublicip,
+           NL("Geolocate public IPs (tree tooltips)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
   AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_SAVEDSCREENPOSITION, &savedscreenposition,
            NL("Last main window position (x, y)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
   AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_SAVEDSCREENSIZE, &savedscreensize,
@@ -235,7 +237,7 @@ bool XTRACEMONITOR_CFG::DoVariableMapping()
   AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_FILTERS, XTRACEMONITOR_CFG_FILTERS_TEXTFILTER, &filters_text,
            NL("Text filter substring (used when istextfilteractive=yes)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
   AddValue(XFILECFG_VALUETYPE_INT, XTRACEMONITOR_CFG_SECTION_FILTERS, XTRACEMONITOR_CFG_FILTERS_LEVELFILTER, &filters_levels,
-           NL("XTrace level bitmask (bit0=Black … bit5=Gray; 255=all)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+           NL("XTrace level bitmask (bit0=Black,1=Purple,2=Green,3=Blue,4=Red,5=Gray; 255=all)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
 
   AddRemark(XTRACEMONITOR_CFG_SECTION_CONSOLE, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
   AddRemark(XTRACEMONITOR_CFG_SECTION_CONSOLE, NL(" Console line prefix options"), 0, 2);
@@ -417,6 +419,7 @@ bool XTRACEMONITOR_CFG::DoDefault()
   colortheme                            = XTRACEMONITOR_CFG_COLORTHEME_DEFAULT;
   savescreenposition                    = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
   savescreensize                        = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
+  geolocalizationpublicip               = XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP_DEFAULT;
   SetSavedScreenPosition(0, 0);
   SetSavedScreenSize(XTRACEMONITOR_WINDOW_WIDTH, XTRACEMONITOR_WINDOW_HEIGHT);
   udplistenport                         = XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;
@@ -582,6 +585,36 @@ bool XTRACEMONITOR_CFG::GetSaveScreenSize()
 void XTRACEMONITOR_CFG::SetSaveScreenSize(bool enable)
 {
   savescreensize = enable;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::GetGeolocalizationPublicIP()
+* @brief      True when public-IP geolocation (worker + tree tooltips) is enabled.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if geolocation is enabled.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::GetGeolocalizationPublicIP()
+{
+  return geolocalizationpublicip;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetGeolocalizationPublicIP(bool enable)
+* @brief      Enables or disables public-IP geolocation and tree tooltips.
+* @ingroup    UTILITIES
+*
+* @param[in]  enable : true to geolocate public IPs.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetGeolocalizationPublicIP(bool enable)
+{
+  geolocalizationpublicip = enable;
 }
 
 
@@ -1813,6 +1846,7 @@ void XTRACEMONITOR_CFG::Clean()
   colortheme           = XTRACEMONITOR_CFG_COLORTHEME_INVALID;
   savescreenposition   = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
   savescreensize       = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
+  geolocalizationpublicip = XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP_DEFAULT;
   savedscreenposition.Empty();
   savedscreensize.Empty();
   udplistenport        = XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;

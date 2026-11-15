@@ -126,16 +126,8 @@ bool XTRACEMONITOR_FORM_FILTERS::SetOwner(XTRACEMONITOR* owner)
 *---------------------------------------------------------------------------------------------------------------------*/
 int XTRACEMONITOR_FORM_FILTERS::LevelMaskForIndex(int index)
 {
-  switch(index)
-    {
-      case 0: return XTRACEMONITOR_CFG_FILTER_LEVEL_BLACK;
-      case 1: return XTRACEMONITOR_CFG_FILTER_LEVEL_BLUE;
-      case 2: return XTRACEMONITOR_CFG_FILTER_LEVEL_GREEN;
-      case 3: return XTRACEMONITOR_CFG_FILTER_LEVEL_PURPLE;
-      case 4: return XTRACEMONITOR_CFG_FILTER_LEVEL_RED;
-      case 5: return XTRACEMONITOR_CFG_FILTER_LEVEL_GRAY;
-      default: return 0;
-    }
+  if((index < 0) || (index > 5)) return 0;
+  return XTRACEMONITOR_CFG_LevelMaskForColorIndex(index);
 }
 
 
@@ -968,6 +960,8 @@ bool XTRACEMONITOR_FORM_FILTERS::OnAccept()
   levelfilter_committed       = levelfilter_draft;
 
   owner->Toolbar_ApplyFilterBtnVisibility();
+  // Rebuild visible console from history with the new level/text gates (old gray/default lines drop out).
+  owner->origins.ReplaySelectedToConsole();
 
   owner->OpStatus_Log(NL("Filters: Aceptar - CFG [filters] guardado."));
   return ArmCloseAfterPress(filters_modal_btn_accept);

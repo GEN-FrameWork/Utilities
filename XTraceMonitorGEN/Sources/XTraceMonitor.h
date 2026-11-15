@@ -40,6 +40,11 @@
 #include "XTraceMonitor_Form_Filters.h"
 #include "XTraceMonitor_Form_About.h"
 #include "XTraceMonitor_Server.h"
+#include "XTraceMonitor_Origins.h"
+#include "XTraceMonitor_GUI_Tree.h"
+#include "XTraceMonitor_GUI_Console.h"
+#include "XTraceMonitor_GUI_VarStatus.h"
+#include "XTraceMonitor_GeoIP.h"
 
 
 
@@ -98,6 +103,7 @@ enum XTRACEMONITOR_BUTTONS
 #define XTRACEMONITOR_LAYOUT_VALOR_TOP            134.0  // 8px under legend bottom (y=126)
 #define XTRACEMONITOR_LAYOUT_VALOR_H              158.0  // header 26 + 6 rows×22 (exact 6 lines)
 #define XTRACEMONITOR_LAYOUT_FOOT_H               22.0
+#define XTRACEMONITOR_LAYOUT_TREESTATS_H          22.0  // IP counters strip under the tree
 #define XTRACEMONITOR_LAYOUT_OPSTATUS_TEXT_PAD_X  8.0
 #define XTRACEMONITOR_LAYOUT_NETSTATUS_LED         12.0  // visible circle; must stay paintable (opaque fill)
 #define XTRACEMONITOR_LAYOUT_NETSTATUS_LINE_H      16.0
@@ -159,6 +165,7 @@ class UI_ELEMENT_FORM;
 class GRPXEVENT;
 class XTRACEMONITOR_CFG;
 class XTRACEMONITOR_SERVER;
+class XTRACEMONITOR_ORIGINS;
 class UI_STYLE;
 class UI_STYLESHEET;
 
@@ -181,6 +188,11 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     friend class                    XTRACEMONITOR_FORM_FILTERS;
     friend class                    XTRACEMONITOR_FORM_ABOUT;
     friend class                    XTRACEMONITOR_SERVER;
+    friend class                    XTRACEMONITOR_ORIGINS;
+    friend class                    XTRACEMONITOR_GUI_TREE;
+    friend class                    XTRACEMONITOR_GUI_CONSOLE;
+    friend class                    XTRACEMONITOR_GUI_VARSTATUS;
+    friend class                    XTRACEMONITOR_GEOIP;
 
     bool                            UpdateInput                             ();
 
@@ -191,19 +203,6 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            DrawFrame                               ();
 
     bool                            Layout_ApplyFlexibleResize              (bool compose = true);
-
-    bool                            Console_Resolve                         ();
-    bool                            Console_SeedStartupLines                ();
-
-    bool                            Valor_Resolve                           ();
-    bool                            Valor_Seed                              ();
-    bool                            Valor_UpdateSplitter                    ();
-
-    bool                            Tree_Resolve                            ();
-    bool                            Tree_Seed                               ();
-    bool                            Tree_BuildUARTLabel                     (XSTRING& out);
-    bool                            Tree_UpdateUARTLabel                    ();
-    bool                            Tree_UpdateInput                        ();
 
     bool                            BrandMonitor_Resolve                    ();
     bool                            BrandMonitor_RepaintAfterChrome         ();
@@ -259,14 +258,6 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     INPBUTTON*                      button[XTRACEMONITOR_BUTTON_MAX];
     INPCURSOR*                      cursor;
 
-    UI_ELEMENT_CONSOLE*             consoleelement;
-    UI_ELEMENT_PROPERTYLIST*        valorelement;
-    bool                            valor_prevpressed;
-
-    UI_ELEMENT_TREE*                treeelement;
-    UI_ELEMENT_TREE_NODE*           tree_uart_node;
-    bool                            tree_prevpressed;
-
     UI_ELEMENT_FORM*                opstatus_form;
     UI_ELEMENT_TEXTBOX*             opstatus_text;
     XSTRING                         opstatus_msgs[XTRACEMONITOR_OPSTATUS_MAXLINES];
@@ -311,6 +302,11 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     XTRACEMONITOR_FORM_FILTERS      form_filters;
     XTRACEMONITOR_FORM_ABOUT        form_about;
     XTRACEMONITOR_SERVER            traceserver;
+    XTRACEMONITOR_ORIGINS           origins;
+    XTRACEMONITOR_GUI_TREE          gui_tree;
+    XTRACEMONITOR_GUI_CONSOLE       gui_console;
+    XTRACEMONITOR_GUI_VARSTATUS     gui_varstatus;
+    XTRACEMONITOR_GEOIP             geoip;
 
     int                             layout_applied_w;
     int                             layout_applied_h;

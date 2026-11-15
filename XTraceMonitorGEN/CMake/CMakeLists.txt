@@ -58,6 +58,10 @@ option(DIO_STREAMUART_FEATURE                                   "Stream UART"   
 option(CIPHER_SYMMETRIC_FEATURE                                 "Cipher Symmetric"                                        ON )
 option(CIPHER_SYMMETRIC_AES_FEATURE                             "Cipher Symmetric AES"                                    ON )
 
+# Public-IP tree tooltips: GEN scraper facade + geolocationip.g / staticmap.g (scripts/scrapers).
+option(DIO_SCRAPERWEB_GEOLOCATIONIP_FEATURE                     "Scraper Web Geolocation IP"                              ON )
+option(DIO_SCRAPERWEB_STATICMAP_FEATURE                         "Scraper Web Static Map"                                  ON )
+
 # About GEN URL link opens the site via XPROCESSMANAGER::OpenURL (cross-platform).
 option(XPROCESSMANAGER_FEATURE                                  "Process Manager"                                         ON )
 
@@ -97,6 +101,11 @@ list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Form_Filters.cpp")
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Form_About.cpp")
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Server.cpp")
+list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Origins.cpp")
+list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_GUI_Tree.cpp")
+list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_GUI_Console.cpp")
+list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_GUI_VarStatus.cpp")
+list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_GeoIP.cpp")
 
 
 # --------------------------------------------------------------------

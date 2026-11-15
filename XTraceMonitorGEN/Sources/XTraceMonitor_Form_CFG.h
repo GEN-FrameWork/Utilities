@@ -124,6 +124,7 @@ class XTRACEMONITOR_FORM_CFG
     UI_ELEMENT_RADIOBUTTON*         theme_dark;
     UI_ELEMENT_CHECKBOX*            chk_savescreenposition;
     UI_ELEMENT_CHECKBOX*            chk_savescreensize;
+    UI_ELEMENT_CHECKBOX*            chk_geolocalizationpublicip;
     UI_ELEMENT_CHECKBOX*            chk_adddatetimeconsole;
     UI_ELEMENT_CHECKBOX*            chk_addipconsole;
     UI_ELEMENT_CHECKBOX*            chk_texttracking;
@@ -147,6 +148,8 @@ class XTRACEMONITOR_FORM_CFG
     bool                            savescreenposition_draft;
     bool                            savescreensize_committed;
     bool                            savescreensize_draft;
+    bool                            geolocalizationpublicip_committed;
+    bool                            geolocalizationpublicip_draft;
     bool                            adddatetimeconsole_committed;
     bool                            adddatetimeconsole_draft;
     bool                            addipconsole_committed;

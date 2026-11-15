@@ -8,8 +8,8 @@
   <fonts >
     <font name="default" file="Nunito-SemiBold.ttf"></font>
     <font name="cjk" file="NotoSansSC-Regular.otf"></font>
-    <!-- Same face as legacy XTraceMonitor TRichEdit (Courier New, Height -11). -->
-    <font name="mono" file="CourierNew.ttf"></font>
+    <!-- Console mono: Roboto Mono SemiBold (closer to Nunito than Courier New). -->
+    <font name="mono" file="RobotoMono-SemiBold.ttf"></font>
   </fonts>
 
 
@@ -400,10 +400,30 @@
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              color="label_ink" sizefont="12" namecolumnwidth="220" overflow-y="auto"></element>
 
-    <element name="tree" type="tree" xpos="6" ypos="665" width="210" height="517"
+    <element name="tree" type="tree" xpos="6" ypos="665" width="210" height="489"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              color="label_ink" sizefont="12" rowheight="20" indentwidth="18"
              overflow-y="auto" overflow-x="auto"></element>
+
+    <!-- Geo tooltip for public IPs: pastel yellow plate, never a stroke/frame, black ink; 6px text inset; app places it at the cursor. -->
+    <element name="tree_geo_tip" type="tooltip" xpos="230" ypos="500" width="280" height="56"
+             visible="0" sizefont="11" linespacing="3" wordclipping="true" translate="false"
+             roundrect="4" border-width="0" border-color="0,0,0,0" padding="6" bckgrdcolor="255,249,196,255"
+             color="0,0,0,255" showdelay="200">
+      <text></text>
+    </element>
+
+    <!-- IP counters under the tree: [diamond] IP Publica (n) [circle] IP Local (n), vertically centered -->
+    <element name="treestats" type="form" xpos="6" ypos="693" width="210" height="22"
+             roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
+             overflow-y="hidden" overflow-x="hidden">
+      <element name="treestats_pub_icon" type="image" xpos="4" ypos="5" width="12" height="12" alpha="100">tree/ip.png</element>
+      <element name="treestats_pub_txt" type="text" xpos="20" ypos="9" width="92" height="14"
+               text-align="left" sizefont="11" color="label_ink" backgroundcolor="0,0,0,0">IP Publica (0)</element>
+      <element name="treestats_loc_icon" type="image" xpos="120" ypos="5" width="12" height="12" alpha="100">tree/packet.png</element>
+      <element name="treestats_loc_txt" type="text" xpos="136" ypos="9" width="70" height="14"
+               text-align="left" sizefont="11" color="label_ink" backgroundcolor="0,0,0,0">IP Local (0)</element>
+    </element>
 
     <element name="log_console" type="console" xpos="222" ypos="665" width="972" height="353"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
@@ -464,6 +484,14 @@
           <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
         <element name="chk_savescreensize_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_131]</element>
+      </element>
+      <element name="chk_geolocalizationpublicip" type="checkbox" class="config-check" xpos="244" ypos="328" width="280" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_geolocalizationpublicip_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
+        </element>
+        <element name="chk_geolocalizationpublicip_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_158]</element>
       </element>
 
       <element name="chk_adddatetimeconsole" type="checkbox" class="config-check" xpos="24" ypos="270" width="320" height="28"

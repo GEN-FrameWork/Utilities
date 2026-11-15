@@ -382,16 +382,13 @@ bool XTRACEMONITOR_SERVER::CloseAll()
 *---------------------------------------------------------------------------------------------------------------------*/
 int XTRACEMONITOR_SERVER::LevelMaskForTraceLevel(XBYTE level)
 {
-  switch(XTRACEMONITOR_SERVER_LEVEL_COLORINDEX(level))
+  // No WITHCOLOR → default/black ink (looks gray on dark theme); still gated by Black bit.
+  if((level & XTRACE_LEVEL_WITHCOLOR) != XTRACE_LEVEL_WITHCOLOR)
     {
-      case 0: return XTRACEMONITOR_CFG_FILTER_LEVEL_BLACK;
-      case 1: return XTRACEMONITOR_CFG_FILTER_LEVEL_BLUE;
-      case 2: return XTRACEMONITOR_CFG_FILTER_LEVEL_GREEN;
-      case 3: return XTRACEMONITOR_CFG_FILTER_LEVEL_PURPLE;
-      case 4: return XTRACEMONITOR_CFG_FILTER_LEVEL_RED;
-      case 5: return XTRACEMONITOR_CFG_FILTER_LEVEL_GRAY;
-      default: return XTRACEMONITOR_CFG_FILTER_LEVEL_BLACK;
+      return XTRACEMONITOR_CFG_FILTER_LEVEL_BLACK;
     }
+
+  return XTRACEMONITOR_CFG_LevelMaskForColorIndex((int)XTRACEMONITOR_SERVER_LEVEL_COLORINDEX(level));
 }
 
 
@@ -399,7 +396,7 @@ int XTRACEMONITOR_SERVER::LevelMaskForTraceLevel(XBYTE level)
 *
 * @fn         bool XTRACEMONITOR_SERVER::MessagePassesFilters(XTRACESERVER_MSG& msg)
 * @brief      Level bitmask + optional text substring filter from CFG [filters].
-* @note       Same contract as legacy: level filter applies only when XTRACE_LEVEL_WITHCOLOR is set.
+* @note       Uncolored lines count as Black so "no colors checked" hides the default gray-looking ink.
 * @ingroup    UTILITIES
 *
 *---------------------------------------------------------------------------------------------------------------------*/
@@ -407,11 +404,8 @@ bool XTRACEMONITOR_SERVER::MessagePassesFilters(XTRACESERVER_MSG& msg)
 {
   XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
 
-  if((msg.level & XTRACE_LEVEL_WITHCOLOR) == XTRACE_LEVEL_WITHCOLOR)
-    {
-      const int mask = LevelMaskForTraceLevel(msg.level);
-      if((cfg.Filters_GetLevels() & mask) == 0) return false;
-    }
+  const int mask = LevelMaskForTraceLevel(msg.level);
+  if((cfg.Filters_GetLevels() & mask) == 0) return false;
 
   if(cfg.Filters_IsTextActive())
     {
@@ -545,16 +539,16 @@ bool XTRACEMONITOR_SERVER::FormatStatusValue(XTRACE_STATUS_MSG* status_msg, XSTR
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_SERVER::ApplyStatusToValor(XTRACE_STATUS_MSG* status_msg)
 {
-  if(!owner || !owner->valorelement || !status_msg) return false;
+  if(!owner || !owner->gui_varstatus.GetElement() || !status_msg) return false;
   if(!status_msg->GetName() || status_msg->GetName()->IsEmpty()) return false;
 
   XSTRING value;
   FormatStatusValue(status_msg, value);
 
   // SetValue finds by name: update existing or Add new; markchanged resets row XTIMER (red for 10s).
-  if(!owner->valorelement->SetValue(status_msg->GetName()->Get(), value.Get(), true)) return false;
+  if(!owner->gui_varstatus.GetElement()->SetValue(status_msg->GetName()->Get(), value.Get(), true)) return false;
 
-  GEN_USERINTERFACE.Elements_SetToRedraw(owner->valorelement);
+  GEN_USERINTERFACE.Elements_SetToRedraw(owner->gui_varstatus.GetElement());
   return true;
 }
 
@@ -570,10 +564,10 @@ bool XTRACEMONITOR_SERVER::ClearStatusValor()
 {
   status_msgs.StatusMsg_DeleteAll();
 
-  if(owner && owner->valorelement)
+  if(owner && owner->gui_varstatus.GetElement())
     {
-      owner->valorelement->Clear();
-      GEN_USERINTERFACE.Elements_SetToRedraw(owner->valorelement);
+      owner->gui_varstatus.GetElement()->Clear();
+      GEN_USERINTERFACE.Elements_SetToRedraw(owner->gui_varstatus.GetElement());
     }
 
   return true;
@@ -589,11 +583,11 @@ bool XTRACEMONITOR_SERVER::ClearStatusValor()
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_SERVER::RefreshValorHighlightRedraw()
 {
-  if(!owner || !owner->valorelement) return false;
+  if(!owner || !owner->gui_varstatus.GetElement()) return false;
 
-  if(owner->valorelement->HasChangedHighlight(UI_ELEMENT_PROPERTYLIST_CHANGED_HIGHLIGHT_SECONDS))
+  if(owner->gui_varstatus.GetElement()->HasChangedHighlight(UI_ELEMENT_PROPERTYLIST_CHANGED_HIGHLIGHT_SECONDS))
     {
-      GEN_USERINTERFACE.Elements_SetToRedraw(owner->valorelement);
+      GEN_USERINTERFACE.Elements_SetToRedraw(owner->gui_varstatus.GetElement());
       return true;
     }
 
@@ -614,30 +608,19 @@ bool XTRACEMONITOR_SERVER::HandleSpecialCommands(XTRACESERVER_MSG& msg)
 
   if(msg.text.Find(XTRACE_IDMSGCLEARSCREEN, false) != XSTRING_NOTFOUND)
     {
-      if(owner->consoleelement)
-        {
-          owner->consoleelement->Clear();
-          GEN_USERINTERFACE.Elements_SetToRedraw(owner->consoleelement);
-        }
+      owner->origins.ClearHistoryMatching(msg.publicIP, msg.localIP);
       return true;
     }
 
   if(msg.text.Find(XTRACE_IDMSGSTATUSCLEAR, false) != XSTRING_NOTFOUND)
     {
-      // StatusMsg_Add(CLEAR) empties the GEN cache; ClearStatusValor syncs the valor UI.
-      status_msgs.StatusMsg_Add(&msg.text);
-      ClearStatusValor();
+      owner->origins.ApplyStatusLine(&msg.text, msg.publicIP, msg.localIP);
       return true;
     }
 
   if(msg.text.Find(XTRACE_IDMSGSTATUS, false) != XSTRING_NOTFOUND)
     {
-      XTRACE_STATUS_MSG* status_msg = status_msgs.StatusMsg_Add(&msg.text);
-      if(!status_msg) return true;
-
-      if(status_msg->GetXTimerLastUpdate()) status_msg->GetXTimerLastUpdate()->Reset();
-
-      ApplyStatusToValor(status_msg);
+      owner->origins.ApplyStatusLine(&msg.text, msg.publicIP, msg.localIP);
       return true;
     }
 
@@ -654,7 +637,9 @@ bool XTRACEMONITOR_SERVER::HandleSpecialCommands(XTRACESERVER_MSG& msg)
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_SERVER::FeedConsole(XTRACESERVER_MSG& msg)
 {
-  if(!owner || !owner->consoleelement) return false;
+  if(!owner || !owner->gui_console.GetElement()) return false;
+
+  owner->origins.EnsureFromMessage(msg.publicIP, msg.localIP);
 
   XSTRING line;
   FormatConsoleLine(msg, line);
@@ -667,14 +652,13 @@ bool XTRACEMONITOR_SERVER::FeedConsole(XTRACESERVER_MSG& msg)
       if(color > UI_ELEMENT_CONSOLE_COLOR_GRAY) color = UI_ELEMENT_CONSOLE_COLOR_BLACK;
     }
 
-  if(!owner->consoleelement->PrintColor(color, line.Get())) return false;
+  if(!owner->origins.PushLine(msg.publicIP, msg.localIP, color, line)) return false;
 
   if(XTRACEMONITOR_CFG::GetInstance(false).GetTextTracking())
     {
-      owner->consoleelement->SetAutoscroll(true);
+      owner->gui_console.GetElement()->SetAutoscroll(true);
     }
 
-  GEN_USERINTERFACE.Elements_SetToRedraw(owner->consoleelement);
   return true;
 }
 

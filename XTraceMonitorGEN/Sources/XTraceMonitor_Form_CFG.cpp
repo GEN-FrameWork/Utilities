@@ -142,6 +142,7 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
   theme_dark               = (UI_ELEMENT_RADIOBUTTON*)GEN_USERINTERFACE.Element_Get(NL("theme_dark") , UI_ELEMENT_TYPE_RADIOBUTTON);
   chk_savescreenposition   = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_savescreenposition"), UI_ELEMENT_TYPE_CHECKBOX);
   chk_savescreensize       = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_savescreensize")    , UI_ELEMENT_TYPE_CHECKBOX);
+  chk_geolocalizationpublicip = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_geolocalizationpublicip"), UI_ELEMENT_TYPE_CHECKBOX);
   chk_adddatetimeconsole   = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_adddatetimeconsole"), UI_ELEMENT_TYPE_CHECKBOX);
   chk_addipconsole         = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_addipconsole")      , UI_ELEMENT_TYPE_CHECKBOX);
   chk_texttracking         = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_texttracking")      , UI_ELEMENT_TYPE_CHECKBOX);
@@ -167,7 +168,8 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
       return false;
     }
 
-  if(!chk_savescreenposition || !chk_savescreensize || !chk_adddatetimeconsole || !chk_addipconsole || !chk_texttracking)
+  if(!chk_savescreenposition || !chk_savescreensize || !chk_geolocalizationpublicip ||
+     !chk_adddatetimeconsole || !chk_addipconsole || !chk_texttracking)
     {
       return false;
     }
@@ -363,6 +365,8 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   place_child((UI_ELEMENT*)chk_savescreenposition, save_chk_x, save_y, save_chk_w, chk_h);
   save_y -= (chk_h + save_gap);
   place_child((UI_ELEMENT*)chk_savescreensize, save_chk_x, save_y, save_chk_w, chk_h);
+  save_y -= (chk_h + save_gap);
+  place_child((UI_ELEMENT*)chk_geolocalizationpublicip, save_chk_x, save_y, save_chk_w, chk_h);
 
   // Añadir + seguimiento — left column under Color Theme (prior layout restored).
   const double add_chk_w  = 320.0;
@@ -396,6 +400,7 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
       if(color_theme_group)        skin->CalculeBoundaryLine_AllElements(color_theme_group, true);
       if(chk_savescreenposition)   skin->CalculeBoundaryLine_AllElements(chk_savescreenposition, true);
       if(chk_savescreensize)       skin->CalculeBoundaryLine_AllElements(chk_savescreensize, true);
+      if(chk_geolocalizationpublicip) skin->CalculeBoundaryLine_AllElements(chk_geolocalizationpublicip, true);
       if(chk_adddatetimeconsole)   skin->CalculeBoundaryLine_AllElements(chk_adddatetimeconsole, true);
       if(chk_addipconsole)         skin->CalculeBoundaryLine_AllElements(chk_addipconsole, true);
       if(chk_texttracking)         skin->CalculeBoundaryLine_AllElements(chk_texttracking, true);
@@ -473,6 +478,7 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
 
   pack_check_row(chk_savescreenposition);
   pack_check_row(chk_savescreensize);
+  pack_check_row(chk_geolocalizationpublicip);
   pack_check_row(chk_adddatetimeconsole);
   pack_check_row(chk_addipconsole);
   pack_check_row(chk_texttracking);
@@ -485,6 +491,8 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
     place_child((UI_ELEMENT*)chk_savescreenposition, save_chk_x, sy, save_chk_w, chk_h);
     sy -= (chk_h + save_gap);
     place_child((UI_ELEMENT*)chk_savescreensize, save_chk_x, sy, save_chk_w, chk_h);
+    sy -= (chk_h + save_gap);
+    place_child((UI_ELEMENT*)chk_geolocalizationpublicip, save_chk_x, sy, save_chk_w, chk_h);
 
     double ay = theme_y - add_margin - chk_h;
     place_child((UI_ELEMENT*)chk_adddatetimeconsole, left_x, ay, add_chk_w, chk_h);
@@ -496,6 +504,7 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   // Re-pack after re-pin so anim/text hit-tests track the final checkbox Y.
   pack_check_row(chk_savescreenposition);
   pack_check_row(chk_savescreensize);
+  pack_check_row(chk_geolocalizationpublicip);
   pack_check_row(chk_adddatetimeconsole);
   pack_check_row(chk_addipconsole);
   pack_check_row(chk_texttracking);
@@ -572,6 +581,7 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   if(color_theme_group)        color_theme_group->SetMustReDraw(true);
   if(chk_savescreenposition)   chk_savescreenposition->SetMustReDraw(true);
   if(chk_savescreensize)       chk_savescreensize->SetMustReDraw(true);
+  if(chk_geolocalizationpublicip) chk_geolocalizationpublicip->SetMustReDraw(true);
   if(chk_adddatetimeconsole)   chk_adddatetimeconsole->SetMustReDraw(true);
   if(chk_addipconsole)         chk_addipconsole->SetMustReDraw(true);
   if(chk_texttracking)         chk_texttracking->SetMustReDraw(true);
@@ -747,6 +757,7 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
       colortheme_draft               = colortheme_committed;
       savescreenposition_draft       = savescreenposition_committed;
       savescreensize_draft           = savescreensize_committed;
+      geolocalizationpublicip_draft  = geolocalizationpublicip_committed;
       adddatetimeconsole_draft       = adddatetimeconsole_committed;
       addipconsole_draft             = addipconsole_committed;
       texttracking_draft             = texttracking_committed;
@@ -843,6 +854,11 @@ bool XTRACEMONITOR_FORM_CFG::HandleElementSelected(UI_ELEMENT* element)
       if(chk_savescreensize && (element == (UI_ELEMENT*)chk_savescreensize))
         {
           savescreensize_draft = chk_savescreensize->GetStatus();
+          return true;
+        }
+      if(chk_geolocalizationpublicip && (element == (UI_ELEMENT*)chk_geolocalizationpublicip))
+        {
+          geolocalizationpublicip_draft = chk_geolocalizationpublicip->GetStatus();
           return true;
         }
       if(chk_adddatetimeconsole && (element == (UI_ELEMENT*)chk_adddatetimeconsole))
@@ -985,6 +1001,8 @@ bool XTRACEMONITOR_FORM_CFG::LoadCommittedFromCFG()
   savescreenposition_draft     = savescreenposition_committed;
   savescreensize_committed     = cfg.GetSaveScreenSize();
   savescreensize_draft         = savescreensize_committed;
+  geolocalizationpublicip_committed = cfg.GetGeolocalizationPublicIP();
+  geolocalizationpublicip_draft     = geolocalizationpublicip_committed;
   adddatetimeconsole_committed = cfg.GetAddDateTimeConsole();
   adddatetimeconsole_draft     = adddatetimeconsole_committed;
   addipconsole_committed       = cfg.GetAddIPConsole();
@@ -1108,15 +1126,18 @@ bool XTRACEMONITOR_FORM_CFG::SetDraftColorTheme(int colortheme)
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_FORM_CFG::SyncChecksFromDraft()
 {
-  if(!chk_savescreenposition || !chk_savescreensize || !chk_adddatetimeconsole || !chk_addipconsole || !chk_texttracking) return false;
+  if(!chk_savescreenposition || !chk_savescreensize || !chk_geolocalizationpublicip ||
+     !chk_adddatetimeconsole || !chk_addipconsole || !chk_texttracking) return false;
 
   chk_savescreenposition->SetStatus(savescreenposition_draft);
   chk_savescreensize->SetStatus(savescreensize_draft);
+  chk_geolocalizationpublicip->SetStatus(geolocalizationpublicip_draft);
   chk_adddatetimeconsole->SetStatus(adddatetimeconsole_draft);
   chk_addipconsole->SetStatus(addipconsole_draft);
   chk_texttracking->SetStatus(texttracking_draft);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_savescreenposition);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_savescreensize);
+  GEN_USERINTERFACE.Elements_SetToRedraw(chk_geolocalizationpublicip);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_adddatetimeconsole);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_addipconsole);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_texttracking);
@@ -1137,6 +1158,7 @@ bool XTRACEMONITOR_FORM_CFG::ReadDraftFromChecks()
 {
   if(chk_savescreenposition) savescreenposition_draft = chk_savescreenposition->GetStatus();
   if(chk_savescreensize)     savescreensize_draft     = chk_savescreensize->GetStatus();
+  if(chk_geolocalizationpublicip) geolocalizationpublicip_draft = chk_geolocalizationpublicip->GetStatus();
   if(chk_adddatetimeconsole) adddatetimeconsole_draft = chk_adddatetimeconsole->GetStatus();
   if(chk_addipconsole)       addipconsole_draft       = chk_addipconsole->GetStatus();
   if(chk_texttracking)       texttracking_draft       = chk_texttracking->GetStatus();
@@ -1634,6 +1656,9 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   // UART may be invalid: still leave the modal, but never persist a bad uartport.
   const bool uart_ok = XTRACEMONITOR_CFG::GetInstance(false).IsUARTPortValid(uartport_draft);
   uartport_valid = uart_ok;
+  // Detect listen/UART port change before overwriting committed values.
+  const bool udp_changed  = (udplistenport_draft != udplistenport_committed);
+  const bool uart_changed = uart_ok && (uartport_draft.Compare(uartport_committed) != 0);
   if(!uart_ok)
     {
       // Keep red idle while the modal is still up; discard draft back to last good commit.
@@ -1646,6 +1671,7 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   cfg.SetColorTheme(colortheme_draft);
   cfg.SetSaveScreenPosition(savescreenposition_draft);
   cfg.SetSaveScreenSize(savescreensize_draft);
+  cfg.SetGeolocalizationPublicIP(geolocalizationpublicip_draft);
   // Do not write stale savedscreenposition/size drafts here — Accept must not snap the live
   // window back to the values loaded when the modal opened. Live geometry is captured below
   // via PersistScreenGeometryToCFG when the matching save checkboxes are on.
@@ -1689,6 +1715,7 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   colortheme_committed          = colortheme_draft;
   savescreenposition_committed  = savescreenposition_draft;
   savescreensize_committed      = savescreensize_draft;
+  geolocalizationpublicip_committed = geolocalizationpublicip_draft;
   adddatetimeconsole_committed  = adddatetimeconsole_draft;
   addipconsole_committed        = addipconsole_draft;
   texttracking_committed        = texttracking_draft;
@@ -1713,7 +1740,7 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   if(uart_ok)
     {
       uartport_committed = uartport_draft;
-      owner->Tree_UpdateUARTLabel();
+      owner->gui_tree.UpdateUARTLabel();
       owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado y tema aplicado."));
     }
    else
@@ -1722,8 +1749,27 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
       owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado; UART invalida (no se guarda)."));
     }
 
+  // New communication port: wipe console + IPs that only exist because a trace arrived.
+  if(udp_changed || uart_changed)
+    {
+      owner->gui_tree.ClearReceivedTraces();
+      owner->OpStatus_Log(NL("Config: puerto cambiado - consola e IPs de traza limpiadas."));
+    }
+
   // UDP listen port and/or UART may have changed — reopen GEN XTRACESERVER paths.
   owner->traceserver.RestartFromCFG();
+
+  // Apply geolocation toggle immediately: stop worker + hide tip, or start and re-queue IPs.
+  if(geolocalizationpublicip_committed)
+    {
+      owner->geoip.Ini();
+      owner->origins.QueuePublicIPGeolocation();
+    }
+   else
+    {
+      owner->gui_tree.HideGeoTooltip();
+      owner->geoip.End();
+    }
 
   if(!owner->ApplyColorTheme(colortheme_committed))
     {
@@ -1752,6 +1798,7 @@ bool XTRACEMONITOR_FORM_CFG::OnCancel()
   colortheme_draft               = colortheme_committed;
   savescreenposition_draft       = savescreenposition_committed;
   savescreensize_draft           = savescreensize_committed;
+  geolocalizationpublicip_draft  = geolocalizationpublicip_committed;
   adddatetimeconsole_draft       = adddatetimeconsole_committed;
   addipconsole_draft             = addipconsole_committed;
   texttracking_draft             = texttracking_committed;
@@ -1792,6 +1839,7 @@ bool XTRACEMONITOR_FORM_CFG::OnDefault()
   colortheme_draft         = XTRACEMONITOR_CFG_COLORTHEME_DEFAULT;
   savescreenposition_draft = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
   savescreensize_draft     = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
+  geolocalizationpublicip_draft = XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP_DEFAULT;
   adddatetimeconsole_draft = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
   addipconsole_draft       = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;
   texttracking_draft       = XTRACEMONITOR_CFG_TEXTTRACKING_DEFAULT;
@@ -1840,6 +1888,7 @@ void XTRACEMONITOR_FORM_CFG::Clean()
   theme_dark                = NULL;
   chk_savescreenposition    = NULL;
   chk_savescreensize        = NULL;
+  chk_geolocalizationpublicip = NULL;
   chk_adddatetimeconsole    = NULL;
   chk_addipconsole          = NULL;
   chk_texttracking          = NULL;
@@ -1860,6 +1909,8 @@ void XTRACEMONITOR_FORM_CFG::Clean()
   savescreenposition_draft     = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
   savescreensize_committed     = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
   savescreensize_draft         = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
+  geolocalizationpublicip_committed = XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP_DEFAULT;
+  geolocalizationpublicip_draft     = XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP_DEFAULT;
   adddatetimeconsole_committed = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
   adddatetimeconsole_draft     = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
   addipconsole_committed       = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;

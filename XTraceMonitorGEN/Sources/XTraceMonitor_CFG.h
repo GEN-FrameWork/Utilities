@@ -41,6 +41,7 @@
 #define XTRACEMONITOR_CFG_COLORTHEME                    NL("colortheme")
 #define XTRACEMONITOR_CFG_SAVESCREENPOSITION            NL("savescreenposition")
 #define XTRACEMONITOR_CFG_SAVESCREENSIZE                NL("savescreensize")
+#define XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP       NL("geolocalizationpublicip")
 #define XTRACEMONITOR_CFG_SAVEDSCREENPOSITION           NL("savedscreenposition")
 #define XTRACEMONITOR_CFG_SAVEDSCREENSIZE               NL("savedscreensize")
 #define XTRACEMONITOR_CFG_UDPLISTENPORT                 NL("udpport")
@@ -59,6 +60,21 @@
 #define XTRACEMONITOR_CFG_FILTER_LEVEL_RED              0x00000010
 #define XTRACEMONITOR_CFG_FILTER_LEVEL_GRAY             0x00000020
 #define XTRACEMONITOR_CFG_FILTER_LEVEL_ALL              0x000000FF
+
+// UI / XTRACE_COLOR_* index 0..5 → CFG bit (legacy Unit1 layout: Purple=bit1, Blue=bit3).
+inline int XTRACEMONITOR_CFG_LevelMaskForColorIndex(int colorindex)
+{
+  switch(colorindex)
+    {
+      case 0: return XTRACEMONITOR_CFG_FILTER_LEVEL_BLACK;
+      case 1: return XTRACEMONITOR_CFG_FILTER_LEVEL_BLUE;
+      case 2: return XTRACEMONITOR_CFG_FILTER_LEVEL_GREEN;
+      case 3: return XTRACEMONITOR_CFG_FILTER_LEVEL_PURPLE;
+      case 4: return XTRACEMONITOR_CFG_FILTER_LEVEL_RED;
+      case 5: return XTRACEMONITOR_CFG_FILTER_LEVEL_GRAY;
+      default: return XTRACEMONITOR_CFG_FILTER_LEVEL_BLACK;
+    }
+}
 
 #define XTRACEMONITOR_CFG_FILTERS_ISTEXTFILTERACTIVE_DEFAULT  false
 #define XTRACEMONITOR_CFG_FILTERS_LEVELFILTER_DEFAULT         XTRACEMONITOR_CFG_FILTER_LEVEL_ALL
@@ -104,6 +120,7 @@
 
 #define XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT    true
 #define XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT        true
+#define XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP_DEFAULT true
 
 #define XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT         10001
 #define XTRACEMONITOR_CFG_UDPLISTENPORT_MIN             1
@@ -177,6 +194,9 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
 
     bool                            GetSaveScreenSize                       ();
     void                            SetSaveScreenSize                       (bool enable);
+
+    bool                            GetGeolocalizationPublicIP              ();
+    void                            SetGeolocalizationPublicIP              (bool enable);
 
     bool                            GetAddDateTimeConsole                   ();
     void                            SetAddDateTimeConsole                   (bool enable);
@@ -265,6 +285,7 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
     int                             colortheme;
     bool                            savescreenposition;
     bool                            savescreensize;
+    bool                            geolocalizationpublicip;
     XSTRING                         savedscreenposition;
     XSTRING                         savedscreensize;
     int                             udplistenport;
