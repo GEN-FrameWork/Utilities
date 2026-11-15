@@ -1722,6 +1722,9 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
       owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado; UART invalida (no se guarda)."));
     }
 
+  // UDP listen port and/or UART may have changed — reopen GEN XTRACESERVER paths.
+  owner->traceserver.RestartFromCFG();
+
   if(!owner->ApplyColorTheme(colortheme_committed))
     {
       owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado; error al aplicar tema."));

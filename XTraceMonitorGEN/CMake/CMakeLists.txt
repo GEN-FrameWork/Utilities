@@ -18,7 +18,7 @@ option(XTRACE_FEATURE                                           "XTrace"        
 option(XTHREADCOLLECTED_FEATURE                                 "Thread Collected"                                        ON )
 #option(XMEMORY_CONTROL_FEATURE                                  "XMemory Control"                                         ON )
 
-#option(GRP_OPENGL_FEATURE                                       "Graphics OpenGL ES required"                             OFF )
+option(GRP_OPENGL_FEATURE                                       "Graphics OpenGL ES required"                             OFF )
 
 option(USE_CLANG_COMPILER_FEATURE                               "Use Clang Compiler"                                      ON )
 
@@ -49,8 +49,9 @@ option(GRP_2D_FEATURE                                           "Graphics 2D"   
 
 option(INP_FEATURE                                              "Inputs"                                                  ON )
 
-# UART config string decode/validate (DIOSTREAMUARTCONFIG::SetFromString).
+# Trace server: UDP listen + optional UART (GEN XTRACESERVER).
 option(DIO_STREAM_FEATURE                                       "Stream"                                                  ON )
+option(DIO_STREAMUDP_FEATURE                                    "Stream UDP"                                              ON )
 option(DIO_STREAMUART_FEATURE                                   "Stream UART"                                             ON )
 
 # DynDNS password at-rest (AES + Base64 in [dyndns] INI).
@@ -95,6 +96,7 @@ list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Form_CFG.cpp")
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Form_Filters.cpp")
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Form_About.cpp")
+list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Server.cpp")
 
 
 # --------------------------------------------------------------------

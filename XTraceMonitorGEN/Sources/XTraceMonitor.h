@@ -39,6 +39,7 @@
 #include "XTraceMonitor_Form_CFG.h"
 #include "XTraceMonitor_Form_Filters.h"
 #include "XTraceMonitor_Form_About.h"
+#include "XTraceMonitor_Server.h"
 
 
 
@@ -157,6 +158,7 @@ class UI_ELEMENT_IMAGE;
 class UI_ELEMENT_FORM;
 class GRPXEVENT;
 class XTRACEMONITOR_CFG;
+class XTRACEMONITOR_SERVER;
 class UI_STYLE;
 class UI_STYLESHEET;
 
@@ -178,6 +180,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     friend class                    XTRACEMONITOR_FORM_CFG;
     friend class                    XTRACEMONITOR_FORM_FILTERS;
     friend class                    XTRACEMONITOR_FORM_ABOUT;
+    friend class                    XTRACEMONITOR_SERVER;
 
     bool                            UpdateInput                             ();
 
@@ -307,6 +310,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     XTRACEMONITOR_FORM_CFG          form_cfg;
     XTRACEMONITOR_FORM_FILTERS      form_filters;
     XTRACEMONITOR_FORM_ABOUT        form_about;
+    XTRACEMONITOR_SERVER            traceserver;
 
     int                             layout_applied_w;
     int                             layout_applied_h;

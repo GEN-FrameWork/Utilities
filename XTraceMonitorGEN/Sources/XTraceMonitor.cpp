@@ -335,6 +335,8 @@ bool XTRACEMONITOR::AppProc_Update()
                                                 form_filters.Tick();
                                                 form_about.Tick();
 
+                                                traceserver.Pump();
+
                                                 if(!GEN_USERINTERFACE.Element_IsModalActive())
                                                   {
                                                     InternetStatus_Update(false);
@@ -402,6 +404,8 @@ bool XTRACEMONITOR::AppProc_End()
   // mainscreen before AppProc_End runs.
 
   //--------------------------------------------------------------------------------------
+
+  traceserver.End();
 
   Ini_UserInterface(false);
 
@@ -974,6 +978,10 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
 
   // Seed modal group titles + fit legends/netstatus for the startup language (e.g. default chi).
   UserInterface_AfterLanguageChange();
+
+  traceserver.SetOwner(this);
+  traceserver.SetHighPriority(true);
+  traceserver.Ini();
 
   OpStatus_Log(NL("XTraceMonitor ready."));
 

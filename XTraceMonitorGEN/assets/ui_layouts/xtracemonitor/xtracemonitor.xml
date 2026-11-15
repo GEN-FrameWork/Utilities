@@ -8,6 +8,8 @@
   <fonts >
     <font name="default" file="Nunito-SemiBold.ttf"></font>
     <font name="cjk" file="NotoSansSC-Regular.otf"></font>
+    <!-- Same face as legacy XTraceMonitor TRichEdit (Courier New, Height -11). -->
+    <font name="mono" file="CourierNew.ttf"></font>
   </fonts>
 
 
@@ -116,7 +118,7 @@
 
     <element name="filter-active-btn" type="multioption" xpos="372" ypos="112" width="72" height="72" visible="false">
       <element type="button" name="filter-active-btn" selectablestatus="active">
-        <element type="animation" state="play" timedelay="10">
+        <element type="animation" state="play" timedelay="50">
           <image width="72" height="72">Filtro_Figuras/Active01.png</image>
           <image width="72" height="72">Filtro_Figuras/Active02.png</image>
           <image width="72" height="72">Filtro_Figuras/Active03.png</image>
@@ -168,7 +170,7 @@
         </element>
       </element>
       <element type="button" name="filter-active-btn" selectablestatus="preselect">
-        <element type="animation" state="play" timedelay="10">
+        <element type="animation" state="play" timedelay="50">
           <image width="72" height="72">Filtro_Figuras/Preselected01.png</image>
           <image width="72" height="72">Filtro_Figuras/Preselected02.png</image>
           <image width="72" height="72">Filtro_Figuras/Preselected03.png</image>
@@ -220,7 +222,7 @@
         </element>
       </element>
       <element type="button" name="filter-active-btn" selectablestatus="selected">
-        <element type="animation" state="play" timedelay="10">
+        <element type="animation" state="play" timedelay="50">
           <image width="72" height="72">Filtro_Figuras/Pressed01.png</image>
           <image width="72" height="72">Filtro_Figuras/Pressed02.png</image>
           <image width="72" height="72">Filtro_Figuras/Pressed03.png</image>
@@ -272,7 +274,7 @@
         </element>
       </element>
       <element type="button" name="filter-active-btn" selectablestatus="deactive">
-        <element type="animation" state="play" timedelay="10">
+        <element type="animation" state="play" timedelay="50">
           <image width="72" height="72">Filtro_Figuras/Disabled01.png</image>
           <image width="72" height="72">Filtro_Figuras/Disabled02.png</image>
           <image width="72" height="72">Filtro_Figuras/Disabled03.png</image>
@@ -405,7 +407,7 @@
 
     <element name="log_console" type="console" xpos="222" ypos="665" width="972" height="353"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
-             sizefont="12" linespacing="3" maxlines="500"
+             fontface="mono" sizefont="11" linespacing="3" maxlines="500"
              autoscroll="true" wordwrap="false" overflow-y="auto" overflow-x="auto"></element>
 
     <element name="opstatus" type="form" xpos="222" ypos="693" width="972" height="22"

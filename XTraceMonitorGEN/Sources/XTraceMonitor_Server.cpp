@@ -1,0 +1,698 @@
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @file       XTraceMonitor_Server.cpp
+*
+* @class      XTRACEMONITOR_SERVER
+* @brief      XTM wrapper around GEN XTRACESERVER (UDP/UART receive → console feed)
+* @ingroup    UTILITIES
+*
+* @copyright  EndoraSoft. All rights reserved.
+*
+* @cond
+* Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+* documentation files(the "Software"), to deal in the Software without restriction, including without limitation
+* the rights to use, copy, modify, merge, publish, distribute, sublicense, and/ or sell copies of the Software,
+* and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+* the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+* THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+* @endcond
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+
+/*---- PRECOMPILATION INCLUDES ---------------------------------------------------------------------------------------*/
+
+#include "GEN_Defines.h"
+
+/*---- INCLUDES ------------------------------------------------------------------------------------------------------*/
+
+#include "XTraceMonitor_Server.h"
+
+#include "XTraceMonitor.h"
+#include "XTraceMonitor_CFG.h"
+
+#include "UI_Element_Console.h"
+#include "UI_Element_PropertyList.h"
+#include "UI_Manager.h"
+
+#include "XTrace.h"
+#include "XString.h"
+#include "XTimer.h"
+
+#ifdef DIO_ACTIVE
+#include "DIOIP.h"
+#endif
+
+// Color index lives in the low nibble; XTRACE_PRINTCOLOR sets XTRACE_LEVEL_WITHCOLOR (0x80).
+#define XTRACEMONITOR_SERVER_LEVEL_COLORINDEX(level)  ((XBYTE)((level) & 0x0F))
+
+/*---- PRECOMPILATION INCLUDES ---------------------------------------------------------------------------------------*/
+
+#include "GEN_Control.h"
+
+/*---- GENERAL VARIABLE ----------------------------------------------------------------------------------------------*/
+
+
+
+/*---- CLASS MEMBERS -------------------------------------------------------------------------------------------------*/
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XTRACEMONITOR_SERVER::XTRACEMONITOR_SERVER()
+* @brief      Constructor of class
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XTRACEMONITOR_SERVER::XTRACEMONITOR_SERVER()
+{
+  Clean();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XTRACEMONITOR_SERVER::~XTRACEMONITOR_SERVER()
+* @brief      Destructor of class
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XTRACEMONITOR_SERVER::~XTRACEMONITOR_SERVER()
+{
+  End();
+  Clean();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::SetOwner(XTRACEMONITOR* owner)
+* @brief      Sets the owning XTM instance (console / workingmode / status).
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::SetOwner(XTRACEMONITOR* owner)
+{
+  this->owner = owner;
+  return (owner != NULL);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::Ini()
+* @brief      Opens UDP (and UART when CFG is valid) via GEN XTRACESERVER.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::Ini()
+{
+#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+  server.SetPriority(priority);
+  return OpenFromCFG();
+#else
+  return false;
+#endif
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::End()
+* @brief      Closes UDP/UART listen paths.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::End()
+{
+  return CloseAll();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::RestartFromCFG()
+* @brief      Re-opens listen paths from the current CFG (port / UART change after Accept).
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::RestartFromCFG()
+{
+  CloseAll();
+  return OpenFromCFG();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::IsOpen()
+* @brief      True when at least one GEN receive path is open.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::IsOpen()
+{
+#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+  return server.IsOpen();
+#else
+  return false;
+#endif
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_SERVER::SetPriority(XTHREADPRIORITY priority)
+* @brief      Sets GEN server parse/stream thread priority.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_SERVER::SetPriority(XTHREADPRIORITY priority)
+{
+  if(priority == XTHREADPRIORITY_UNKNOWN) priority = XTHREADPRIORITY_NORMAL;
+  this->priority = priority;
+  this->highpriority = (priority >= XTHREADPRIORITY_HIGH);
+
+#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+  server.SetPriority(priority);
+#endif
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_SERVER::SetHighPriority(bool enable)
+* @brief      HIGH when enable, otherwise NORMAL (does not use REALTIME).
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_SERVER::SetHighPriority(bool enable)
+{
+  highpriority = enable;
+  SetPriority(enable ? XTHREADPRIORITY_HIGH : XTHREADPRIORITY_NORMAL);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XTHREADPRIORITY XTRACEMONITOR_SERVER::GetPriority()
+* @brief      Current requested thread priority.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XTHREADPRIORITY XTRACEMONITOR_SERVER::GetPriority()
+{
+  return priority;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::Pump()
+* @brief      Pops queued GEN messages and feeds the console when working.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::Pump()
+{
+#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+  if(!owner) return false;
+  if(!server.IsOpen()) return false;
+
+  XDWORD fed = 0;
+
+  for(XDWORD n = 0; n < XTRACEMONITOR_SERVER_MAX_PUMP_PER_FRAME; n++)
+    {
+      XTRACESERVER_MSG msg;
+      if(!server.Pop(msg)) break;
+
+      // Status / clear / clear-screen always applied; console text only while working.
+      if(HandleSpecialCommands(msg))
+        {
+          fed++;
+          continue;
+        }
+
+      if(!owner->workingmode) continue;
+
+      if(!MessagePassesFilters(msg)) continue;
+
+      if(FeedConsole(msg)) fed++;
+    }
+
+  RefreshValorHighlightRedraw();
+
+  return (fed > 0);
+#else
+  return false;
+#endif
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XDWORD XTRACEMONITOR_SERVER::GetDroppedCount()
+* @brief      Messages dropped by the GEN bounded queue.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XDWORD XTRACEMONITOR_SERVER::GetDroppedCount()
+{
+#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+  return server.GetDroppedCount();
+#else
+  return 0;
+#endif
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XDWORD XTRACEMONITOR_SERVER::GetQueuedCount()
+* @brief      Messages waiting in the GEN queue.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XDWORD XTRACEMONITOR_SERVER::GetQueuedCount()
+{
+#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+  return server.GetCount();
+#else
+  return 0;
+#endif
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::OpenFromCFG()
+* @brief      Opens UDP listen port and optional UART from XTRACEMONITOR_CFG.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::OpenFromCFG()
+{
+#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  bool ok = false;
+
+  server.SetPriority(priority);
+
+#if defined(DIO_STREAMUDP_ACTIVE)
+  {
+    const int port = cfg.ResolveUDPListenPort(cfg.GetUDPListenPort());
+    if(server.Ini((XWORD)port))
+      {
+        listenport_open = (XWORD)port;
+        ok = true;
+        if(owner)
+          {
+            XSTRING line;
+            line.Format(NL("Trace server: UDP *:%d open."), (int)listenport_open);
+            owner->OpStatus_Log(line.Get());
+          }
+      }
+     else if(owner)
+      {
+        XSTRING line;
+        line.Format(NL("Trace server: UDP *:%d failed."), port);
+        owner->OpStatus_Log(line.Get());
+      }
+  }
+#endif
+
+#if defined(DIO_STREAMUART_ACTIVE)
+  {
+    XSTRING* uart = cfg.GetUARTPort();
+    if(uart && cfg.IsUARTPortValid(uart))
+      {
+        if(server.IniUART(uart))
+          {
+            uart_open = true;
+            ok = true;
+            if(owner) owner->OpStatus_Log(NL("Trace server: UART open."));
+          }
+         else if(owner)
+          {
+            owner->OpStatus_Log(NL("Trace server: UART open failed."));
+          }
+      }
+  }
+#endif
+
+  return ok;
+#else
+  return false;
+#endif
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::CloseAll()
+* @brief      Ends the GEN server (UDP + UART).
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::CloseAll()
+{
+#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+  server.End();
+#endif
+  listenport_open = 0;
+  uart_open       = false;
+  return true;
+}
+
+
+#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         int XTRACEMONITOR_SERVER::LevelMaskForTraceLevel(XBYTE level)
+* @brief      Maps XTrace color index 0..5 (low nibble) to the CFG filter bitmask.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+int XTRACEMONITOR_SERVER::LevelMaskForTraceLevel(XBYTE level)
+{
+  switch(XTRACEMONITOR_SERVER_LEVEL_COLORINDEX(level))
+    {
+      case 0: return XTRACEMONITOR_CFG_FILTER_LEVEL_BLACK;
+      case 1: return XTRACEMONITOR_CFG_FILTER_LEVEL_BLUE;
+      case 2: return XTRACEMONITOR_CFG_FILTER_LEVEL_GREEN;
+      case 3: return XTRACEMONITOR_CFG_FILTER_LEVEL_PURPLE;
+      case 4: return XTRACEMONITOR_CFG_FILTER_LEVEL_RED;
+      case 5: return XTRACEMONITOR_CFG_FILTER_LEVEL_GRAY;
+      default: return XTRACEMONITOR_CFG_FILTER_LEVEL_BLACK;
+    }
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::MessagePassesFilters(XTRACESERVER_MSG& msg)
+* @brief      Level bitmask + optional text substring filter from CFG [filters].
+* @note       Same contract as legacy: level filter applies only when XTRACE_LEVEL_WITHCOLOR is set.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::MessagePassesFilters(XTRACESERVER_MSG& msg)
+{
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+
+  if((msg.level & XTRACE_LEVEL_WITHCOLOR) == XTRACE_LEVEL_WITHCOLOR)
+    {
+      const int mask = LevelMaskForTraceLevel(msg.level);
+      if((cfg.Filters_GetLevels() & mask) == 0) return false;
+    }
+
+  if(cfg.Filters_IsTextActive())
+    {
+      XSTRING* filter = cfg.Filters_GetText();
+      if(filter && !filter->IsEmpty())
+        {
+          if(msg.text.Find(filter->Get(), false) == XSTRING_NOTFOUND) return false;
+        }
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::FormatConsoleLine(XTRACESERVER_MSG& msg, XSTRING& out)
+* @brief      Builds the console line with optional date/time and IP prefixes from CFG [console].
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::FormatConsoleLine(XTRACESERVER_MSG& msg, XSTRING& out)
+{
+  out.Empty();
+
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+
+  if(cfg.GetAddDateTimeConsole())
+    {
+      XSTRING dt;
+      msg.time.GetDateTimeToString(XDATETIME_FORMAT_STANDARD | XDATETIME_FORMAT_TIMEWITHMILLISECONDS, dt);
+      if(!dt.IsEmpty())
+        {
+          out.Add(dt);
+          out.Add(NL(" "));
+        }
+    }
+
+  if(cfg.GetAddIPConsole())
+    {
+      // Prefer public when it is a real remote address; otherwise local (DIOIP::IsLocal / empty).
+      DIOIP showip;
+      DIOIP publicip;
+
+      if(msg.publicIP)
+        {
+          publicip.Set((XBYTE)((msg.publicIP >> 24) & 0xFF),
+                       (XBYTE)((msg.publicIP >> 16) & 0xFF),
+                       (XBYTE)((msg.publicIP >>  8) & 0xFF),
+                       (XBYTE)( msg.publicIP        & 0xFF));
+          if(!publicip.IsEmpty() && !publicip.IsLocal() && !publicip.IsAPIPA()) showip.Set(publicip.Get());
+        }
+
+      if(showip.IsEmpty() && msg.localIP)
+        {
+          showip.Set((XBYTE)((msg.localIP >> 24) & 0xFF),
+                     (XBYTE)((msg.localIP >> 16) & 0xFF),
+                     (XBYTE)((msg.localIP >>  8) & 0xFF),
+                     (XBYTE)( msg.localIP        & 0xFF));
+        }
+
+      if(showip.IsEmpty() && !publicip.IsEmpty()) showip.Set(publicip.Get());
+
+      // Fixed width like legacy XTM: always [XXX.XXX.XXX.XXX] (zero-padded octets via DIOIP::Get).
+      XBYTE* a = showip.Get();
+      XSTRING ip;
+      ip.Format(NL("[%03d.%03d.%03d.%03d] "), (int)a[0], (int)a[1], (int)a[2], (int)a[3]);
+      out.Add(ip);
+    }
+
+  out.Add(msg.text);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::FormatStatusValue(XTRACE_STATUS_MSG* status_msg, XSTRING& out)
+* @brief      Formats the display value for the valor property list.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::FormatStatusValue(XTRACE_STATUS_MSG* status_msg, XSTRING& out)
+{
+  out.Empty();
+  if(!status_msg) return false;
+
+  switch(status_msg->GetType())
+    {
+      case XTRACE_TYPE_STATUS_MSG_BOOLEAN :
+        out = status_msg->Value_GetBoolean() ? NL("true") : NL("false");
+        break;
+
+      case XTRACE_TYPE_STATUS_MSG_INTEGER :
+        out.Format(NL("%d"), status_msg->Value_GetInteger());
+        break;
+
+      case XTRACE_TYPE_STATUS_MSG_STRING  :
+        if(status_msg->Value_GetString()) out = status_msg->Value_GetString()->Get();
+        break;
+
+      case XTRACE_TYPE_STATUS_MSG_XDWORD  :
+        out.Format(NL("%u"), status_msg->Value_GetDword());
+        break;
+
+      case XTRACE_TYPE_STATUS_MSG_FLOAT   :
+        out.Format(NL("%f"), status_msg->Value_GetFloat());
+        break;
+
+      case XTRACE_TYPE_STATUS_MSG_RGBCOLOR:
+        {
+          XBYTE* c = status_msg->Value_GetColor();
+          if(c) out.Format(NL("%02X,%02X,%02X"), (int)c[0], (int)c[1], (int)c[2]);
+        }
+        break;
+
+      default:
+        break;
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::ApplyStatusToValor(XTRACE_STATUS_MSG* status_msg)
+* @brief      Adds or updates a Name/Value row in the valor property list (marks changed → red).
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::ApplyStatusToValor(XTRACE_STATUS_MSG* status_msg)
+{
+  if(!owner || !owner->valorelement || !status_msg) return false;
+  if(!status_msg->GetName() || status_msg->GetName()->IsEmpty()) return false;
+
+  XSTRING value;
+  FormatStatusValue(status_msg, value);
+
+  // SetValue finds by name: update existing or Add new; markchanged resets row XTIMER (red for 10s).
+  if(!owner->valorelement->SetValue(status_msg->GetName()->Get(), value.Get(), true)) return false;
+
+  GEN_USERINTERFACE.Elements_SetToRedraw(owner->valorelement);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::ClearStatusValor()
+* @brief      Clears GEN status cache and the valor property list.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::ClearStatusValor()
+{
+  status_msgs.StatusMsg_DeleteAll();
+
+  if(owner && owner->valorelement)
+    {
+      owner->valorelement->Clear();
+      GEN_USERINTERFACE.Elements_SetToRedraw(owner->valorelement);
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::RefreshValorHighlightRedraw()
+* @brief      Keeps valor dirty while any row is still inside the red highlight window.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::RefreshValorHighlightRedraw()
+{
+  if(!owner || !owner->valorelement) return false;
+
+  if(owner->valorelement->HasChangedHighlight(UI_ELEMENT_PROPERTYLIST_CHANGED_HIGHLIGHT_SECONDS))
+    {
+      GEN_USERINTERFACE.Elements_SetToRedraw(owner->valorelement);
+      return true;
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::HandleSpecialCommands(XTRACESERVER_MSG& msg)
+* @brief      Handles XTRACE control strings (clear screen / status / clear status).
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::HandleSpecialCommands(XTRACESERVER_MSG& msg)
+{
+  if(!owner) return false;
+
+  if(msg.text.Find(XTRACE_IDMSGCLEARSCREEN, false) != XSTRING_NOTFOUND)
+    {
+      if(owner->consoleelement)
+        {
+          owner->consoleelement->Clear();
+          GEN_USERINTERFACE.Elements_SetToRedraw(owner->consoleelement);
+        }
+      return true;
+    }
+
+  if(msg.text.Find(XTRACE_IDMSGSTATUSCLEAR, false) != XSTRING_NOTFOUND)
+    {
+      // StatusMsg_Add(CLEAR) empties the GEN cache; ClearStatusValor syncs the valor UI.
+      status_msgs.StatusMsg_Add(&msg.text);
+      ClearStatusValor();
+      return true;
+    }
+
+  if(msg.text.Find(XTRACE_IDMSGSTATUS, false) != XSTRING_NOTFOUND)
+    {
+      XTRACE_STATUS_MSG* status_msg = status_msgs.StatusMsg_Add(&msg.text);
+      if(!status_msg) return true;
+
+      if(status_msg->GetXTimerLastUpdate()) status_msg->GetXTimerLastUpdate()->Reset();
+
+      ApplyStatusToValor(status_msg);
+      return true;
+    }
+
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_SERVER::FeedConsole(XTRACESERVER_MSG& msg)
+* @brief      Appends one filtered message to the graphical console.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_SERVER::FeedConsole(XTRACESERVER_MSG& msg)
+{
+  if(!owner || !owner->consoleelement) return false;
+
+  XSTRING line;
+  FormatConsoleLine(msg, line);
+
+  // Packet level is flags|index (e.g. XTRACE_PRINTCOLOR(2) → 0x82). Color = low nibble when WITHCOLOR.
+  XBYTE color = UI_ELEMENT_CONSOLE_COLOR_BLACK;
+  if((msg.level & XTRACE_LEVEL_WITHCOLOR) == XTRACE_LEVEL_WITHCOLOR)
+    {
+      color = XTRACEMONITOR_SERVER_LEVEL_COLORINDEX(msg.level);
+      if(color > UI_ELEMENT_CONSOLE_COLOR_GRAY) color = UI_ELEMENT_CONSOLE_COLOR_BLACK;
+    }
+
+  if(!owner->consoleelement->PrintColor(color, line.Get())) return false;
+
+  if(XTRACEMONITOR_CFG::GetInstance(false).GetTextTracking())
+    {
+      owner->consoleelement->SetAutoscroll(true);
+    }
+
+  GEN_USERINTERFACE.Elements_SetToRedraw(owner->consoleelement);
+  return true;
+}
+
+#endif // DIO + UDP/UART
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_SERVER::Clean()
+* @brief      Clean
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_SERVER::Clean()
+{
+  owner          = NULL;
+  highpriority   = true;
+  priority       = XTHREADPRIORITY_HIGH;
+  listenport_open = 0;
+  uart_open      = false;
+}
