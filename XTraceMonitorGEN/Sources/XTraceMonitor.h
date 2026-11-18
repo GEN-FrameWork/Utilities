@@ -39,6 +39,7 @@
 #include "XTraceMonitor_Form_CFG.h"
 #include "XTraceMonitor_Form_Filters.h"
 #include "XTraceMonitor_Form_About.h"
+#include "XTraceMonitor_Form_DynDNS.h"
 #include "XTraceMonitor_Server.h"
 #include "XTraceMonitor_Origins.h"
 #include "XTraceMonitor_GUI_Tree.h"
@@ -80,45 +81,66 @@ enum XTRACEMONITOR_BUTTONS
 };
 
 
-#define APPLICATION_VERSION                       0
-#define APPLICATION_SUBVERSION                    1
-#define APPLICATION_SUBVERSIONERR                 0
+#define APPLICATION_VERSION                         8
+#define APPLICATION_SUBVERSION                      0
+#define APPLICATION_SUBVERSIONERR                   0
 
-#define APPLICATION_NAMEAPP                       NL("eXtended Trace Monitor")
-#define APPLICATION_NAMEFILE                      NL("xtracemonitor")
+#define APPLICATION_NAMEAPP                         NL("eXtended Trace Monitor")
+#define APPLICATION_NAMEFILE                        NL("xtracemonitor")
 
-#define APPLICATION_OWNER                         NL("EndoraSoft")
+#define APPLICATION_OWNER                           NL("EndoraSoft")
 
-#define APPLICATION_YEAROFCREATION                2026
+#define APPLICATION_YEAROFCREATION                  2026
 
-#define XTRACEMONITOR_WINDOW_WIDTH                1200   // minimum client width (also design size)
-#define XTRACEMONITOR_WINDOW_HEIGHT               699    // minimum client height (also design size)
+#define XTRACEMONITOR_WINDOW_WIDTH                  1200   // minimum client width (also design size)
+#define XTRACEMONITOR_WINDOW_HEIGHT                 699    // minimum client height (also design size)
 
 // Flexible resize layout (only these grow/shrink; everything else stays fixed at design coords).
-#define XTRACEMONITOR_LAYOUT_MARGIN               6.0
-#define XTRACEMONITOR_LAYOUT_GAP                  6.0
-#define XTRACEMONITOR_LAYOUT_PANELS_X             222.0  // tree 6+210 + gap 6
-#define XTRACEMONITOR_LAYOUT_CAPTION_H            40.0   // matches chrome app icon (40×40)
-#define XTRACEMONITOR_LAYOUT_CHROME_GAP           0.0    // toolbar bubbles flush under caption
-#define XTRACEMONITOR_LAYOUT_VALOR_TOP            134.0  // 8px under legend bottom (y=126)
-#define XTRACEMONITOR_LAYOUT_VALOR_H              158.0  // header 26 + 6 rows×22 (exact 6 lines)
-#define XTRACEMONITOR_LAYOUT_FOOT_H               22.0
-#define XTRACEMONITOR_LAYOUT_TREESTATS_H          22.0  // IP counters strip under the tree
-#define XTRACEMONITOR_LAYOUT_OPSTATUS_TEXT_PAD_X  8.0
-#define XTRACEMONITOR_LAYOUT_NETSTATUS_LED         12.0  // visible circle; must stay paintable (opaque fill)
-#define XTRACEMONITOR_LAYOUT_NETSTATUS_LINE_H      16.0
+#define XTRACEMONITOR_LAYOUT_MARGIN                 6.0
+#define XTRACEMONITOR_LAYOUT_GAP                    6.0
+#define XTRACEMONITOR_LAYOUT_PANELS_X               222.0  // tree 6+210 + gap 6
+#define XTRACEMONITOR_LAYOUT_CAPTION_H              40.0   // matches chrome app icon (40×40)
+#define XTRACEMONITOR_LAYOUT_CHROME_GAP             0.0    // toolbar bubbles flush under caption
+#define XTRACEMONITOR_LAYOUT_VALOR_TOP              134.0  // 8px under legend bottom (y=126)
+#define XTRACEMONITOR_LAYOUT_VALOR_H                158.0  // header 26 + 6 rows×22 (exact 6 lines)
+#define XTRACEMONITOR_LAYOUT_FOOT_H                 22.0
+#define XTRACEMONITOR_LAYOUT_TREESTATS_H            22.0   // IP counters strip under the tree
+#define XTRACEMONITOR_LAYOUT_OPSTATUS_TEXT_PAD_X    8.0
+#define XTRACEMONITOR_LAYOUT_NETSTATUS_LED          12.0   // visible circle; must stay paintable (opaque fill)
+#define XTRACEMONITOR_LAYOUT_NETSTATUS_LINE_H       16.0
 #define XTRACEMONITOR_LAYOUT_NETSTATUS_LINE_GAP     2.0
-#define XTRACEMONITOR_LAYOUT_NETSTATUS_LED_GAP      6.0  // LED → "Conexion a internet"
-#define XTRACEMONITOR_LAYOUT_NETSTATUS_TEXT_PAD    16.0  // measure slack inside the frame (long EN/DE/FR/CJK lines)
-#define XTRACEMONITOR_LAYOUT_NETSTATUS_FRAME_PAD    6.0  // inner pad LED/text ↔ frame (same chrome as valor)
-#define XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_MIN_W     86.0  // XML default legend width
-#define XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_PAD        8.0  // text ↔ legend form edges
-#define XTRACEMONITOR_NETSTATUS_POLL_MS           1000  // UI refresh from GEN-cached InternetStatus
+#define XTRACEMONITOR_LAYOUT_NETSTATUS_LED_GAP      6.0    // LED → "Conexion a internet" 
+#define XTRACEMONITOR_LAYOUT_NETSTATUS_TEXT_PAD     16.0   // measure slack inside the frame (long EN/DE/FR/CJK lines)
+#define XTRACEMONITOR_LAYOUT_NETSTATUS_FRAME_PAD    6.0    // inner pad LED/text ↔ frame (same chrome as valor)
+#define XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_MIN_W      86.0   // XML default legend width
+#define XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_PAD        8.0    // text ↔ legend form edges
+#define XTRACEMONITOR_NETSTATUS_POLL_MS             1000   // UI refresh from GEN-cached InternetStatus
 
-#define XTRACEMONITOR_OPSTATUS_MAXLINES           20
-#define XTRACEMONITOR_OPSTATUS_LINEHEIGHT         18.0f
-#define XTRACEMONITOR_OPSTATUS_PAD                4.0f
-#define XTRACEMONITOR_OPSTATUS_DBLCLICK_MS        700
+#define XTRACEMONITOR_OPSTATUS_MAXLINES             20
+#define XTRACEMONITOR_OPSTATUS_MAXARGS              2
+#define XTRACEMONITOR_OPSTATUS_LINEHEIGHT           18.0f
+#define XTRACEMONITOR_OPSTATUS_PAD                  4.0f
+#define XTRACEMONITOR_OPSTATUS_DBLCLICK_MS          700
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @struct     XTRACEMONITOR_OPSTATUS_ENTRY
+* @brief      Status foot line: translate ID + optional Format args (rebuilt on language change).
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+struct XTRACEMONITOR_OPSTATUS_ENTRY
+{
+  XDWORD  id;
+  XDWORD  nargs;
+  XSTRING arg[XTRACEMONITOR_OPSTATUS_MAXARGS];
+
+  XTRACEMONITOR_OPSTATUS_ENTRY()
+  {
+    id    = 0;
+    nargs = 0;
+  }
+};
 
 // Config modal: fixed size = 75% of the app minimum client (1200×699), always; only recentered.
 #define XTRACEMONITOR_CONFIGMODAL_W               900.0  // 1200 * 0.75
@@ -187,6 +209,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     friend class                    XTRACEMONITOR_FORM_CFG;
     friend class                    XTRACEMONITOR_FORM_FILTERS;
     friend class                    XTRACEMONITOR_FORM_ABOUT;
+    friend class                    XTRACEMONITOR_FORM_DYNDNS;
     friend class                    XTRACEMONITOR_SERVER;
     friend class                    XTRACEMONITOR_ORIGINS;
     friend class                    XTRACEMONITOR_GUI_TREE;
@@ -203,6 +226,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            DrawFrame                               ();
 
     bool                            Layout_ApplyFlexibleResize              (bool compose = true);
+    bool                            Layout_ApplyConsoleAboveOpStatus        (bool dirty = true);
 
     bool                            BrandMonitor_Resolve                    ();
     bool                            BrandMonitor_RepaintAfterChrome         ();
@@ -216,7 +240,10 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            InternetStatus_RepaintAfterChrome       ();
 
     bool                            OpStatus_Resolve                        ();
-    bool                            OpStatus_Log                            (XCHAR* message);
+    bool                            OpStatus_Log                            (XDWORD translate_id);
+    bool                            OpStatus_Log                            (XDWORD translate_id, XCHAR* arg0);
+    bool                            OpStatus_Log                            (XDWORD translate_id, XCHAR* arg0, XCHAR* arg1);
+    bool                            OpStatus_FormatLine                     (const XTRACEMONITOR_OPSTATUS_ENTRY& entry, XSTRING& out);
     bool                            OpStatus_Refresh                        ();
     bool                            OpStatus_DisableScroll                  ();
     bool                            OpStatus_ApplyGeometry                  (XDWORD visible_lines);
@@ -246,6 +273,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            UserInterface_ElementSelected           (UI_ELEMENT* element);
     bool                            UserInterface_ChangeLiteralText         (UI_ELEMENT_TEXT* element_text, XSTRING* maskvalue, XSTRING* maskresult);
     bool                            UserInterface_CFGChromes                (GRPSCREEN* screen);
+    bool                            Chrome_ApplyAndroidConstraints          ();
 
     void                            HandleEvent_UserInterface               (UI_XEVENT* event);
     void                            HandleEvent_Graphics                    (GRPXEVENT* event);
@@ -260,7 +288,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
 
     UI_ELEMENT_FORM*                opstatus_form;
     UI_ELEMENT_TEXTBOX*             opstatus_text;
-    XSTRING                         opstatus_msgs[XTRACEMONITOR_OPSTATUS_MAXLINES];
+    XTRACEMONITOR_OPSTATUS_ENTRY    opstatus_msgs[XTRACEMONITOR_OPSTATUS_MAXLINES];
     XDWORD                          opstatus_count;
     double                          opstatus_foot_y;
     double                          opstatus_last_baseline;
@@ -301,6 +329,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     XTRACEMONITOR_FORM_CFG          form_cfg;
     XTRACEMONITOR_FORM_FILTERS      form_filters;
     XTRACEMONITOR_FORM_ABOUT        form_about;
+    XTRACEMONITOR_FORM_DYNDNS       form_dyndns;
     XTRACEMONITOR_SERVER            traceserver;
     XTRACEMONITOR_ORIGINS           origins;
     XTRACEMONITOR_GUI_TREE          gui_tree;
@@ -316,6 +345,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            chrome_theme_dirty; // RefreshChrome pending until chrome layout exists
     bool                            exitapp;
     bool                            screen_geometry_persisted; // one-shot save before mainscreen is destroyed
+    bool                            showaboutboot_pending;    // open About once after startup when CFG says so
 };
 
 

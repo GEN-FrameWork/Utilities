@@ -57,6 +57,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <functional>
 #ifdef WINDOWS
 #include <windows.h>
 #endif
@@ -638,9 +639,16 @@ bool XTRACEMONITOR::AppProc_Update()
 
           case XTRACEMONITOR_XFSMSTATE_INI    :
                                                 {
+                                                  if(showaboutboot_pending)
+                                                    {
+                                                      showaboutboot_pending = false;
+                                                      form_about.Show(true);
+                                                    }
+
                                                   form_cfg.Tick();
                                                   form_filters.Tick();
                                                   form_about.Tick();
+                                                  form_dyndns.Tick();
 
                                                   traceserver.Pump();
 
@@ -823,6 +831,7 @@ bool XTRACEMONITOR::UpdateInput()
   int  now_cursor_x = 0;
   int  now_cursor_y = 0;
   bool bar_owned    = false;
+  bool edit_owned   = false;
 
   if(cursor)
     {
@@ -863,11 +872,16 @@ bool XTRACEMONITOR::UpdateInput()
           if(mouseheld)
             {
               bar_owned = GEN_USERINTERFACE.ScrollBar_OnPointer(now_cursor_x, now_cursor_y, true);
-              if(bar_owned) cursor->GetMotion()->Reset();
+              if(!bar_owned)
+                {
+                  edit_owned = GEN_USERINTERFACE.EditText_OnPointer(now_cursor_x, now_cursor_y, true);
+                }
+              if(bar_owned || edit_owned) cursor->GetMotion()->Reset();
             }
            else
             {
-              bar_owned = GEN_USERINTERFACE.ScrollBar_OnPointer(cursor_x, cursor_y, false);
+              bar_owned  = GEN_USERINTERFACE.ScrollBar_OnPointer(cursor_x, cursor_y, false);
+              edit_owned = GEN_USERINTERFACE.EditText_OnPointer(cursor_x, cursor_y, false);
             }
 
           if(button[XTRACEMONITOR_BUTTON_TOUCHSCREEN])
@@ -876,6 +890,10 @@ bool XTRACEMONITOR::UpdateInput()
                 {
                   GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_CURSOR_MOVE, cursor_x, cursor_y);
                   if(GEN_USERINTERFACE.ScrollBar_OnPointer(cursor_x, cursor_y, true))
+                    {
+                      cursor->GetMotion()->Reset();
+                    }
+                   else if(GEN_USERINTERFACE.EditText_OnPointer(cursor_x, cursor_y, true))
                     {
                       cursor->GetMotion()->Reset();
                     }
@@ -888,6 +906,7 @@ bool XTRACEMONITOR::UpdateInput()
                else
                 {
                   GEN_USERINTERFACE.ScrollBar_OnPointer(cursor_x, cursor_y, false);
+                  GEN_USERINTERFACE.EditText_OnPointer(cursor_x, cursor_y, false);
                 }
             }
         }
@@ -897,13 +916,19 @@ bool XTRACEMONITOR::UpdateInput()
           int click_x = now_cursor_x;
           int click_y = now_cursor_y;
 
+          // If the motion branch did not run (or stalled), end the EditText gesture here.
+          if(!edit_owned)
+            {
+              edit_owned = GEN_USERINTERFACE.EditText_OnPointer(click_x, click_y, false);
+            }
+
           if(GEN_USERINTERFACE.Element_IsModalActive())
             {
               if(form_about.IsVisible() && form_about.GenUrl_HitTest(click_x, click_y))
                 {
                   form_about.OpenGenFrameworkPage();
                 }
-               else if(!bar_owned)
+               else if(!bar_owned && !edit_owned)
                 {
                   GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_SELECCTION, click_x, click_y);
                 }
@@ -920,7 +945,7 @@ bool XTRACEMONITOR::UpdateInput()
             {
               // Tree owns the click (select / expand); do not forward as generic UI selection.
             }
-           else if(!bar_owned)
+           else if(!bar_owned && !edit_owned)
             {
               GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_SELECCTION, click_x, click_y);
             }
@@ -941,6 +966,8 @@ bool XTRACEMONITOR::UpdateInput()
           if(visible > XTRACEMONITOR_OPSTATUS_MAXLINES) visible = XTRACEMONITOR_OPSTATUS_MAXLINES;
         }
       OpStatus_ApplyGeometry(visible);
+      // Keep console bottom glued above live opstatus height (expand/collapse / line_h lock).
+      Layout_ApplyConsoleAboveOpStatus(true);
       if(opstatus_expanded && (opstatus_count > 1)) GEN_USERINTERFACE.Element_PutToLastPositionLayout(opstatus_form);
 
       if((opstatus_line_h < 1.0f) && opstatus_text)
@@ -1017,6 +1044,14 @@ bool XTRACEMONITOR::Ini_Graphics(GRPSCREEN* screen)
   int size_w = XTRACEMONITOR_WINDOW_WIDTH;
   int size_h = XTRACEMONITOR_WINDOW_HEIGHT;
 
+  #ifdef ANDROID
+  // XTM Android only: fill the device display. MainProcANDROID seeds
+  // GetMaxWidth/Height from ANativeWindow before SCREEN_CREATING. Other GEN
+  // Android apps (UI_System) keep a fixed design canvas + GLES letterbox.
+  if(screen->GetMaxWidth()  > 0) size_w = (int)screen->GetMaxWidth();
+  if(screen->GetMaxHeight() > 0) size_h = (int)screen->GetMaxHeight();
+  #else
+  // Desktop: restore saved geometry from the shipped assets .ini.
   XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
   int saved_x = 0;
   int saved_y = 0;
@@ -1033,6 +1068,7 @@ bool XTRACEMONITOR::Ini_Graphics(GRPSCREEN* screen)
       size_w = saved_w;
       size_h = saved_h;
     }
+  #endif
 
   screen->SetPosition(pos_x, pos_y);
   screen->SetWidth((XDWORD)size_w);
@@ -1055,6 +1091,9 @@ bool XTRACEMONITOR::Ini_Graphics(GRPSCREEN* screen)
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::ApplySavedScreenGeometry()
 {
+  #ifdef ANDROID
+  return false;
+  #else
   GRPSCREEN* screen = GetMainScreen();
   if(!screen) return false;
 
@@ -1079,7 +1118,7 @@ bool XTRACEMONITOR::ApplySavedScreenGeometry()
       int cur_h = (int)screen->GetHeight();
       if((cur_w != saved_w) || (cur_h != saved_h))
         {
-          if(screen->Resize(saved_w, saved_h))
+                  if(screen->Resize(saved_w, saved_h))
             {
               applied = true;
               Layout_ApplyFlexibleResize(true);
@@ -1088,6 +1127,7 @@ bool XTRACEMONITOR::ApplySavedScreenGeometry()
     }
 
   return applied;
+  #endif
 }
 
 
@@ -1191,7 +1231,7 @@ bool XTRACEMONITOR::Ini_Canvas(GRPSCREEN* screen)
     {
       GRPVIEWPORT* viewport = screen->GetViewport(GRPVIEWPORT_ID_MAIN);
       if(viewport)
-        {          
+        {
           viewport->SetMinSize((float)XTRACEMONITOR_WINDOW_WIDTH, (float)XTRACEMONITOR_WINDOW_HEIGHT);
           viewport->SetMaxSize(3840.0f, 2160.0f);
         }
@@ -1365,6 +1405,12 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       return false;
     }
 
+  form_dyndns.SetOwner(this);
+  if(!form_dyndns.Resolve())
+    {
+      return false;
+    }
+
   ApplyColorTheme(XTRACEMONITOR_CFG::GetInstance(false).GetColorTheme());
 
 
@@ -1380,9 +1426,60 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
   traceserver.SetHighPriority(true);
   traceserver.Ini();
 
-  OpStatus_Log(NL("XTraceMonitor ready."));
+  Chrome_ApplyAndroidConstraints();
+
+  OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_READY);
+
+  // Defer About until the app is in AppProc_Update (main window already up and running).
+  showaboutboot_pending = XTRACEMONITOR_CFG::GetInstance(false).GetShowAboutBoot();
 
   return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::Chrome_ApplyAndroidConstraints()
+* @brief      Android-only: keep minimize/maximize visible but deactivated (deactive face + no hit/preselect).
+* @ingroup    UTILITIES
+*
+* @return     bool : true if chrome was adjusted; false if not Android or chrome missing.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::Chrome_ApplyAndroidConstraints()
+{
+  #if !defined(ANDROID) || !defined(GRP_SCREEN_CUSTOMCHROMES_ACTIVE)
+  return false;
+  #else
+  GRPSCREEN* screen = GetMainScreen();
+  if(!screen) return false;
+
+  UI_LAYOUT* chrome = GEN_USERINTERFACE.Layouts_Get(NL("chrome"));
+  if(!chrome) chrome = screen->GetCFGChromesLayout();
+  if(!chrome) return false;
+
+  // Stay in the caption, show selectablestatus="deactive" faces
+  // (icon_minimized/maximized_deactivated.svg), and skip chrome hit-test / UI preselect
+  // (both gate on IsActive) — same contract as chrome language when translation is off.
+  auto deactivate = [](UI_ELEMENT* element) -> bool
+    {
+      if(!element) return false;
+      element->SetVisible(true);
+      element->SetActive(false);
+      element->SetPreSelect(false);
+      element->SetSelected(false);
+      element->SetMustReDraw(true);
+      return true;
+    };
+
+  bool adjusted = false;
+  if(deactivate(chrome->Elements_Get(UI_ELEMENT_CHROMEROLE_MINIMIZE))) adjusted = true;
+  if(deactivate(chrome->Elements_Get(UI_ELEMENT_CHROMEROLE_MAXIMIZE))) adjusted = true;
+  if(!adjusted) return false;
+
+  chrome->Elements_SetToRedraw();
+  return true;
+  #endif
 }
 
 
@@ -1593,23 +1690,18 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
         }
     }
 
-  const double margin   = XTRACEMONITOR_LAYOUT_MARGIN;
-  const double gap      = XTRACEMONITOR_LAYOUT_GAP;
-  const double panels_x = XTRACEMONITOR_LAYOUT_PANELS_X;
+  const double margin    = XTRACEMONITOR_LAYOUT_MARGIN;
+  const double gap       = XTRACEMONITOR_LAYOUT_GAP;
+  const double panels_x  = XTRACEMONITOR_LAYOUT_PANELS_X;
   const double valor_top = XTRACEMONITOR_LAYOUT_VALOR_TOP;
-  const double valor_h  = XTRACEMONITOR_LAYOUT_VALOR_H;
-  const double foot_h   = XTRACEMONITOR_LAYOUT_FOOT_H;
+  const double valor_h   = XTRACEMONITOR_LAYOUT_VALOR_H;
+  const double foot_h    = XTRACEMONITOR_LAYOUT_FOOT_H;
   double panel_w = W - margin - panels_x;
   if(panel_w < 1.0) panel_w = 1.0;
 
-  double foot_y      = H - margin;
-  double console_bot = foot_y - foot_h - gap;
-  double valor_y     = valor_top + valor_h;
-  double console_top = valor_y + gap;
-  double console_h   = console_bot - console_top;
-  if(console_h < 1.0) console_h = 1.0;
+  double foot_y  = H - margin;
+  double valor_y = valor_top + valor_h;
 
-  
   if((opstatus_foot_y > 0.0) && (foot_y != opstatus_foot_y) && (opstatus_last_baseline > 0.0))
     {
       opstatus_last_baseline += (foot_y - opstatus_foot_y);
@@ -1617,17 +1709,15 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
 
   opstatus_foot_y = foot_y;
 
-  // Same foot band as opstatus: margin from window edge, GAP above the strip (matches console→opstatus).
-  const double treestats_h = XTRACEMONITOR_LAYOUT_TREESTATS_H;
-  const double tree_w      = XTRACEMONITOR_LAYOUT_PANELS_X - margin - gap; // 210 at design size
-  double tree_bot = console_bot;
-  double tree_h   = tree_bot - valor_top;
+  // Tree / treestats stay on the collapsed foot band; console clears the live opstatus height.
+  const double tree_w   = XTRACEMONITOR_LAYOUT_PANELS_X - margin - gap; // 210 at design size
+  double       tree_bot = foot_y - foot_h - gap;
+  double       tree_h   = tree_bot - valor_top;
   if(tree_h < 1.0) tree_h = 1.0;
 
   gui_tree.ApplyLayoutGeometry(margin, tree_w, tree_h, tree_bot);
   gui_tree.Stats_ApplyGeometry(foot_y, margin, tree_w);
   gui_varstatus.ApplyLayoutGeometry(panel_w, valor_h, valor_y);
-  gui_console.ApplyLayoutGeometry(panel_w, console_h, console_bot);
 
   if(opstatus_form && opstatus_form->GetBoundaryLine())
     {
@@ -1657,6 +1747,9 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
       OpStatus_ApplyGeometry(visible);
     }
 
+  // After opstatus height is known: shrink console so expand never overlaps the message frame.
+  Layout_ApplyConsoleAboveOpStatus(false);
+
   layout_applied_w = (int)W;
   layout_applied_h = (int)H;
 
@@ -1674,6 +1767,10 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
     {
       form_about.ApplyGeometry();
     }
+  if(form_dyndns.IsVisible())
+    {
+      form_dyndns.ApplyGeometry();
+    }
 
   if(!GEN_USERINTERFACE.Element_IsModalActive())
     {
@@ -1684,6 +1781,137 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
 
   GEN_USERINTERFACE.Layout_PutBackground();
   GEN_USERINTERFACE.Elements_SetToRedraw();
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::Layout_ApplyConsoleAboveOpStatus(bool dirty)
+* @brief      Places the console bottom above the live opstatus height (collapsed or expanded).
+* @ingroup    UTILITIES
+*
+* @param[in]  dirty : When true, redraw console (and opstatus) if geometry changed.
+*
+* @return     bool : true if the console was updated; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::Layout_ApplyConsoleAboveOpStatus(bool dirty)
+{
+  GRPSCREEN* screen = GetMainScreen();
+  if(!screen) return false;
+
+  double W = (double)screen->GetWidth();
+  double H = (double)screen->GetHeight();
+  if((W < 1.0) || (H < 1.0)) return false;
+
+  const double margin    = XTRACEMONITOR_LAYOUT_MARGIN;
+  const double gap       = XTRACEMONITOR_LAYOUT_GAP;
+  const double panels_x  = XTRACEMONITOR_LAYOUT_PANELS_X;
+  const double valor_top = XTRACEMONITOR_LAYOUT_VALOR_TOP;
+  const double valor_h   = XTRACEMONITOR_LAYOUT_VALOR_H;
+  const double foot_h    = XTRACEMONITOR_LAYOUT_FOOT_H;
+
+  double panel_w = W - margin - panels_x;
+  if(panel_w < 1.0) panel_w = 1.0;
+
+  double foot_y = opstatus_foot_y;
+  if(foot_y <= 0.0) foot_y = H - margin;
+
+  double status_h = foot_h;
+  if(opstatus_form && opstatus_form->GetBoundaryLine() && (opstatus_form->GetBoundaryLine()->height > 0.0))
+    {
+      status_h = opstatus_form->GetBoundaryLine()->height;
+    }
+  if(status_h < foot_h) status_h = foot_h;
+
+  double console_bot = foot_y - status_h - gap;
+  double valor_y     = valor_top + valor_h;
+  double console_top = valor_y + gap;
+  double console_h   = console_bot - console_top;
+  if(console_h < 1.0) console_h = 1.0;
+
+  UI_ELEMENT_CONSOLE* console = gui_console.GetElement();
+
+  // Pre-move console top (may be above the layout console_top if valor/resize lagged).
+  double old_c_t = console_top;
+  if(console && console->GetBoundaryLine() && (console->GetBoundaryLine()->height > 0.0))
+    {
+      old_c_t = UI_BOUNDARYLINE_EdgeTop(console->GetYPosition(), console->GetBoundaryLine()->height);
+    }
+
+  bool changed = true;
+  if(console && console->GetBoundaryLine())
+    {
+      changed = (console->GetBoundaryLine()->width  != panel_w)    ||
+                (console->GetBoundaryLine()->height != console_h)  ||
+                (console->GetBoundaryLine()->y      != console_bot);
+    }
+
+  if(!gui_console.ApplyLayoutGeometry(panel_w, console_h, console_bot)) return false;
+
+  if(dirty && changed)
+    {
+      UI_LAYOUT* layout = NULL;
+      if(console) layout = console->GetLayout();
+      if(!layout && opstatus_form) layout = opstatus_form->GetLayout();
+
+      if(layout && layout->GetSkin() && (layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS))
+        {
+          UI_SKINCANVAS* skin   = (UI_SKINCANVAS*)layout->GetSkin();
+          GRP2DCANVAS*   canvas = skin->GetCanvas();
+          if(canvas)
+            {
+              // Wipe the whole console column from the highest console top down to the foot:
+              // covers shrink gap, old borders, and opstatus glyphs left after expand/collapse.
+              const double pad = 3.0;
+              double wipe_l = panels_x - pad;
+              double wipe_r = panels_x + panel_w + pad;
+              double wipe_t = ((old_c_t < console_top) ? old_c_t : console_top) - pad;
+              double wipe_b = foot_y + pad;
+
+              XBYTE pr = 24, pg = 28, pb = 36, pa = 255;
+              if(layout->GetBackground() && layout->GetBackground()->GetColor() &&
+                 layout->GetBackground()->GetColor()->IsValid())
+                {
+                  UI_COLOR* page = layout->GetBackground()->GetColor();
+                  pr = (XBYTE)page->GetRed();
+                  pg = (XBYTE)page->GetGreen();
+                  pb = (XBYTE)page->GetBlue();
+                  pa = (XBYTE)page->GetAlpha();
+                }
+
+              GRP2DCOLOR_RGBA8 fill(pr, pg, pb, pa);
+              GRP2DCOLOR_RGBA8 noline(0, 0, 0, 0);
+              canvas->SetFillColor(&fill);
+              canvas->SetLineColor(&noline);
+              canvas->SetLineWidth(1.0f);
+              if(wipe_b > wipe_t) canvas->Rectangle(wipe_l, wipe_b, wipe_r, wipe_t, true);
+
+              // Drop stale rebuild snapshots without restoring (page wipe already cleaned the band).
+              auto drop_area = [&](UI_ELEMENT* el)
+                {
+                  if(!el) return;
+                  GRP2DREBUILDAREA* area = skin->GetRebuildAreaByElement(el);
+                  if(!area) return;
+                  XVECTOR<GRP2DREBUILDAREA*>* areas = skin->GetRebuildAreas();
+                  if(areas) areas->Delete(area);
+                  GEN_DELETE area;
+                };
+              drop_area(console);
+              drop_area(opstatus_form);
+              if(opstatus_text) skin->DiscardTextBackdrop(opstatus_text);
+              // Collapse path: expanded FormBackdrop is taller than the new foot. Draw_Form's
+              // mismatch branch PutBitmapNoAlpha's that tall cache AFTER console redraw and
+              // blanks the restored log until the next console line. Drop without restoring.
+              if(opstatus_form) skin->DiscardFormBackdrop(opstatus_form);
+            }
+        }
+
+      gui_console.SetToRedraw();
+      if(opstatus_form) GEN_USERINTERFACE.Elements_SetToRedraw(opstatus_form, true);
+    }
 
   return true;
 }
@@ -2399,13 +2627,64 @@ bool XTRACEMONITOR::OpStatus_Resolve()
 }
 
 
-bool XTRACEMONITOR::OpStatus_Log(XCHAR* message)
+bool XTRACEMONITOR::OpStatus_FormatLine(const XTRACEMONITOR_OPSTATUS_ENTRY& entry, XSTRING& out)
 {
-  if(!message) return false;
+  out.Empty();
+  if(!entry.id) return false;
+
+  XCHAR* mask = TL((XTRACEMONITOR_TRANSLATEID)entry.id);
+  if(!mask) return false;
+
+  if(entry.nargs == 0)
+    {
+      out.Set(mask);
+      return true;
+    }
+
+  if(entry.nargs == 1)
+    {
+      out.Format(mask, entry.arg[0].Get());
+      return true;
+    }
+
+  out.Format(mask, entry.arg[0].Get(), entry.arg[1].Get());
+  return true;
+}
+
+
+bool XTRACEMONITOR::OpStatus_Log(XDWORD translate_id)
+{
+  return OpStatus_Log(translate_id, NULL, NULL);
+}
+
+
+bool XTRACEMONITOR::OpStatus_Log(XDWORD translate_id, XCHAR* arg0)
+{
+  return OpStatus_Log(translate_id, arg0, NULL);
+}
+
+
+bool XTRACEMONITOR::OpStatus_Log(XDWORD translate_id, XCHAR* arg0, XCHAR* arg1)
+{
+  if(!translate_id) return false;
+
+  XTRACEMONITOR_OPSTATUS_ENTRY entry;
+  entry.id = translate_id;
+  entry.nargs = 0;
+  if(arg0)
+    {
+      entry.arg[0].Set(arg0);
+      entry.nargs = 1;
+    }
+  if(arg1)
+    {
+      entry.arg[1].Set(arg1);
+      entry.nargs = 2;
+    }
 
   if(opstatus_count < XTRACEMONITOR_OPSTATUS_MAXLINES)
     {
-      opstatus_msgs[opstatus_count].Set(message);
+      opstatus_msgs[opstatus_count] = entry;
       opstatus_count++;
     }
    else
@@ -2414,7 +2693,7 @@ bool XTRACEMONITOR::OpStatus_Log(XCHAR* message)
         {
           opstatus_msgs[c-1] = opstatus_msgs[c];
         }
-      opstatus_msgs[XTRACEMONITOR_OPSTATUS_MAXLINES-1].Set(message);
+      opstatus_msgs[XTRACEMONITOR_OPSTATUS_MAXLINES-1] = entry;
       opstatus_count = XTRACEMONITOR_OPSTATUS_MAXLINES;
     }
 
@@ -2445,13 +2724,25 @@ bool XTRACEMONITOR::OpStatus_Refresh()
       for(XDWORD c=start; c<opstatus_count; c++)
         {
           if(c > start) body.Add(NL("\n"));
-          body.Add(opstatus_msgs[c].Get());
+          XSTRING line;
+          OpStatus_FormatLine(opstatus_msgs[c], line);
+          body.Add(line.Get());
         }
     }
 
   opstatus_text->GetText()->Set(body.Get());
 
   OpStatus_ApplyGeometry(visible);
+
+  // Expand/collapse changes foot height. Draw_Form mismatch-restore would PutBitmapNoAlpha
+  // the previous FormBackdrop over the console band; drop it before layout/redraw.
+  if(opstatus_form && opstatus_form->GetLayout() && opstatus_form->GetLayout()->GetSkin() &&
+     (opstatus_form->GetLayout()->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS))
+    {
+      ((UI_SKINCANVAS*)opstatus_form->GetLayout()->GetSkin())->DiscardFormBackdrop(opstatus_form);
+    }
+
+  Layout_ApplyConsoleAboveOpStatus(true);
 
   if(opstatus_expanded && (opstatus_count > 1)) GEN_USERINTERFACE.Element_PutToLastPositionLayout(opstatus_form);
 
@@ -2947,11 +3238,11 @@ bool XTRACEMONITOR::Toolbar_RelayoutLabels()
   static SLOT slots[] =
     {
       { NL("stop-btn")  , NL("run-btn")           , NL("runstop-lbl")   },
+      { NL("filter-btn"), NL("filter-active-btn") , NL("filter-lbl")    },
       { NL("clear-btn") , NULL                    , NL("clear-lbl")     },
       { NL("delstatus-btn"), NULL                 , NL("delstatus-lbl") },
-      { NL("filter-btn"), NL("filter-active-btn") , NL("filter-lbl")    },
-      { NL("dyndns-btn"), NULL                    , NL("dyndns-lbl")    },
       { NL("save-btn")  , NULL                    , NL("save-lbl")      },
+      { NL("dyndns-btn"), NULL                    , NL("dyndns-lbl")    },
       { NL("config-btn"), NULL                    , NL("config-lbl")    },
     };
 
@@ -3135,6 +3426,9 @@ bool XTRACEMONITOR::UserInterface_AfterLanguageChange()
               GEN_USERINTERFACE.Elements_SetToRedraw(title_txt, true);
             }
         }
+
+      // Keep Android maximize hidden / margins packed after chrome title rebuild.
+      Chrome_ApplyAndroidConstraints();
     }
 
   // Dirt translated #[TRANSLATE] labels first. Netstatus remasure/wipe runs AFTER so DropStaleCaches
@@ -3148,6 +3442,15 @@ bool XTRACEMONITOR::UserInterface_AfterLanguageChange()
   if(flt) flt->Elements_SetToRedraw();
   UI_LAYOUT* abt = GEN_USERINTERFACE.Layouts_Get(NL("about_modal"));
   if(abt) abt->Elements_SetToRedraw();
+  UI_LAYOUT* dyn = GEN_USERINTERFACE.Layouts_Get(NL("dyndns_modal"));
+  if(dyn) dyn->Elements_SetToRedraw();
+
+  // Tree fixed folders + IP counters + valor headers (not #[TRANSLATE] masks).
+  origins.RefreshFixedLabels();
+  gui_varstatus.ApplyHeaderCaptions();
+
+  // OpStatus lines: rebuild from stored translate IDs + args.
+  OpStatus_Refresh();
 
   // TL()-driven netstatus: force refresh + remasure last (DropStaleCaches + ghost frames).
   InternetStatus_Update(true);
@@ -3211,7 +3514,8 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
           const bool is_app_layout = (!layout->GetNameID()->Compare(NL("xtracemonitor"), true) ||
                                       !layout->GetNameID()->Compare(NL("config_modal") , true) ||
                                       !layout->GetNameID()->Compare(NL("filters_modal"), true) ||
-                                      !layout->GetNameID()->Compare(NL("about_modal")  , true));
+                                      !layout->GetNameID()->Compare(NL("about_modal")  , true) ||
+                                      !layout->GetNameID()->Compare(NL("dyndns_modal") , true));
           if(!is_app_layout) continue;
 
           if(layout->GetBackground() && layout->GetBackground()->GetColor())
@@ -3306,6 +3610,7 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
   // About GEN mark: white on Dark, black on Light.
   form_about.ApplyTheme(light);
   if(form_about.IsVisible()) form_about.ApplyGeometry();
+  if(form_dyndns.IsVisible()) form_dyndns.ApplyGeometry();
 
   GEN_USERINTERFACE.Layout_PutBackground();
   GEN_USERINTERFACE.Elements_SetToRedraw();
@@ -3315,7 +3620,8 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
    else
     InternetStatus_RepaintAfterChrome();
 
-  OpStatus_Log(light ? TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_COLOR_THEME_LIGHT) : TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_COLOR_THEME_DARK));
+  OpStatus_Log(light ? (XDWORD)XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_COLOR_THEME_LIGHT
+                     : (XDWORD)XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_COLOR_THEME_DARK);
   return true;
 }
 
@@ -3390,7 +3696,8 @@ bool XTRACEMONITOR::ApplyColorTheme_RefreshChrome(bool light)
   apply_caption(caption_el);
   apply_title(title_el);
 
-  auto walk = [&](UI_ELEMENT* element, auto&& self) -> void
+  std::function<void(UI_ELEMENT*)> walk;
+  walk = [&](UI_ELEMENT* element) -> void
     {
       if(!element) return;
 
@@ -3404,7 +3711,7 @@ bool XTRACEMONITOR::ApplyColorTheme_RefreshChrome(bool light)
       if(element->GetComposeElements())
         {
           for(XDWORD c=0; c<element->GetComposeElements()->GetSize(); c++)
-            self(element->GetComposeElements()->Get(c), self);
+            walk(element->GetComposeElements()->Get(c));
         }
     };
 
@@ -3412,7 +3719,7 @@ bool XTRACEMONITOR::ApplyColorTheme_RefreshChrome(bool light)
   if(elements)
     {
       for(XDWORD e=0; e<elements->GetSize(); e++)
-        walk(elements->Get(e), walk);
+        walk(elements->Get(e));
     }
 
   return true;
@@ -3735,8 +4042,14 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
       {
         switch(chrome_el->GetChromeRole())
           {
-            case UI_ELEMENT_CHROMEROLE_MINIMIZE : if(GetMainScreen()) GetMainScreen()->Minimize(true);
+            case UI_ELEMENT_CHROMEROLE_MINIMIZE :
+                                                  #ifdef ANDROID
+                                                  // XTM Android: minimize stays visible but deactivated; ignore if hit.
                                                   return true;
+                                                  #else
+                                                  if(GetMainScreen()) GetMainScreen()->Minimize(true);
+                                                  return true;
+                                                  #endif
 
             case UI_ELEMENT_CHROMEROLE_LANGUAGE :
                                                   #ifdef XTRANSLATION_ACTIVE
@@ -3751,7 +4064,12 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
                                                   #endif
                                                   return true;
 
-            case UI_ELEMENT_CHROMEROLE_MAXIMIZE : if(GetMainScreen())
+            case UI_ELEMENT_CHROMEROLE_MAXIMIZE :
+                                                  #ifdef ANDROID
+                                                  // XTM Android: maximize stays visible but deactivated; ignore if hit.
+                                                  return true;
+                                                  #else
+                                                  if(GetMainScreen())
                                                     {
                                                       // Toggle grow _ restore (same contract as UI_System / WindowChromes).
                                                       if(GetMainScreen()->IsClientSizeAtMaximum())
@@ -3759,6 +4077,7 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
                                                        else GetMainScreen()->Maximize(true);
                                                     }
                                                   return true;
+                                                  #endif
 
             case UI_ELEMENT_CHROMEROLE_CLOSE    : PersistScreenGeometryToCFG();
                                                   screen_geometry_persisted = true;
@@ -3780,44 +4099,49 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
   if(form_cfg.HandleElementSelected(element)) return true;
   if(form_filters.HandleElementSelected(element)) return true;
   if(form_about.HandleElementSelected(element)) return true;
+  if(form_dyndns.HandleElementSelected(element)) return true;
 
   if(!name->Compare(NL("stop-btn"), true))
     {
       Toolbar_SetWorkingMode(false);
-      OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_WORKINGMODE_OFF_PAUSED));
+      OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_WORKINGMODE_OFF_PAUSED);
       return true;
     }
 
   if(!name->Compare(NL("run-btn"), true))
     {
       Toolbar_SetWorkingMode(true);
-      OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_WORKINGMODE_ON));
+      OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_WORKINGMODE_ON);
       return true;
     }
 
   if(!name->Compare(NL("clear-btn"), true))
     {
       origins.ClearSelectedHistory();
-      OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_CLEAR_CONSOLE));
+      OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_CLEAR_CONSOLE);
       return true;
     }
 
   if(!name->Compare(NL("delstatus-btn"), true))
     {
       origins.ClearSelectedStatus();
-      OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_DEL_VAR_STATUS));
-      return true;
-    }
-
-  if(!name->Compare(NL("dyndns-btn"), true))
-    {
-      OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_AJUSTA_DYNDNS_TODO));
+      OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_DEL_VAR_STATUS);
       return true;
     }
 
   if(!name->Compare(NL("save-btn"), true))
     {
-      OpStatus_Log(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_SAVE_CONSOLE));
+      XSTRING saved_name;
+
+      if(origins.SaveSelectedConsole(&saved_name))
+        {
+          OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_SAVE_CONSOLE_OK, saved_name.Get());
+        }
+       else
+        {
+          OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_SAVE_CONSOLE_ERR);
+        }
+
       return true;
     }
 
@@ -3927,7 +4251,12 @@ bool XTRACEMONITOR::UserInterface_CFGChromes(GRPSCREEN* screen)
 
   #endif
 
+  #ifdef ANDROID
+  // Fixed to device max size: no resize grip / maximize affordance on Android.
+  cfgchromes.SetResizeActive(false);
+  #else
   cfgchromes.SetResizeActive(true);
+  #endif
 
   screen->SetCFGChromes(cfgchromes);
 
@@ -4104,6 +4433,7 @@ void XTRACEMONITOR::Clean()
   chrome_theme_dirty        = false;
   exitapp                   = false;
   screen_geometry_persisted = false;
+  showaboutboot_pending     = false;
 
   for(int c=0; c<XTRACEMONITOR_BUTTON_MAX; c++)
     {

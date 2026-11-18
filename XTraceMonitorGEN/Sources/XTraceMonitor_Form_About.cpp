@@ -54,6 +54,7 @@
 
 #include "XTraceMonitor.h"
 #include "XTraceMonitor_CFG.h"
+#include "XTraceMonitor_TranslateID.h"
 
 #include "XMemory_Control.h"
 
@@ -620,6 +621,7 @@ bool XTRACEMONITOR_FORM_ABOUT::Show(bool show)
     {
       if(owner->form_cfg.IsVisible())     owner->form_cfg.Show(false);
       if(owner->form_filters.IsVisible()) owner->form_filters.Show(false);
+      if(owner->form_dyndns.IsVisible())  owner->form_dyndns.Show(false);
 
       {
         XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
@@ -636,7 +638,7 @@ bool XTRACEMONITOR_FORM_ABOUT::Show(bool show)
       GEN_USERINTERFACE.ModalLayer_Invalidate();
       GEN_USERINTERFACE.Elements_SetToRedraw();
 
-      owner->OpStatus_Log(NL("About modal open."));
+      owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_ABOUT_MODAL_OPEN);
     }
    else
     {
@@ -649,7 +651,7 @@ bool XTRACEMONITOR_FORM_ABOUT::Show(bool show)
 
       owner->InternetStatus_Update(true);
 
-      owner->OpStatus_Log(NL("About modal closed."));
+      owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_ABOUT_MODAL_CLOSED);
     }
 
   return true;
@@ -754,20 +756,20 @@ bool XTRACEMONITOR_FORM_ABOUT::OpenGenFrameworkPage()
   #ifdef XPROCESSMANAGER_ACTIVE
   if(!XPROCESSMANAGER::GetIsInstanced())
     {
-      if(owner) owner->OpStatus_Log(NL("About: XPROCESSMANAGER not instanced."));
+      if(owner) owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_ABOUT_XPM_NOT_INSTANCED);
       return false;
     }
 
   if(!GEN_XPROCESSMANAGER.OpenURL(XTRACEMONITOR_GENFRAMEWORK_URL_OPEN))
     {
-      if(owner) owner->OpStatus_Log(NL("About: failed to open GEN Framework URL."));
+      if(owner) owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_ABOUT_URL_FAIL);
       return false;
     }
 
-  if(owner) owner->OpStatus_Log(NL("About: opened GEN Framework page."));
+  if(owner) owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_ABOUT_URL_OK);
   return true;
   #else
-  if(owner) owner->OpStatus_Log(NL("About: XPROCESSMANAGER not active."));
+  if(owner) owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_ABOUT_XPM_NOT_ACTIVE);
   return false;
   #endif
 }
@@ -786,7 +788,7 @@ bool XTRACEMONITOR_FORM_ABOUT::OnAccept()
 {
   if(!owner) return false;
 
-  owner->OpStatus_Log(NL("About: Aceptar."));
+  owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_ABOUT_ACCEPT);
   return ArmCloseAfterPress(about_modal_btn_accept);
 }
 

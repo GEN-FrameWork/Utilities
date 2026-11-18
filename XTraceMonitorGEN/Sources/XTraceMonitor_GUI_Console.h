@@ -53,6 +53,7 @@ class XTRACEMONITOR_GUI_CONSOLE
 
     bool                            ApplyLayoutGeometry                     (double panel_w, double console_h, double console_bot);
     bool                            SetToRedraw                             ();
+    bool                            ApplyTextTracking                       ();
 
     UI_ELEMENT_CONSOLE*             GetElement                              ();
 

@@ -54,6 +54,9 @@
 #include "XTraceMonitor_CFG.h"
 #include "XTraceMonitor_GeoIP.h"
 #include "XTraceMonitor_Origins.h"
+#include "XTraceMonitor_TranslateID.h"
+
+#include "XTranslation.h"
 
 #include "XMemory_Control.h"
 
@@ -875,7 +878,7 @@ bool XTRACEMONITOR_GUI_TREE::Stats_ApplyGeometry(double foot_y, double margin, d
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool XTRACEMONITOR_GUI_TREE::Stats_Refresh(XDWORD public_count, XDWORD local_count)
-* @brief      Updates labels to "IP Publica (n)" / "IP Local (n)" and recenters the strip.
+* @brief      Updates labels to "Publicas (n)" / "Locales (n)" and recenters the strip.
 * @ingroup    UTILITIES
 *
 * @param[in]  public_count : Number of public IP origins.
@@ -890,8 +893,8 @@ bool XTRACEMONITOR_GUI_TREE::Stats_Refresh(XDWORD public_count, XDWORD local_cou
 
   XSTRING pub;
   XSTRING loc;
-  pub.Format(NL("IP Publica (%u)"), public_count);
-  loc.Format(NL("IP Local (%u)"), local_count);
+  pub.Format(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_STATS_PUBLIC), public_count);
+  loc.Format(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_STATS_LOCAL), local_count);
 
   treestats_pub_txt->GetText()->Set(pub.Get());
   treestats_loc_txt->GetText()->Set(loc.Get());

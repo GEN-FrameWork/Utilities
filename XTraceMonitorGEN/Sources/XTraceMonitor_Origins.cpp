@@ -17,6 +17,9 @@
 
 #include "XTraceMonitor.h"
 #include "XTraceMonitor_CFG.h"
+#include "XTraceMonitor_TranslateID.h"
+
+#include "XTranslation.h"
 
 #include "UI_Element_Tree.h"
 #include "UI_Element_Console.h"
@@ -26,6 +29,12 @@
 #include "DIOIP.h"
 #include "DIODNSResolver.h"
 #include "XTimer.h"
+#include "XFactory.h"
+#include "XPath.h"
+#include "XDir.h"
+#include "XDateTime.h"
+#include "XFileTXT.h"
+#include "XPathsManager.h"
 
 /*---- PRECOMPILATION INCLUDES ---------------------------------------------------------------------------------------*/
 
@@ -257,11 +266,13 @@ bool XTRACEMONITOR_ORIGINS::SeedTree()
 
   owner->gui_tree.GetElement()->Clear();
 
-  root = AddOrigin(XTRACEMONITOR_ORIGIN_KIND_ALL, 0, 0, NL("All"), NL("tree/all.png"), NULL);
+  root = AddOrigin(XTRACEMONITOR_ORIGIN_KIND_ALL, 0, 0,
+                   TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_TREE_ALL), NL("tree/all.png"), NULL);
   if(!root) return false;
 
   local_no_internet = AddOrigin(XTRACEMONITOR_ORIGIN_KIND_LOCAL_NO_INTERNET, 0, 0,
-                                NL("# Local (no internet)"), NL("tree/local.png"), root->node);
+                                TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_TREE_LOCAL_NO_INTERNET),
+                                NL("tree/local.png"), root->node);
   if(!local_no_internet) return false;
 
   XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
@@ -343,6 +354,43 @@ bool XTRACEMONITOR_ORIGINS::UpdateUARTLabel()
 }
 
 
+bool XTRACEMONITOR_ORIGINS::RefreshFixedLabels()
+{
+  bool changed = false;
+
+  if(root && root->node)
+    {
+      XCHAR* label = TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_TREE_ALL);
+      if(root->node->text.Compare(label))
+        {
+          root->node->text.Set(label);
+          root->name.Set(label);
+          changed = true;
+        }
+    }
+
+  if(local_no_internet && local_no_internet->node)
+    {
+      XCHAR* label = TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_TREE_LOCAL_NO_INTERNET);
+      if(local_no_internet->node->text.Compare(label))
+        {
+          local_no_internet->node->text.Set(label);
+          local_no_internet->name.Set(label);
+          changed = true;
+        }
+    }
+
+  if(changed && owner && owner->gui_tree.GetElement())
+    {
+      GEN_USERINTERFACE.Elements_SetToRedraw(owner->gui_tree.GetElement());
+    }
+
+  RefreshIPCounters();
+  UpdateUARTLabel();
+  return true;
+}
+
+
 bool XTRACEMONITOR_ORIGINS::BelongsTo(XTRACEMONITOR_ORIGIN* origin, XDWORD publicIP, XDWORD localIP)
 {
   if(!origin) return false;
@@ -387,7 +435,7 @@ bool XTRACEMONITOR_ORIGINS::EnsureFromMessage(XDWORD publicIP, XDWORD localIP)
       return (uart != NULL);
     }
 
-  // Local-only under "# Local (no internet)".
+  // Local-only under "Local (no internet)".
   if(!publicIP && localIP)
     {
       if(FindExact(0, localIP)) return true;
@@ -559,10 +607,7 @@ bool XTRACEMONITOR_ORIGINS::ReplaySelectedToConsole()
       owner->gui_console.GetElement()->PrintColor(line->color, line->text.Get());
     }
 
-  if(cfg.GetTextTracking())
-    {
-      owner->gui_console.GetElement()->SetAutoscroll(true);
-    }
+  owner->gui_console.ApplyTextTracking();
 
   GEN_USERINTERFACE.Elements_SetToRedraw(owner->gui_console.GetElement());
   return true;
@@ -589,6 +634,255 @@ bool XTRACEMONITOR_ORIGINS::ClearSelectedHistory()
       GEN_USERINTERFACE.Elements_SetToRedraw(owner->gui_console.GetElement());
     }
 
+  return true;
+}
+
+
+bool XTRACEMONITOR_ORIGINS::SanitizeFileToken(XSTRING& token)
+{
+  if(token.IsEmpty()) return false;
+
+  for(XDWORD c = 0; c < token.GetSize(); c++)
+    {
+      XCHAR ch = token.Get()[c];
+      if((ch == _C('\\')) || (ch == _C('/')) || (ch == _C(':')) || (ch == _C('*')) ||
+         (ch == _C('?'))  || (ch == _C('"')) || (ch == _C('<')) || (ch == _C('>')) ||
+         (ch == _C('|'))  || (ch == _C(' ')) || (ch == _C('(')) || (ch == _C(')')))
+        {
+          token.Get()[c] = _C('_');
+        }
+    }
+
+  while(token.Find(NL("__"), true) != XSTRING_NOTFOUND)
+    {
+      token.DeleteCharacters(token.Find(NL("__"), true), 1);
+    }
+
+  return !token.IsEmpty();
+}
+
+
+bool XTRACEMONITOR_ORIGINS::ResolveCFGOriginName(XDWORD publicIP, XSTRING& out)
+{
+  out.Empty();
+  if(!publicIP) return false;
+
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  const int norigins = cfg.GetOriginCount();
+
+  for(int i = 0; i < norigins; i++)
+    {
+      XTRACEMONITOR_CFG_ORIGIN cfgorigin;
+      if(!cfg.GetOrigin(i, cfgorigin)) continue;
+      if(cfgorigin.name.IsEmpty()) continue;
+
+      XSTRING display_ip = cfgorigin.ip;
+      if(display_ip.IsEmpty() && !cfgorigin.url.IsEmpty())
+        {
+          DIOIP resolved;
+          if(GEN_DIODNSRESOLVER.ResolveURL(cfgorigin.url.Get(), resolved))
+            {
+              resolved.GetXString(display_ip);
+            }
+        }
+
+      if(display_ip.IsEmpty()) continue;
+
+      DIOIP dioip;
+      if(!dioip.Set(display_ip)) continue;
+
+      XBYTE* a = dioip.Get();
+      XDWORD packed = ((XDWORD)a[0] << 24) | ((XDWORD)a[1] << 16) | ((XDWORD)a[2] << 8) | (XDWORD)a[3];
+      if(packed != publicIP) continue;
+
+      out = cfgorigin.name;
+      return true;
+    }
+
+  return false;
+}
+
+
+bool XTRACEMONITOR_ORIGINS::BuildSaveFileName(XTRACEMONITOR_ORIGIN* origin, XSTRING& out)
+{
+  out.Empty();
+  if(!origin) return false;
+
+  XSTRING public_part;
+  XSTRING local_part;
+  XSTRING cfg_name;
+  XSTRING stamp;
+
+  switch(origin->kind)
+    {
+      case XTRACEMONITOR_ORIGIN_KIND_ALL :
+        public_part = NL("All");
+        break;
+
+      case XTRACEMONITOR_ORIGIN_KIND_LOCAL_NO_INTERNET :
+      case XTRACEMONITOR_ORIGIN_KIND_LOCAL_CHILD :
+        public_part = NL("Local");
+        break;
+
+      case XTRACEMONITOR_ORIGIN_KIND_UART :
+        public_part = NL("UART");
+        break;
+
+      default :
+        if(origin->publicIP)
+          {
+            FormatIPLabel(origin->publicIP, false, public_part);
+            ResolveCFGOriginName(origin->publicIP, cfg_name);
+          }
+         else
+          {
+            public_part = NL("Unknown");
+          }
+        break;
+    }
+
+  const bool have_local =
+    origin->localIP &&
+    (origin->localIP != XTRACEMONITOR_ORIGIN_UART_IP) &&
+    (origin->kind != XTRACEMONITOR_ORIGIN_KIND_UART) &&
+    (origin->kind != XTRACEMONITOR_ORIGIN_KIND_ALL) &&
+    (origin->kind != XTRACEMONITOR_ORIGIN_KIND_LOCAL_NO_INTERNET) &&
+    (origin->kind != XTRACEMONITOR_ORIGIN_KIND_CFG) &&
+    (origin->kind != XTRACEMONITOR_ORIGIN_KIND_PUBLIC_PARENT);
+
+  if(have_local) FormatIPLabel(origin->localIP, false, local_part);
+
+  XDATETIME* now = GEN_XFACTORY.CreateDateTime();
+  if(now)
+    {
+      now->Read();
+      stamp.Format(NL("%04d%02d%02d_%02d%02d%02d"),
+                   now->GetYear(), now->GetMonth(), now->GetDay(),
+                   now->GetHours(), now->GetMinutes(), now->GetSeconds());
+      GEN_XFACTORY.DeleteDateTime(now);
+    }
+   else
+    {
+      stamp = NL("00000000_000000");
+    }
+
+  SanitizeFileToken(public_part);
+  SanitizeFileToken(local_part);
+  SanitizeFileToken(cfg_name);
+
+  out = NL("Trace");
+  if(!cfg_name.IsEmpty())
+    {
+      out += NL("_");
+      out += cfg_name.Get();
+    }
+  out += NL("_");
+  out += public_part.Get();
+  if(!local_part.IsEmpty())
+    {
+      out += NL("_");
+      out += local_part.Get();
+    }
+  out += NL("_");
+  out += stamp.Get();
+  out += NL(".txt");
+
+  return !out.IsEmpty();
+}
+
+
+bool XTRACEMONITOR_ORIGINS::SaveSelectedConsole(XSTRING* out_filename)
+{
+  if(out_filename) out_filename->Empty();
+  if(!selected || !owner || !owner->gui_console.GetElement()) return false;
+
+  XSTRING filename;
+  if(!BuildSaveFileName(selected, filename)) return false;
+
+  XPATH dir;
+  if(!GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_ROOT, dir)) return false;
+
+  dir.Slash_Add();
+  dir += XTRACEMONITOR_SAVED_DIR;
+
+  XDIR* xdir = GEN_XFACTORY.Create_Dir();
+  if(!xdir) return false;
+
+  if(!xdir->Exist(dir.Get()))
+    {
+      if(!xdir->Make(dir.Get(), true))
+        {
+          GEN_XFACTORY.Delete_Dir(xdir);
+          return false;
+        }
+    }
+
+  GEN_XFACTORY.Delete_Dir(xdir);
+
+  XPATH filepath = dir;
+  filepath.Slash_Add();
+  filepath += filename.Get();
+
+  XFILETXT filetxt;
+  if(!filetxt.Create(filepath, XFILETXTFORMATCHAR_UTF8, XFILETXTTYPELF_0D0A)) return false;
+
+  // 1) Status variables first: pad names so every value starts on the same column.
+  UI_ELEMENT_PROPERTYLIST* valor = owner->gui_varstatus.GetElement();
+  const XDWORD nrows = valor ? valor->GetRowCount() : 0;
+  XDWORD name_width = 0;
+
+  if(nrows > 0)
+    {
+      for(XDWORD r = 0; r < nrows; r++)
+        {
+          UI_ELEMENT_PROPERTYLIST_ROW* row = valor->GetRow(r);
+          if(!row) continue;
+          if(row->name.GetSize() > name_width) name_width = row->name.GetSize();
+        }
+
+      for(XDWORD r = 0; r < nrows; r++)
+        {
+          UI_ELEMENT_PROPERTYLIST_ROW* row = valor->GetRow(r);
+          if(!row) continue;
+
+          XSTRING padded = row->name;
+          while(padded.GetSize() < name_width) padded += NL(" ");
+
+          XSTRING statusline;
+          statusline.Format(NL("%s\t%s"), padded.Get(), row->value.Get());
+          filetxt.AddLine(statusline);
+        }
+
+      // Two blank lines between status block and console lines.
+      filetxt.AddLine(NL(""));
+      filetxt.AddLine(NL(""));
+    }
+
+  // 2) Console lines: "[n] text..." (color index, space, remainder).
+  UI_ELEMENT_CONSOLE* console = owner->gui_console.GetElement();
+  const XDWORD nlines = console->GetLineCount();
+  for(XDWORD c = 0; c < nlines; c++)
+    {
+      UI_ELEMENT_CONSOLE_LINE* line = console->GetLine(c);
+      if(!line) continue;
+
+      XSTRING outline;
+      outline.Format(NL("[%u] %s"), (XDWORD)line->colorindex, line->text.Get());
+      filetxt.AddLine(outline);
+    }
+
+  // XFILETXT::WriteAllFile refuses empty line buffers; keep a BOM-only file valid.
+  if(filetxt.GetNLines() <= 0) filetxt.AddLine(NL(""));
+
+  if(!filetxt.WriteAllFile())
+    {
+      filetxt.Close();
+      return false;
+    }
+
+  filetxt.Close();
+
+  if(out_filename) (*out_filename) = filename;
   return true;
 }
 

@@ -42,6 +42,7 @@
 #define XTRACEMONITOR_CFG_SAVESCREENPOSITION            NL("savescreenposition")
 #define XTRACEMONITOR_CFG_SAVESCREENSIZE                NL("savescreensize")
 #define XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP       NL("geolocalizationpublicip")
+#define XTRACEMONITOR_CFG_SHOWABOUTBOOT                 NL("showaboutboot")
 #define XTRACEMONITOR_CFG_SAVEDSCREENPOSITION           NL("savedscreenposition")
 #define XTRACEMONITOR_CFG_SAVEDSCREENSIZE               NL("savedscreensize")
 #define XTRACEMONITOR_CFG_UDPLISTENPORT                 NL("udpport")
@@ -121,6 +122,7 @@ inline int XTRACEMONITOR_CFG_LevelMaskForColorIndex(int colorindex)
 #define XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT    true
 #define XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT        true
 #define XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP_DEFAULT true
+#define XTRACEMONITOR_CFG_SHOWABOUTBOOT_DEFAULT         false
 
 #define XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT         10001
 #define XTRACEMONITOR_CFG_UDPLISTENPORT_MIN             1
@@ -197,6 +199,9 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
 
     bool                            GetGeolocalizationPublicIP              ();
     void                            SetGeolocalizationPublicIP              (bool enable);
+
+    bool                            GetShowAboutBoot                        ();
+    void                            SetShowAboutBoot                        (bool enable);
 
     bool                            GetAddDateTimeConsole                   ();
     void                            SetAddDateTimeConsole                   (bool enable);
@@ -286,6 +291,7 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
     bool                            savescreenposition;
     bool                            savescreensize;
     bool                            geolocalizationpublicip;
+    bool                            showaboutboot;
     XSTRING                         savedscreenposition;
     XSTRING                         savedscreensize;
     int                             udplistenport;

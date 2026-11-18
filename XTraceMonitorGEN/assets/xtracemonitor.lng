@@ -411,19 +411,19 @@
     </sentence>
     <sentence id="00125" fixed="0">
       <text lang="Spanish">
-        <![CDATA[Ajustar DynDNS (TODO).]]>
+        <![CDATA[Actualizar hosts DynDNS con la IP pública.]]>
       </text>
       <text lang="English">
-        <![CDATA[Adjust DynDNS (TODO).]]>
+        <![CDATA[Update DynDNS hosts with the public IP.]]>
       </text>
       <text lang="French">
-        <![CDATA[Ajuster DynDNS (TODO).]]>
+        <![CDATA[Mettre à jour les hôtes DynDNS avec l'IP publique.]]>
       </text>
       <text lang="German">
-        <![CDATA[DynDNS anpassen (TODO).]]>
+        <![CDATA[DynDNS-Hosts mit öffentlicher IP aktualisieren.]]>
       </text>
       <text lang="Chinese">
-        <![CDATA[调整 DynDNS (TODO)。]]>
+        <![CDATA[用公网 IP 更新 DynDNS 主机。]]>
       </text>
     </sentence>
     <sentence id="00126" fixed="0">
@@ -986,6 +986,391 @@
       <text lang="Chinese">
         <![CDATA[定位公网 IP]]>
       </text>
+    </sentence>
+    <sentence id="00159" fixed="0">
+      <text lang="Spanish"><![CDATA[Actualizar DynDNS]]></text>
+      <text lang="English"><![CDATA[Update DynDNS]]></text>
+      <text lang="French"><![CDATA[Mettre à jour DynDNS]]></text>
+      <text lang="German"><![CDATA[DynDNS aktualisieren]]></text>
+      <text lang="Chinese"><![CDATA[更新 DynDNS]]></text>
+    </sentence>
+    <sentence id="00160" fixed="0">
+      <text lang="Spanish"><![CDATA[DynDNS: modal abierto.]]></text>
+      <text lang="English"><![CDATA[DynDNS: modal open.]]></text>
+      <text lang="French"><![CDATA[DynDNS : modal ouvert.]]></text>
+      <text lang="German"><![CDATA[DynDNS: Modal geöffnet.]]></text>
+      <text lang="Chinese"><![CDATA[DynDNS：对话框已打开。]]></text>
+    </sentence>
+    <sentence id="00161" fixed="0">
+      <text lang="Spanish"><![CDATA[DynDNS: modal cerrado.]]></text>
+      <text lang="English"><![CDATA[DynDNS: modal closed.]]></text>
+      <text lang="French"><![CDATA[DynDNS : modal fermé.]]></text>
+      <text lang="German"><![CDATA[DynDNS: Modal geschlossen.]]></text>
+      <text lang="Chinese"><![CDATA[DynDNS：对话框已关闭。]]></text>
+    </sentence>
+    <sentence id="00162" fixed="0">
+      <text lang="Spanish"><![CDATA[DynDNS no está activo en la configuración.]]></text>
+      <text lang="English"><![CDATA[DynDNS is not enabled in configuration.]]></text>
+      <text lang="French"><![CDATA[DynDNS n'est pas activé dans la configuration.]]></text>
+      <text lang="German"><![CDATA[DynDNS ist in der Konfiguration nicht aktiv.]]></text>
+      <text lang="Chinese"><![CDATA[配置中未启用 DynDNS。]]></text>
+    </sentence>
+    <sentence id="00163" fixed="0">
+      <text lang="Spanish"><![CDATA[Faltan login o contraseña de DynDNS.]]></text>
+      <text lang="English"><![CDATA[DynDNS login or password is missing.]]></text>
+      <text lang="French"><![CDATA[Identifiant ou mot de passe DynDNS manquant.]]></text>
+      <text lang="German"><![CDATA[DynDNS-Login oder Passwort fehlt.]]></text>
+      <text lang="Chinese"><![CDATA[缺少 DynDNS 登录名或密码。]]></text>
+    </sentence>
+    <sentence id="00164" fixed="0">
+      <text lang="Spanish"><![CDATA[No hay hosts UDP en [target] para actualizar.]]></text>
+      <text lang="English"><![CDATA[No UDP hosts in [target] to update.]]></text>
+      <text lang="French"><![CDATA[Aucun hôte UDP dans [target] à mettre à jour.]]></text>
+      <text lang="German"><![CDATA[Keine UDP-Hosts in [target] zum Aktualisieren.]]></text>
+      <text lang="Chinese"><![CDATA[[target] 中没有可更新的 UDP 主机。]]></text>
+    </sentence>
+    <sentence id="00165" fixed="0">
+      <text lang="Spanish"><![CDATA[Sin conexión a Internet.]]></text>
+      <text lang="English"><![CDATA[No Internet connection.]]></text>
+      <text lang="French"><![CDATA[Pas de connexion Internet.]]></text>
+      <text lang="German"><![CDATA[Keine Internetverbindung.]]></text>
+      <text lang="Chinese"><![CDATA[无互联网连接。]]></text>
+    </sentence>
+    <sentence id="00166" fixed="0">
+      <text lang="Spanish"><![CDATA[No se pudo obtener la IP pública.]]></text>
+      <text lang="English"><![CDATA[Could not obtain the public IP.]]></text>
+      <text lang="French"><![CDATA[Impossible d'obtenir l'IP publique.]]></text>
+      <text lang="German"><![CDATA[Öffentliche IP konnte nicht ermittelt werden.]]></text>
+      <text lang="Chinese"><![CDATA[无法获取公网 IP。]]></text>
+    </sentence>
+    <sentence id="00167" fixed="0">
+      <text lang="Spanish"><![CDATA[Consultando IP pública…]]></text>
+      <text lang="English"><![CDATA[Resolving public IP…]]></text>
+      <text lang="French"><![CDATA[Résolution de l'IP publique…]]></text>
+      <text lang="German"><![CDATA[Öffentliche IP wird ermittelt…]]></text>
+      <text lang="Chinese"><![CDATA[正在解析公网 IP…]]></text>
+    </sentence>
+    <sentence id="00168" fixed="0">
+      <text lang="Spanish"><![CDATA[IP pública: %s]]></text>
+      <text lang="English"><![CDATA[Public IP: %s]]></text>
+      <text lang="French"><![CDATA[IP publique : %s]]></text>
+      <text lang="German"><![CDATA[Öffentliche IP: %s]]></text>
+      <text lang="Chinese"><![CDATA[公网 IP：%s]]></text>
+    </sentence>
+    <sentence id="00169" fixed="0">
+      <text lang="Spanish"><![CDATA[Hosts a actualizar: %d]]></text>
+      <text lang="English"><![CDATA[Hosts to update: %d]]></text>
+      <text lang="French"><![CDATA[Hôtes à mettre à jour : %d]]></text>
+      <text lang="German"><![CDATA[Zu aktualisierende Hosts: %d]]></text>
+      <text lang="Chinese"><![CDATA[待更新主机：%d]]></text>
+    </sentence>
+    <sentence id="00170" fixed="0">
+      <text lang="Spanish"><![CDATA[Actualizando %s …]]></text>
+      <text lang="English"><![CDATA[Updating %s …]]></text>
+      <text lang="French"><![CDATA[Mise à jour de %s …]]></text>
+      <text lang="German"><![CDATA[Aktualisiere %s …]]></text>
+      <text lang="Chinese"><![CDATA[正在更新 %s …]]></text>
+    </sentence>
+    <sentence id="00171" fixed="0">
+      <text lang="Spanish"><![CDATA[OK  %s]]></text>
+      <text lang="English"><![CDATA[OK  %s]]></text>
+      <text lang="French"><![CDATA[OK  %s]]></text>
+      <text lang="German"><![CDATA[OK  %s]]></text>
+      <text lang="Chinese"><![CDATA[成功  %s]]></text>
+    </sentence>
+    <sentence id="00172" fixed="0">
+      <text lang="Spanish"><![CDATA[OK  %s (sin cambios)]]></text>
+      <text lang="English"><![CDATA[OK  %s (unchanged)]]></text>
+      <text lang="French"><![CDATA[OK  %s (inchangé)]]></text>
+      <text lang="German"><![CDATA[OK  %s (unverändert)]]></text>
+      <text lang="Chinese"><![CDATA[成功  %s（无变化）]]></text>
+    </sentence>
+    <sentence id="00173" fixed="0">
+      <text lang="Spanish"><![CDATA[ERROR  %s (%s)]]></text>
+      <text lang="English"><![CDATA[ERROR  %s (%s)]]></text>
+      <text lang="French"><![CDATA[ERREUR  %s (%s)]]></text>
+      <text lang="German"><![CDATA[FEHLER  %s (%s)]]></text>
+      <text lang="Chinese"><![CDATA[错误  %s（%s）]]></text>
+    </sentence>
+    <sentence id="00174" fixed="0">
+      <text lang="Spanish"><![CDATA[Operación cancelada.]]></text>
+      <text lang="English"><![CDATA[Operation cancelled.]]></text>
+      <text lang="French"><![CDATA[Opération annulée.]]></text>
+      <text lang="German"><![CDATA[Vorgang abgebrochen.]]></text>
+      <text lang="Chinese"><![CDATA[操作已取消。]]></text>
+    </sentence>
+    <sentence id="00175" fixed="0">
+      <text lang="Spanish"><![CDATA[Resumen: %d OK, %d error(es).]]></text>
+      <text lang="English"><![CDATA[Summary: %d OK, %d error(s).]]></text>
+      <text lang="French"><![CDATA[Résumé : %d OK, %d erreur(s).]]></text>
+      <text lang="German"><![CDATA[Zusammenfassung: %d OK, %d Fehler.]]></text>
+      <text lang="Chinese"><![CDATA[摘要：%d 成功，%d 错误。]]></text>
+    </sentence>
+    <sentence id="00176" fixed="0">
+      <text lang="Spanish"><![CDATA[API DynDNS no disponible en esta compilación.]]></text>
+      <text lang="English"><![CDATA[DynDNS API is not available in this build.]]></text>
+      <text lang="French"><![CDATA[API DynDNS indisponible dans cette compilation.]]></text>
+      <text lang="German"><![CDATA[DynDNS-API in diesem Build nicht verfügbar.]]></text>
+      <text lang="Chinese"><![CDATA[此编译版本中无 DynDNS API。]]></text>
+    </sentence>
+    <sentence id="00177" fixed="0">
+      <text lang="Spanish"><![CDATA[Mostrar About al arrancar]]></text>
+      <text lang="English"><![CDATA[Show About at startup]]></text>
+      <text lang="French"><![CDATA[Afficher À propos au démarrage]]></text>
+      <text lang="German"><![CDATA[Info beim Start anzeigen]]></text>
+      <text lang="Chinese"><![CDATA[启动时显示关于]]></text>
+    </sentence>
+    <sentence id="00178" fixed="0">
+      <text lang="Spanish"><![CDATA[Todos]]></text>
+      <text lang="English"><![CDATA[All]]></text>
+      <text lang="French"><![CDATA[Tous]]></text>
+      <text lang="German"><![CDATA[Alle]]></text>
+      <text lang="Chinese"><![CDATA[全部]]></text>
+    </sentence>
+    <sentence id="00179" fixed="0">
+      <text lang="Spanish"><![CDATA[Local (sin internet)]]></text>
+      <text lang="English"><![CDATA[Local (no internet)]]></text>
+      <text lang="French"><![CDATA[Local (sans internet)]]></text>
+      <text lang="German"><![CDATA[Lokal (kein Internet)]]></text>
+      <text lang="Chinese"><![CDATA[本地（无网络）]]></text>
+    </sentence>
+    <sentence id="00180" fixed="0">
+      <text lang="Spanish"><![CDATA[Públicas (%u)]]></text>
+      <text lang="English"><![CDATA[Public (%u)]]></text>
+      <text lang="French"><![CDATA[Publiques (%u)]]></text>
+      <text lang="German"><![CDATA[Öffentlich (%u)]]></text>
+      <text lang="Chinese"><![CDATA[公网 (%u)]]></text>
+    </sentence>
+    <sentence id="00181" fixed="0">
+      <text lang="Spanish"><![CDATA[Locales (%u)]]></text>
+      <text lang="English"><![CDATA[Local (%u)]]></text>
+      <text lang="French"><![CDATA[Locales (%u)]]></text>
+      <text lang="German"><![CDATA[Lokal (%u)]]></text>
+      <text lang="Chinese"><![CDATA[本地 (%u)]]></text>
+    </sentence>
+    <sentence id="00182" fixed="0">
+      <text lang="Spanish"><![CDATA[Nombre]]></text>
+      <text lang="English"><![CDATA[Name]]></text>
+      <text lang="French"><![CDATA[Nom]]></text>
+      <text lang="German"><![CDATA[Name]]></text>
+      <text lang="Chinese"><![CDATA[名称]]></text>
+    </sentence>
+    <sentence id="00183" fixed="0">
+      <text lang="Spanish"><![CDATA[Valor]]></text>
+      <text lang="English"><![CDATA[Value]]></text>
+      <text lang="French"><![CDATA[Valeur]]></text>
+      <text lang="German"><![CDATA[Wert]]></text>
+      <text lang="Chinese"><![CDATA[值]]></text>
+    </sentence>
+    <sentence id="00184" fixed="0">
+      <text lang="Spanish"><![CDATA[XTraceMonitor listo.]]></text>
+      <text lang="English"><![CDATA[XTraceMonitor ready.]]></text>
+      <text lang="French"><![CDATA[XTraceMonitor prêt.]]></text>
+      <text lang="German"><![CDATA[XTraceMonitor bereit.]]></text>
+      <text lang="Chinese"><![CDATA[XTraceMonitor 已就绪。]]></text>
+    </sentence>
+    <sentence id="00185" fixed="0">
+      <text lang="Spanish"><![CDATA[Configuración: modal abierto.]]></text>
+      <text lang="English"><![CDATA[Config: modal open.]]></text>
+      <text lang="French"><![CDATA[Config : modal ouvert.]]></text>
+      <text lang="German"><![CDATA[Konfiguration: Modal geöffnet.]]></text>
+      <text lang="Chinese"><![CDATA[配置：对话框已打开。]]></text>
+    </sentence>
+    <sentence id="00186" fixed="0">
+      <text lang="Spanish"><![CDATA[Configuración: modal cerrado.]]></text>
+      <text lang="English"><![CDATA[Config: modal closed.]]></text>
+      <text lang="French"><![CDATA[Config : modal fermé.]]></text>
+      <text lang="German"><![CDATA[Konfiguration: Modal geschlossen.]]></text>
+      <text lang="Chinese"><![CDATA[配置：对话框已关闭。]]></text>
+    </sentence>
+    <sentence id="00187" fixed="0">
+      <text lang="Spanish"><![CDATA[Config: Aceptar - error al cifrar password DynDNS.]]></text>
+      <text lang="English"><![CDATA[Config: Accept - failed to encrypt DynDNS password.]]></text>
+      <text lang="French"><![CDATA[Config : Accepter - échec du chiffrement du mot de passe DynDNS.]]></text>
+      <text lang="German"><![CDATA[Config: Übernehmen - DynDNS-Passwort konnte nicht verschlüsselt werden.]]></text>
+      <text lang="Chinese"><![CDATA[配置：接受 - 加密 DynDNS 密码失败。]]></text>
+    </sentence>
+    <sentence id="00188" fixed="0">
+      <text lang="Spanish"><![CDATA[Config: Aceptar - error al guardar CFG.]]></text>
+      <text lang="English"><![CDATA[Config: Accept - failed to save CFG.]]></text>
+      <text lang="French"><![CDATA[Config : Accepter - échec de l'enregistrement du CFG.]]></text>
+      <text lang="German"><![CDATA[Config: Übernehmen - CFG konnte nicht gespeichert werden.]]></text>
+      <text lang="Chinese"><![CDATA[配置：接受 - 保存 CFG 失败。]]></text>
+    </sentence>
+    <sentence id="00189" fixed="0">
+      <text lang="Spanish"><![CDATA[Config: Aceptar - CFG guardado y tema aplicado.]]></text>
+      <text lang="English"><![CDATA[Config: Accept - CFG saved and theme applied.]]></text>
+      <text lang="French"><![CDATA[Config : Accepter - CFG enregistré et thème appliqué.]]></text>
+      <text lang="German"><![CDATA[Config: Übernehmen - CFG gespeichert und Thema angewendet.]]></text>
+      <text lang="Chinese"><![CDATA[配置：接受 - CFG 已保存并应用主题。]]></text>
+    </sentence>
+    <sentence id="00190" fixed="0">
+      <text lang="Spanish"><![CDATA[Config: Aceptar - CFG guardado; UART inválida (no se guarda).]]></text>
+      <text lang="English"><![CDATA[Config: Accept - CFG saved; invalid UART (not saved).]]></text>
+      <text lang="French"><![CDATA[Config : Accepter - CFG enregistré ; UART invalide (non enregistrée).]]></text>
+      <text lang="German"><![CDATA[Config: Übernehmen - CFG gespeichert; ungültige UART (nicht gespeichert).]]></text>
+      <text lang="Chinese"><![CDATA[配置：接受 - CFG 已保存；UART 无效（未保存）。]]></text>
+    </sentence>
+    <sentence id="00191" fixed="0">
+      <text lang="Spanish"><![CDATA[Config: puerto cambiado - consola e IPs de traza limpiadas.]]></text>
+      <text lang="English"><![CDATA[Config: port changed - console and trace IPs cleared.]]></text>
+      <text lang="French"><![CDATA[Config : port modifié - console et IP de trace effacées.]]></text>
+      <text lang="German"><![CDATA[Config: Port geändert - Konsole und Trace-IPs geleert.]]></text>
+      <text lang="Chinese"><![CDATA[配置：端口已更改 - 已清除控制台和跟踪 IP。]]></text>
+    </sentence>
+    <sentence id="00192" fixed="0">
+      <text lang="Spanish"><![CDATA[Config: Aceptar - CFG guardado; error al aplicar tema.]]></text>
+      <text lang="English"><![CDATA[Config: Accept - CFG saved; failed to apply theme.]]></text>
+      <text lang="French"><![CDATA[Config : Accepter - CFG enregistré ; échec de l'application du thème.]]></text>
+      <text lang="German"><![CDATA[Config: Übernehmen - CFG gespeichert; Thema konnte nicht angewendet werden.]]></text>
+      <text lang="Chinese"><![CDATA[配置：接受 - CFG 已保存；应用主题失败。]]></text>
+    </sentence>
+    <sentence id="00193" fixed="0">
+      <text lang="Spanish"><![CDATA[Config: Cancelar.]]></text>
+      <text lang="English"><![CDATA[Config: Cancel.]]></text>
+      <text lang="French"><![CDATA[Config : Annuler.]]></text>
+      <text lang="German"><![CDATA[Config: Abbrechen.]]></text>
+      <text lang="Chinese"><![CDATA[配置：取消。]]></text>
+    </sentence>
+    <sentence id="00194" fixed="0">
+      <text lang="Spanish"><![CDATA[Config: Predeterminado.]]></text>
+      <text lang="English"><![CDATA[Config: Default.]]></text>
+      <text lang="French"><![CDATA[Config : Par défaut.]]></text>
+      <text lang="German"><![CDATA[Config: Standard.]]></text>
+      <text lang="Chinese"><![CDATA[配置：默认。]]></text>
+    </sentence>
+    <sentence id="00195" fixed="0">
+      <text lang="Spanish"><![CDATA[Filtros: modal abierto.]]></text>
+      <text lang="English"><![CDATA[Filters: modal open.]]></text>
+      <text lang="French"><![CDATA[Filtres : modal ouvert.]]></text>
+      <text lang="German"><![CDATA[Filter: Modal geöffnet.]]></text>
+      <text lang="Chinese"><![CDATA[过滤器：对话框已打开。]]></text>
+    </sentence>
+    <sentence id="00196" fixed="0">
+      <text lang="Spanish"><![CDATA[Filtros: modal cerrado.]]></text>
+      <text lang="English"><![CDATA[Filters: modal closed.]]></text>
+      <text lang="French"><![CDATA[Filtres : modal fermé.]]></text>
+      <text lang="German"><![CDATA[Filter: Modal geschlossen.]]></text>
+      <text lang="Chinese"><![CDATA[过滤器：对话框已关闭。]]></text>
+    </sentence>
+    <sentence id="00197" fixed="0">
+      <text lang="Spanish"><![CDATA[Filtros: Aceptar - error al guardar CFG [filters].]]></text>
+      <text lang="English"><![CDATA[Filters: Accept - failed to save CFG [filters].]]></text>
+      <text lang="French"><![CDATA[Filtres : Accepter - échec de l'enregistrement du CFG [filters].]]></text>
+      <text lang="German"><![CDATA[Filter: Übernehmen - CFG [filters] konnte nicht gespeichert werden.]]></text>
+      <text lang="Chinese"><![CDATA[过滤器：接受 - 保存 CFG [filters] 失败。]]></text>
+    </sentence>
+    <sentence id="00198" fixed="0">
+      <text lang="Spanish"><![CDATA[Filtros: Aceptar - CFG [filters] guardado.]]></text>
+      <text lang="English"><![CDATA[Filters: Accept - CFG [filters] saved.]]></text>
+      <text lang="French"><![CDATA[Filtres : Accepter - CFG [filters] enregistré.]]></text>
+      <text lang="German"><![CDATA[Filter: Übernehmen - CFG [filters] gespeichert.]]></text>
+      <text lang="Chinese"><![CDATA[过滤器：接受 - CFG [filters] 已保存。]]></text>
+    </sentence>
+    <sentence id="00199" fixed="0">
+      <text lang="Spanish"><![CDATA[Filtros: Cancelar.]]></text>
+      <text lang="English"><![CDATA[Filters: Cancel.]]></text>
+      <text lang="French"><![CDATA[Filtres : Annuler.]]></text>
+      <text lang="German"><![CDATA[Filter: Abbrechen.]]></text>
+      <text lang="Chinese"><![CDATA[过滤器：取消。]]></text>
+    </sentence>
+    <sentence id="00200" fixed="0">
+      <text lang="Spanish"><![CDATA[Filtros: Predeterminado.]]></text>
+      <text lang="English"><![CDATA[Filters: Default.]]></text>
+      <text lang="French"><![CDATA[Filtres : Par défaut.]]></text>
+      <text lang="German"><![CDATA[Filter: Standard.]]></text>
+      <text lang="Chinese"><![CDATA[过滤器：默认。]]></text>
+    </sentence>
+    <sentence id="00201" fixed="0">
+      <text lang="Spanish"><![CDATA[About: modal abierto.]]></text>
+      <text lang="English"><![CDATA[About: modal open.]]></text>
+      <text lang="French"><![CDATA[À propos : modal ouvert.]]></text>
+      <text lang="German"><![CDATA[Info: Modal geöffnet.]]></text>
+      <text lang="Chinese"><![CDATA[关于：对话框已打开。]]></text>
+    </sentence>
+    <sentence id="00202" fixed="0">
+      <text lang="Spanish"><![CDATA[About: modal cerrado.]]></text>
+      <text lang="English"><![CDATA[About: modal closed.]]></text>
+      <text lang="French"><![CDATA[À propos : modal fermé.]]></text>
+      <text lang="German"><![CDATA[Info: Modal geschlossen.]]></text>
+      <text lang="Chinese"><![CDATA[关于：对话框已关闭。]]></text>
+    </sentence>
+    <sentence id="00203" fixed="0">
+      <text lang="Spanish"><![CDATA[About: XPROCESSMANAGER no instanciado.]]></text>
+      <text lang="English"><![CDATA[About: XPROCESSMANAGER not instanced.]]></text>
+      <text lang="French"><![CDATA[À propos : XPROCESSMANAGER non instancié.]]></text>
+      <text lang="German"><![CDATA[Info: XPROCESSMANAGER nicht instanziiert.]]></text>
+      <text lang="Chinese"><![CDATA[关于：XPROCESSMANAGER 未实例化。]]></text>
+    </sentence>
+    <sentence id="00204" fixed="0">
+      <text lang="Spanish"><![CDATA[About: error al abrir la URL de GEN Framework.]]></text>
+      <text lang="English"><![CDATA[About: failed to open GEN Framework URL.]]></text>
+      <text lang="French"><![CDATA[À propos : échec de l'ouverture de l'URL GEN Framework.]]></text>
+      <text lang="German"><![CDATA[Info: GEN-Framework-URL konnte nicht geöffnet werden.]]></text>
+      <text lang="Chinese"><![CDATA[关于：打开 GEN Framework 网址失败。]]></text>
+    </sentence>
+    <sentence id="00205" fixed="0">
+      <text lang="Spanish"><![CDATA[About: página GEN Framework abierta.]]></text>
+      <text lang="English"><![CDATA[About: opened GEN Framework page.]]></text>
+      <text lang="French"><![CDATA[À propos : page GEN Framework ouverte.]]></text>
+      <text lang="German"><![CDATA[Info: GEN-Framework-Seite geöffnet.]]></text>
+      <text lang="Chinese"><![CDATA[关于：已打开 GEN Framework 页面。]]></text>
+    </sentence>
+    <sentence id="00206" fixed="0">
+      <text lang="Spanish"><![CDATA[About: XPROCESSMANAGER no activo.]]></text>
+      <text lang="English"><![CDATA[About: XPROCESSMANAGER not active.]]></text>
+      <text lang="French"><![CDATA[À propos : XPROCESSMANAGER non actif.]]></text>
+      <text lang="German"><![CDATA[Info: XPROCESSMANAGER nicht aktiv.]]></text>
+      <text lang="Chinese"><![CDATA[关于：XPROCESSMANAGER 未启用。]]></text>
+    </sentence>
+    <sentence id="00207" fixed="0">
+      <text lang="Spanish"><![CDATA[About: Aceptar.]]></text>
+      <text lang="English"><![CDATA[About: Accept.]]></text>
+      <text lang="French"><![CDATA[À propos : Accepter.]]></text>
+      <text lang="German"><![CDATA[Info: Übernehmen.]]></text>
+      <text lang="Chinese"><![CDATA[关于：接受。]]></text>
+    </sentence>
+    <sentence id="00208" fixed="0">
+      <text lang="Spanish"><![CDATA[Servidor de trazas: UDP *:%s abierto.]]></text>
+      <text lang="English"><![CDATA[Trace server: UDP *:%s open.]]></text>
+      <text lang="French"><![CDATA[Serveur de traces : UDP *:%s ouvert.]]></text>
+      <text lang="German"><![CDATA[Trace-Server: UDP *:%s geöffnet.]]></text>
+      <text lang="Chinese"><![CDATA[跟踪服务器：UDP *:%s 已打开。]]></text>
+    </sentence>
+    <sentence id="00209" fixed="0">
+      <text lang="Spanish"><![CDATA[Servidor de trazas: UDP *:%s falló.]]></text>
+      <text lang="English"><![CDATA[Trace server: UDP *:%s failed.]]></text>
+      <text lang="French"><![CDATA[Serveur de traces : UDP *:%s a échoué.]]></text>
+      <text lang="German"><![CDATA[Trace-Server: UDP *:%s fehlgeschlagen.]]></text>
+      <text lang="Chinese"><![CDATA[跟踪服务器：UDP *:%s 失败。]]></text>
+    </sentence>
+    <sentence id="00210" fixed="0">
+      <text lang="Spanish"><![CDATA[Servidor de trazas: UART abierta.]]></text>
+      <text lang="English"><![CDATA[Trace server: UART open.]]></text>
+      <text lang="French"><![CDATA[Serveur de traces : UART ouverte.]]></text>
+      <text lang="German"><![CDATA[Trace-Server: UART geöffnet.]]></text>
+      <text lang="Chinese"><![CDATA[跟踪服务器：UART 已打开。]]></text>
+    </sentence>
+    <sentence id="00211" fixed="0">
+      <text lang="Spanish"><![CDATA[Servidor de trazas: fallo al abrir UART.]]></text>
+      <text lang="English"><![CDATA[Trace server: UART open failed.]]></text>
+      <text lang="French"><![CDATA[Serveur de traces : échec d'ouverture UART.]]></text>
+      <text lang="German"><![CDATA[Trace-Server: UART konnte nicht geöffnet werden.]]></text>
+      <text lang="Chinese"><![CDATA[跟踪服务器：打开 UART 失败。]]></text>
+    </sentence>
+    <sentence id="00212" fixed="0">
+      <text lang="Spanish"><![CDATA[Consola guardada [%s].]]></text>
+      <text lang="English"><![CDATA[Console saved [%s].]]></text>
+      <text lang="French"><![CDATA[Console enregistrée [%s].]]></text>
+      <text lang="German"><![CDATA[Konsole gespeichert [%s].]]></text>
+      <text lang="Chinese"><![CDATA[控制台已保存 [%s]。]]></text>
+    </sentence>
+    <sentence id="00213" fixed="0">
+      <text lang="Spanish"><![CDATA[Error al guardar la consola.]]></text>
+      <text lang="English"><![CDATA[Failed to save console.]]></text>
+      <text lang="French"><![CDATA[Échec de l'enregistrement de la console.]]></text>
+      <text lang="German"><![CDATA[Konsole konnte nicht gespeichert werden.]]></text>
+      <text lang="Chinese"><![CDATA[保存控制台失败。]]></text>
     </sentence>
   </translations>
 </lng>

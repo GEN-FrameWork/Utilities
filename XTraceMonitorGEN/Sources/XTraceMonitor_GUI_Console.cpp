@@ -39,6 +39,7 @@
 #include "UI_Manager.h"
 
 #include "XTraceMonitor.h"
+#include "XTraceMonitor_CFG.h"
 
 #include "XMemory_Control.h"
 
@@ -120,6 +121,8 @@ bool XTRACEMONITOR_GUI_CONSOLE::Resolve()
   consoleelement = (UI_ELEMENT_CONSOLE*)GEN_USERINTERFACE.Element_Get(NL("log_console"), UI_ELEMENT_TYPE_CONSOLE);
   if(!consoleelement) return false;
 
+  // XML defaults autoscroll=true; align with CFG texttracking (often off).
+  ApplyTextTracking();
   return true;
 }
 
@@ -198,6 +201,25 @@ bool XTRACEMONITOR_GUI_CONSOLE::SetToRedraw()
 {
   if(!consoleelement) return false;
   GEN_USERINTERFACE.Elements_SetToRedraw(consoleelement);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::ApplyTextTracking()
+* @brief      Mirrors CFG texttracking onto console autoscroll (follow live tail).
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the console exists; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::ApplyTextTracking()
+{
+  if(!consoleelement) return false;
+
+  // OFF: keep displacement (user/manual scroll). ON: pin to live tail each paint.
+  consoleelement->SetAutoscroll(XTRACEMONITOR_CFG::GetInstance(false).GetTextTracking());
   return true;
 }
 

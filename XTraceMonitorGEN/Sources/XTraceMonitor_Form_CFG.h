@@ -80,7 +80,12 @@ class XTRACEMONITOR_FORM_CFG
     int                             GetColorThemeCommitted                  ();
     int                             GetColorThemeDraft                      ();
 
-    // DynDNS password: AES-CBC + Base64 using XTRACEMONITOR_DYNDNS_CIPHER_PASSWORD.
+    bool                            GetDynDNSActiveCommitted                ();
+    bool                            GetDynDNSLoginCommitted                 (XSTRING& out_login);
+    bool                            GetDynDNSPasswordPlain                  (XSTRING& out_plain);
+
+    // DynDNS password: AES-CBC (PKCS7) + Base64 using XTRACEMONITOR_DYNDNS_CIPHER_PASSWORD.
+    // Decrypt also accepts legacy SPACES-padded ciphertext from older INI files.
     static bool                     EncryptDynDNSPassword                   (XSTRING& plain, XSTRING& out_b64);
     static bool                     DecryptDynDNSPassword                   (XSTRING& in_b64, XSTRING& out_plain);
 
@@ -125,6 +130,7 @@ class XTRACEMONITOR_FORM_CFG
     UI_ELEMENT_CHECKBOX*            chk_savescreenposition;
     UI_ELEMENT_CHECKBOX*            chk_savescreensize;
     UI_ELEMENT_CHECKBOX*            chk_geolocalizationpublicip;
+    UI_ELEMENT_CHECKBOX*            chk_showaboutboot;
     UI_ELEMENT_CHECKBOX*            chk_adddatetimeconsole;
     UI_ELEMENT_CHECKBOX*            chk_addipconsole;
     UI_ELEMENT_CHECKBOX*            chk_texttracking;
@@ -150,6 +156,8 @@ class XTRACEMONITOR_FORM_CFG
     bool                            savescreensize_draft;
     bool                            geolocalizationpublicip_committed;
     bool                            geolocalizationpublicip_draft;
+    bool                            showaboutboot_committed;
+    bool                            showaboutboot_draft;
     bool                            adddatetimeconsole_committed;
     bool                            adddatetimeconsole_draft;
     bool                            addipconsole_committed;

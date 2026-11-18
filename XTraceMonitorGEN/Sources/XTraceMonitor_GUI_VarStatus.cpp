@@ -43,6 +43,9 @@
 #include "UI_Manager.h"
 
 #include "XTraceMonitor.h"
+#include "XTraceMonitor_TranslateID.h"
+
+#include "XTranslation.h"
 
 #include "XMemory_Control.h"
 
@@ -137,11 +140,23 @@ bool XTRACEMONITOR_GUI_VARSTATUS::Resolve()
 * @return     bool : true if the operation is successful; otherwise false.
 *
 *---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_VARSTATUS::ApplyHeaderCaptions()
+{
+  if(!valorelement) return false;
+
+  valorelement->SetHeaderCaptions(TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_PROPERTY_NAME),
+                                  TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_PROPERTY_VALUE));
+  GEN_USERINTERFACE.Elements_SetToRedraw(valorelement);
+  return true;
+}
+
+
 bool XTRACEMONITOR_GUI_VARSTATUS::Seed()
 {
   if(!valorelement) return false;
 
   valorelement->Clear();
+  ApplyHeaderCaptions();
   GEN_USERINTERFACE.Elements_SetToRedraw(valorelement);
   return true;
 }

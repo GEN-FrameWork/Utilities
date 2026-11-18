@@ -218,7 +218,7 @@
       "inherits": "gen-base-debug-ninja",
       "binaryDir": "${sourceDir}/Build/Android/android32",
       "installDir": "${sourceDir}/Build/Android/android32",
-      "toolchainFile": "${sourceDir}/../../../../ThirdPartyLibraries/android-ndk/build/cmake/android.toolchain.cmake",
+      "toolchainFile": "${sourceDir}/../../../ThirdPartyLibraries/android-ndk/build/cmake/android.toolchain.cmake",
       "warnings": {
         "dev": false
       },
@@ -245,7 +245,7 @@
       "inherits": "gen-base-debug-ninja",
       "binaryDir": "${sourceDir}/Build/Android/android64",
       "installDir": "${sourceDir}/Build/Android/android64",
-      "toolchainFile": "${sourceDir}/../../../../ThirdPartyLibraries/android-ndk/build/cmake/android.toolchain.cmake",
+      "toolchainFile": "${sourceDir}/../../../ThirdPartyLibraries/android-ndk/build/cmake/android.toolchain.cmake",
       "warnings": {
         "dev": false
       },

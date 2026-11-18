@@ -33,6 +33,7 @@ enum XTRACEMONITOR_ORIGIN_KIND
 
 #define XTRACEMONITOR_ORIGIN_UART_IP              0xFFFFFFFFu
 #define XTRACEMONITOR_ORIGINS_HISTORY_DEFAULT_MAX 8000
+#define XTRACEMONITOR_SAVED_DIR                   NL("saved")
 
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
 
@@ -89,6 +90,7 @@ class XTRACEMONITOR_ORIGINS
 
     bool                            SeedTree                        ();
     bool                            UpdateUARTLabel                 ();
+    bool                            RefreshFixedLabels              ();
 
     bool                            EnsureFromMessage               (XDWORD publicIP, XDWORD localIP);
     bool                            BelongsTo                       (XTRACEMONITOR_ORIGIN* origin, XDWORD publicIP, XDWORD localIP);
@@ -102,6 +104,7 @@ class XTRACEMONITOR_ORIGINS
     bool                            ClearSelectedHistory            ();
     bool                            ClearHistoryMatching            (XDWORD publicIP, XDWORD localIP);
     bool                            ClearReceivedTraces             ();
+    bool                            SaveSelectedConsole             (XSTRING* out_filename = NULL);
 
     bool                            ApplyStatusLine                 (XSTRING* line, XDWORD publicIP, XDWORD localIP);
     bool                            ClearSelectedStatus             ();
@@ -121,6 +124,9 @@ class XTRACEMONITOR_ORIGINS
     bool                            FormatIPLabel                   (XDWORD ip, bool starred, XSTRING& out);
     bool                            IconForIP                       (XDWORD ip, XCHAR*& icon);
     bool                            TrimHistory                     ();
+    bool                            ResolveCFGOriginName            (XDWORD publicIP, XSTRING& out);
+    bool                            BuildSaveFileName               (XTRACEMONITOR_ORIGIN* origin, XSTRING& out);
+    bool                            SanitizeFileToken               (XSTRING& token);
 
     void                            Clean                           ();
 

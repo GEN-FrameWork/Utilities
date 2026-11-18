@@ -60,6 +60,7 @@
 
 #include "XTraceMonitor.h"
 #include "XTraceMonitor_CFG.h"
+#include "XTraceMonitor_TranslateID.h"
 
 #include "XMemory_Control.h"
 
@@ -143,6 +144,7 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
   chk_savescreenposition   = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_savescreenposition"), UI_ELEMENT_TYPE_CHECKBOX);
   chk_savescreensize       = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_savescreensize")    , UI_ELEMENT_TYPE_CHECKBOX);
   chk_geolocalizationpublicip = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_geolocalizationpublicip"), UI_ELEMENT_TYPE_CHECKBOX);
+  chk_showaboutboot        = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_showaboutboot")     , UI_ELEMENT_TYPE_CHECKBOX);
   chk_adddatetimeconsole   = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_adddatetimeconsole"), UI_ELEMENT_TYPE_CHECKBOX);
   chk_addipconsole         = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_addipconsole")      , UI_ELEMENT_TYPE_CHECKBOX);
   chk_texttracking         = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_texttracking")      , UI_ELEMENT_TYPE_CHECKBOX);
@@ -168,7 +170,7 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
       return false;
     }
 
-  if(!chk_savescreenposition || !chk_savescreensize || !chk_geolocalizationpublicip ||
+  if(!chk_savescreenposition || !chk_savescreensize || !chk_geolocalizationpublicip || !chk_showaboutboot ||
      !chk_adddatetimeconsole || !chk_addipconsole || !chk_texttracking)
     {
       return false;
@@ -367,6 +369,8 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   place_child((UI_ELEMENT*)chk_savescreensize, save_chk_x, save_y, save_chk_w, chk_h);
   save_y -= (chk_h + save_gap);
   place_child((UI_ELEMENT*)chk_geolocalizationpublicip, save_chk_x, save_y, save_chk_w, chk_h);
+  save_y -= (chk_h + save_gap);
+  place_child((UI_ELEMENT*)chk_showaboutboot, save_chk_x, save_y, save_chk_w, chk_h);
 
   // Añadir + seguimiento — left column under Color Theme (prior layout restored).
   const double add_chk_w  = 320.0;
@@ -401,6 +405,7 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
       if(chk_savescreenposition)   skin->CalculeBoundaryLine_AllElements(chk_savescreenposition, true);
       if(chk_savescreensize)       skin->CalculeBoundaryLine_AllElements(chk_savescreensize, true);
       if(chk_geolocalizationpublicip) skin->CalculeBoundaryLine_AllElements(chk_geolocalizationpublicip, true);
+      if(chk_showaboutboot)        skin->CalculeBoundaryLine_AllElements(chk_showaboutboot, true);
       if(chk_adddatetimeconsole)   skin->CalculeBoundaryLine_AllElements(chk_adddatetimeconsole, true);
       if(chk_addipconsole)         skin->CalculeBoundaryLine_AllElements(chk_addipconsole, true);
       if(chk_texttracking)         skin->CalculeBoundaryLine_AllElements(chk_texttracking, true);
@@ -479,6 +484,7 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   pack_check_row(chk_savescreenposition);
   pack_check_row(chk_savescreensize);
   pack_check_row(chk_geolocalizationpublicip);
+  pack_check_row(chk_showaboutboot);
   pack_check_row(chk_adddatetimeconsole);
   pack_check_row(chk_addipconsole);
   pack_check_row(chk_texttracking);
@@ -493,6 +499,8 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
     place_child((UI_ELEMENT*)chk_savescreensize, save_chk_x, sy, save_chk_w, chk_h);
     sy -= (chk_h + save_gap);
     place_child((UI_ELEMENT*)chk_geolocalizationpublicip, save_chk_x, sy, save_chk_w, chk_h);
+    sy -= (chk_h + save_gap);
+    place_child((UI_ELEMENT*)chk_showaboutboot, save_chk_x, sy, save_chk_w, chk_h);
 
     double ay = theme_y - add_margin - chk_h;
     place_child((UI_ELEMENT*)chk_adddatetimeconsole, left_x, ay, add_chk_w, chk_h);
@@ -505,6 +513,7 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   pack_check_row(chk_savescreenposition);
   pack_check_row(chk_savescreensize);
   pack_check_row(chk_geolocalizationpublicip);
+  pack_check_row(chk_showaboutboot);
   pack_check_row(chk_adddatetimeconsole);
   pack_check_row(chk_addipconsole);
   pack_check_row(chk_texttracking);
@@ -582,6 +591,7 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   if(chk_savescreenposition)   chk_savescreenposition->SetMustReDraw(true);
   if(chk_savescreensize)       chk_savescreensize->SetMustReDraw(true);
   if(chk_geolocalizationpublicip) chk_geolocalizationpublicip->SetMustReDraw(true);
+  if(chk_showaboutboot)        chk_showaboutboot->SetMustReDraw(true);
   if(chk_adddatetimeconsole)   chk_adddatetimeconsole->SetMustReDraw(true);
   if(chk_addipconsole)         chk_addipconsole->SetMustReDraw(true);
   if(chk_texttracking)         chk_texttracking->SetMustReDraw(true);
@@ -750,6 +760,10 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
         {
           owner->form_about.Show(false);
         }
+      if(owner->form_dyndns.IsVisible())
+        {
+          owner->form_dyndns.Show(false);
+        }
 
       if(!ApplyGeometry()) return false;
 
@@ -758,6 +772,7 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
       savescreenposition_draft       = savescreenposition_committed;
       savescreensize_draft           = savescreensize_committed;
       geolocalizationpublicip_draft  = geolocalizationpublicip_committed;
+      showaboutboot_draft           = showaboutboot_committed;
       adddatetimeconsole_draft       = adddatetimeconsole_committed;
       addipconsole_draft             = addipconsole_committed;
       texttracking_draft             = texttracking_committed;
@@ -782,7 +797,7 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
       GEN_USERINTERFACE.ModalLayer_Invalidate();
       GEN_USERINTERFACE.Elements_SetToRedraw();
 
-      owner->OpStatus_Log(NL("Config modal open."));
+      owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_CONFIG_MODAL_OPEN);
     }
    else
     {
@@ -796,7 +811,7 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
       // Page was wiped: rebuild net-status from committed CFG (UDP/target) + live internet values.
       owner->InternetStatus_Update(true);
 
-      owner->OpStatus_Log(NL("Config modal closed."));
+      owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_CONFIG_MODAL_CLOSED);
     }
 
   return true;
@@ -859,6 +874,11 @@ bool XTRACEMONITOR_FORM_CFG::HandleElementSelected(UI_ELEMENT* element)
       if(chk_geolocalizationpublicip && (element == (UI_ELEMENT*)chk_geolocalizationpublicip))
         {
           geolocalizationpublicip_draft = chk_geolocalizationpublicip->GetStatus();
+          return true;
+        }
+      if(chk_showaboutboot && (element == (UI_ELEMENT*)chk_showaboutboot))
+        {
+          showaboutboot_draft = chk_showaboutboot->GetStatus();
           return true;
         }
       if(chk_adddatetimeconsole && (element == (UI_ELEMENT*)chk_adddatetimeconsole))
@@ -968,6 +988,47 @@ int XTRACEMONITOR_FORM_CFG::GetColorThemeCommitted()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool XTRACEMONITOR_FORM_CFG::GetDynDNSActiveCommitted()
+* @brief      Last accepted / loaded DynDNS active flag.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::GetDynDNSActiveCommitted()
+{
+  return dyndns_active_committed;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::GetDynDNSLoginCommitted(XSTRING& out_login)
+* @brief      Copies the committed DynDNS login.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::GetDynDNSLoginCommitted(XSTRING& out_login)
+{
+  out_login = dyndns_login_committed;
+  return !out_login.IsEmpty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::GetDynDNSPasswordPlain(XSTRING& out_plain)
+* @brief      Copies the committed DynDNS password in plaintext (INI stores AES+Base64 only).
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::GetDynDNSPasswordPlain(XSTRING& out_plain)
+{
+  out_plain = dyndns_password_committed;
+  return !out_plain.IsEmpty();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         int XTRACEMONITOR_FORM_CFG::GetColorThemeDraft()
 * @brief      In-modal draft color theme integer.
 * @ingroup    UTILITIES
@@ -1003,6 +1064,8 @@ bool XTRACEMONITOR_FORM_CFG::LoadCommittedFromCFG()
   savescreensize_draft         = savescreensize_committed;
   geolocalizationpublicip_committed = cfg.GetGeolocalizationPublicIP();
   geolocalizationpublicip_draft     = geolocalizationpublicip_committed;
+  showaboutboot_committed           = cfg.GetShowAboutBoot();
+  showaboutboot_draft               = showaboutboot_committed;
   adddatetimeconsole_committed = cfg.GetAddDateTimeConsole();
   adddatetimeconsole_draft     = adddatetimeconsole_committed;
   addipconsole_committed       = cfg.GetAddIPConsole();
@@ -1126,18 +1189,20 @@ bool XTRACEMONITOR_FORM_CFG::SetDraftColorTheme(int colortheme)
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_FORM_CFG::SyncChecksFromDraft()
 {
-  if(!chk_savescreenposition || !chk_savescreensize || !chk_geolocalizationpublicip ||
+  if(!chk_savescreenposition || !chk_savescreensize || !chk_geolocalizationpublicip || !chk_showaboutboot ||
      !chk_adddatetimeconsole || !chk_addipconsole || !chk_texttracking) return false;
 
   chk_savescreenposition->SetStatus(savescreenposition_draft);
   chk_savescreensize->SetStatus(savescreensize_draft);
   chk_geolocalizationpublicip->SetStatus(geolocalizationpublicip_draft);
+  chk_showaboutboot->SetStatus(showaboutboot_draft);
   chk_adddatetimeconsole->SetStatus(adddatetimeconsole_draft);
   chk_addipconsole->SetStatus(addipconsole_draft);
   chk_texttracking->SetStatus(texttracking_draft);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_savescreenposition);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_savescreensize);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_geolocalizationpublicip);
+  GEN_USERINTERFACE.Elements_SetToRedraw(chk_showaboutboot);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_adddatetimeconsole);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_addipconsole);
   GEN_USERINTERFACE.Elements_SetToRedraw(chk_texttracking);
@@ -1159,6 +1224,7 @@ bool XTRACEMONITOR_FORM_CFG::ReadDraftFromChecks()
   if(chk_savescreenposition) savescreenposition_draft = chk_savescreenposition->GetStatus();
   if(chk_savescreensize)     savescreensize_draft     = chk_savescreensize->GetStatus();
   if(chk_geolocalizationpublicip) geolocalizationpublicip_draft = chk_geolocalizationpublicip->GetStatus();
+  if(chk_showaboutboot)      showaboutboot_draft      = chk_showaboutboot->GetStatus();
   if(chk_adddatetimeconsole) adddatetimeconsole_draft = chk_adddatetimeconsole->GetStatus();
   if(chk_addipconsole)       addipconsole_draft       = chk_addipconsole->GetStatus();
   if(chk_texttracking)       texttracking_draft       = chk_texttracking->GetStatus();
@@ -1569,7 +1635,10 @@ bool XTRACEMONITOR_FORM_CFG::EncryptDynDNSPassword(XSTRING& plain, XSTRING& out_
   key.Set(keybuf);
   cipherAES.SetKey(&key);
   cipherAES.SetChainingMode(CIPHERCHAININGMODE_CBC);
-  cipherAES.SetPaddingType(XBUFFER_PADDINGTYPE_SPACES);
+  // PKCS7 (not SPACES): Uncipher's Padding_Delete() does not strip AES block fill because
+  // paddinghas is false on the decrypted buffer — SPACES left trailing 0x20 in the password.
+  cipherAES.SetPaddingType(XBUFFER_PADDINGTYPE_PKCS7);
+  cipherAES.SetPaddingAdjustSize(16);
   cipherAES.SetInitVector(ivbuf);
 
   XBUFFER charstr;
@@ -1597,6 +1666,15 @@ bool XTRACEMONITOR_FORM_CFG::DecryptDynDNSPassword(XSTRING& in_b64, XSTRING& out
   out_plain.Empty();
   if(in_b64.IsEmpty()) return true;
 
+  // INI remark padding can leave trailing whitespace on the Base64 token.
+  in_b64.DeleteCharacter(0x20 , XSTRINGCONTEXT_TO_END);
+  in_b64.DeleteCharacter(0x09 , XSTRINGCONTEXT_TO_END);
+  in_b64.DeleteCharacter(0x0D , XSTRINGCONTEXT_TO_END);
+  in_b64.DeleteCharacter(0x0A , XSTRINGCONTEXT_TO_END);
+  in_b64.DeleteCharacter(0x20 , XSTRINGCONTEXT_FROM_FIRST);
+  in_b64.DeleteCharacter(0x09 , XSTRINGCONTEXT_FROM_FIRST);
+  if(in_b64.IsEmpty()) return true;
+
   XSTRING passkey;
   passkey = XTRACEMONITOR_DYNDNS_CIPHER_PASSWORD;
 
@@ -1614,18 +1692,60 @@ bool XTRACEMONITOR_FORM_CFG::DecryptDynDNSPassword(XSTRING& in_b64, XSTRING& out
   key.Set(keybuf);
   cipherAES.SetKey(&key);
   cipherAES.SetChainingMode(CIPHERCHAININGMODE_CBC);
-  cipherAES.SetPaddingType(XBUFFER_PADDINGTYPE_SPACES);
+  cipherAES.SetPaddingType(XBUFFER_PADDINGTYPE_PKCS7);
+  cipherAES.SetPaddingAdjustSize(16);
   cipherAES.SetInitVector(ivbuf);
 
   XBUFFER xbuffer;
   if(!xbuffer.ConvertFromBase64(in_b64)) return false;
   if(!cipherAES.Uncipher(xbuffer)) return false;
 
-  for(XDWORD c=0; c<cipherAES.GetResult()->GetSize(); c++)
+  XBUFFER* plainbuf = cipherAES.GetResult();
+  if(!plainbuf || !plainbuf->GetSize()) return false;
+
+  // Uncipher() calls Padding_Delete() but paddinghas is false on the decrypted buffer, so
+  // block fill stays in the bytes. Strip PKCS7 (new) or legacy SPACES (old INI) here.
+  XDWORD plainsize = plainbuf->GetSize();
+  XBYTE  last      = plainbuf->GetByte(plainsize - 1);
+  bool   stripped  = false;
+
+  if((last >= 1) && (last <= 16) && ((XDWORD)last <= plainsize))
     {
-      out_plain.Add((XCHAR)cipherAES.GetResult()->GetByte(c));
+      bool pkcs7 = true;
+      for(XDWORD i = 0; i < (XDWORD)last; i++)
+        {
+          if(plainbuf->GetByte(plainsize - 1 - i) != last)
+            {
+              pkcs7 = false;
+              break;
+            }
+        }
+      if(pkcs7)
+        {
+          plainsize -= (XDWORD)last;
+          stripped   = true;
+        }
     }
+
+  if(!stripped)
+    {
+      // Legacy AES+SPACES ciphertext (padding bytes are 0x20).
+      while(plainsize && (plainbuf->GetByte(plainsize - 1) == 0x20))
+        {
+          plainsize--;
+        }
+    }
+
+  for(XDWORD c = 0; c < plainsize; c++)
+    {
+      XBYTE b = plainbuf->GetByte(c);
+      if(!b) break;
+      out_plain.Add((XCHAR)b);
+    }
+
+  // Belt-and-suspenders: never leave trailing whitespace in the DynDNS password.
   out_plain.DeleteCharacter(0x20, XSTRINGCONTEXT_TO_END);
+  out_plain.DeleteCharacter(0x09, XSTRINGCONTEXT_TO_END);
   return true;
 }
 
@@ -1672,6 +1792,7 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   cfg.SetSaveScreenPosition(savescreenposition_draft);
   cfg.SetSaveScreenSize(savescreensize_draft);
   cfg.SetGeolocalizationPublicIP(geolocalizationpublicip_draft);
+  cfg.SetShowAboutBoot(showaboutboot_draft);
   // Do not write stale savedscreenposition/size drafts here — Accept must not snap the live
   // window back to the values loaded when the modal opened. Live geometry is captured below
   // via PersistScreenGeometryToCFG when the matching save checkboxes are on.
@@ -1680,6 +1801,7 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   cfg.SetAddDateTimeConsole(adddatetimeconsole_draft);
   cfg.SetAddIPConsole(addipconsole_draft);
   cfg.SetTextTracking(texttracking_draft);
+  owner->gui_console.ApplyTextTracking();
 
   cfg.SetDynDNSActive(dyndns_active_draft);
   if(dyndns_active_draft)
@@ -1688,7 +1810,7 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
       XSTRING cipher;
       if(!EncryptDynDNSPassword(dyndns_password_draft, cipher))
         {
-          owner->OpStatus_Log(NL("Config: Aceptar - error al cifrar password DynDNS."));
+          owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_CONFIG_ACCEPT_ENCRYPT_ERR);
           return false;
         }
       cfg.SetDynDNSPassword(&cipher);
@@ -1702,7 +1824,7 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
 
   if(!cfg.Save())
     {
-      owner->OpStatus_Log(NL("Config: Aceptar - error al guardar CFG."));
+      owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_CONFIG_ACCEPT_SAVE_ERR);
       return false;
     }
 
@@ -1716,6 +1838,7 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   savescreenposition_committed  = savescreenposition_draft;
   savescreensize_committed      = savescreensize_draft;
   geolocalizationpublicip_committed = geolocalizationpublicip_draft;
+  showaboutboot_committed           = showaboutboot_draft;
   adddatetimeconsole_committed  = adddatetimeconsole_draft;
   addipconsole_committed        = addipconsole_draft;
   texttracking_committed        = texttracking_draft;
@@ -1741,19 +1864,19 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
     {
       uartport_committed = uartport_draft;
       owner->gui_tree.UpdateUARTLabel();
-      owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado y tema aplicado."));
+      owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_CONFIG_ACCEPT_SAVED_THEME);
     }
    else
     {
       uartport_draft = uartport_committed;
-      owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado; UART invalida (no se guarda)."));
+      owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_CONFIG_ACCEPT_SAVED_UART_INVALID);
     }
 
   // New communication port: wipe console + IPs that only exist because a trace arrived.
   if(udp_changed || uart_changed)
     {
       owner->gui_tree.ClearReceivedTraces();
-      owner->OpStatus_Log(NL("Config: puerto cambiado - consola e IPs de traza limpiadas."));
+      owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_CONFIG_PORT_CHANGED_CLEARED);
     }
 
   // UDP listen port and/or UART may have changed — reopen GEN XTRACESERVER paths.
@@ -1773,7 +1896,7 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
 
   if(!owner->ApplyColorTheme(colortheme_committed))
     {
-      owner->OpStatus_Log(NL("Config: Aceptar - CFG guardado; error al aplicar tema."));
+      owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_CONFIG_ACCEPT_SAVED_THEME_ERR);
       return Show(false);
     }
 
@@ -1799,6 +1922,7 @@ bool XTRACEMONITOR_FORM_CFG::OnCancel()
   savescreenposition_draft       = savescreenposition_committed;
   savescreensize_draft           = savescreensize_committed;
   geolocalizationpublicip_draft  = geolocalizationpublicip_committed;
+  showaboutboot_draft            = showaboutboot_committed;
   adddatetimeconsole_draft       = adddatetimeconsole_committed;
   addipconsole_draft             = addipconsole_committed;
   texttracking_draft             = texttracking_committed;
@@ -1817,7 +1941,7 @@ bool XTRACEMONITOR_FORM_CFG::OnCancel()
   ApplyDynDNSFieldsEnabled();
   ApplyDynDNSToolbarButton(dyndns_active_committed);
 
-  owner->OpStatus_Log(NL("Config: Cancelar."));
+  owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_CONFIG_CANCEL);
   return ArmCloseAfterPress(config_modal_btn_cancel);
 }
 
@@ -1840,6 +1964,7 @@ bool XTRACEMONITOR_FORM_CFG::OnDefault()
   savescreenposition_draft = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
   savescreensize_draft     = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
   geolocalizationpublicip_draft = XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP_DEFAULT;
+  showaboutboot_draft      = XTRACEMONITOR_CFG_SHOWABOUTBOOT_DEFAULT;
   adddatetimeconsole_draft = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
   addipconsole_draft       = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;
   texttracking_draft       = XTRACEMONITOR_CFG_TEXTTRACKING_DEFAULT;
@@ -1859,7 +1984,7 @@ bool XTRACEMONITOR_FORM_CFG::OnDefault()
   ApplyDynDNSFieldsEnabled();
   ApplyDynDNSToolbarButton(dyndns_active_draft);
 
-  owner->OpStatus_Log(NL("Config: Predeterminado."));
+  owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_CONFIG_DEFAULT);
   // Stay open: only hold the Pressed face so the click is visible.
   return HoldPressVisual(config_modal_btn_default);
 }
@@ -1889,6 +2014,7 @@ void XTRACEMONITOR_FORM_CFG::Clean()
   chk_savescreenposition    = NULL;
   chk_savescreensize        = NULL;
   chk_geolocalizationpublicip = NULL;
+  chk_showaboutboot         = NULL;
   chk_adddatetimeconsole    = NULL;
   chk_addipconsole          = NULL;
   chk_texttracking          = NULL;
@@ -1911,6 +2037,8 @@ void XTRACEMONITOR_FORM_CFG::Clean()
   savescreensize_draft         = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
   geolocalizationpublicip_committed = XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP_DEFAULT;
   geolocalizationpublicip_draft     = XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP_DEFAULT;
+  showaboutboot_committed           = XTRACEMONITOR_CFG_SHOWABOUTBOOT_DEFAULT;
+  showaboutboot_draft               = XTRACEMONITOR_CFG_SHOWABOUTBOOT_DEFAULT;
   adddatetimeconsole_committed = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
   adddatetimeconsole_draft     = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
   addipconsole_committed       = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;

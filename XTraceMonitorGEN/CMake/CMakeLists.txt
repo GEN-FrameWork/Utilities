@@ -18,7 +18,7 @@ option(XTRACE_FEATURE                                           "XTrace"        
 option(XTHREADCOLLECTED_FEATURE                                 "Thread Collected"                                        ON )
 #option(XMEMORY_CONTROL_FEATURE                                  "XMemory Control"                                         ON )
 
-option(GRP_OPENGL_FEATURE                                       "Graphics OpenGL ES required"                             OFF )
+option(GRP_OPENGL_FEATURE                                       "Graphics OpenGL ES required"                             ON  )
 
 option(USE_CLANG_COMPILER_FEATURE                               "Use Clang Compiler"                                      ON )
 
@@ -49,21 +49,19 @@ option(GRP_2D_FEATURE                                           "Graphics 2D"   
 
 option(INP_FEATURE                                              "Inputs"                                                  ON )
 
-# Trace server: UDP listen + optional UART (GEN XTRACESERVER).
 option(DIO_STREAM_FEATURE                                       "Stream"                                                  ON )
 option(DIO_STREAMUDP_FEATURE                                    "Stream UDP"                                              ON )
 option(DIO_STREAMUART_FEATURE                                   "Stream UART"                                             ON )
 
-# DynDNS password at-rest (AES + Base64 in [dyndns] INI).
 option(CIPHER_SYMMETRIC_FEATURE                                 "Cipher Symmetric"                                        ON )
 option(CIPHER_SYMMETRIC_AES_FEATURE                             "Cipher Symmetric AES"                                    ON )
+option(DIO_DYNDNS_FEATURE                                       "DynDNS protocol (members.dyndns.org)"                    ON )
 
-# Public-IP tree tooltips: GEN scraper facade + geolocationip.g / staticmap.g (scripts/scrapers).
 option(DIO_SCRAPERWEB_GEOLOCATIONIP_FEATURE                     "Scraper Web Geolocation IP"                              ON )
 option(DIO_SCRAPERWEB_STATICMAP_FEATURE                         "Scraper Web Static Map"                                  ON )
 
-# About GEN URL link opens the site via XPROCESSMANAGER::OpenURL (cross-platform).
 option(XPROCESSMANAGER_FEATURE                                  "Process Manager"                                         ON )
+option(XCLIPBOARD_FEATURE                                       "Clipboard functions (portable text)"                     ON )
 
 
 # --------------------------------------------------------------------
@@ -77,6 +75,7 @@ add_definitions(${APP_CFG_XTRACEMONITOR})
 # Android package settings
 
 set(GEN_ANDROID_APP_LABEL                                  "XTraceMonitor")
+set(GEN_ANDROID_APP_ID                                     "com.gen.xtracemonitor")
 
 
 # --------------------------------------------------------------------
@@ -100,6 +99,7 @@ list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Form_CFG.cpp")
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Form_Filters.cpp")
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Form_About.cpp")
+list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Form_DynDNS.cpp")
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Server.cpp")
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_Origins.cpp")
 list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor_GUI_Tree.cpp")

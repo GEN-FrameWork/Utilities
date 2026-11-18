@@ -36,6 +36,7 @@
 
 #include "XTraceMonitor.h"
 #include "XTraceMonitor_CFG.h"
+#include "XTraceMonitor_TranslateID.h"
 
 #include "UI_Element_Console.h"
 #include "UI_Element_PropertyList.h"
@@ -313,16 +314,16 @@ bool XTRACEMONITOR_SERVER::OpenFromCFG()
         ok = true;
         if(owner)
           {
-            XSTRING line;
-            line.Format(NL("Trace server: UDP *:%d open."), (int)listenport_open);
-            owner->OpStatus_Log(line.Get());
+            XSTRING port_s;
+            port_s.Format(NL("%d"), (int)listenport_open);
+            owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_TRACE_UDP_OPEN, port_s.Get());
           }
       }
      else if(owner)
       {
-        XSTRING line;
-        line.Format(NL("Trace server: UDP *:%d failed."), port);
-        owner->OpStatus_Log(line.Get());
+        XSTRING port_s;
+        port_s.Format(NL("%d"), port);
+        owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_TRACE_UDP_FAIL, port_s.Get());
       }
   }
 #endif
@@ -336,11 +337,11 @@ bool XTRACEMONITOR_SERVER::OpenFromCFG()
           {
             uart_open = true;
             ok = true;
-            if(owner) owner->OpStatus_Log(NL("Trace server: UART open."));
+            if(owner) owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_TRACE_UART_OPEN);
           }
          else if(owner)
           {
-            owner->OpStatus_Log(NL("Trace server: UART open failed."));
+            owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_TRACE_UART_FAIL);
           }
       }
   }
@@ -654,10 +655,9 @@ bool XTRACEMONITOR_SERVER::FeedConsole(XTRACESERVER_MSG& msg)
 
   if(!owner->origins.PushLine(msg.publicIP, msg.localIP, color, line)) return false;
 
-  if(XTRACEMONITOR_CFG::GetInstance(false).GetTextTracking())
-    {
-      owner->gui_console.GetElement()->SetAutoscroll(true);
-    }
+  // Keep follow flag in sync every line: texttracking=no must clear XML autoscroll=true
+  // or DrawConsole pins to the tail every frame and vertical scroll appears broken.
+  owner->gui_console.ApplyTextTracking();
 
   return true;
 }

@@ -221,6 +221,8 @@ bool XTRACEMONITOR_CFG::DoVariableMapping()
            NL("Save main window size on exit"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
   AddValue(XFILECFG_VALUETYPE_BOOLEAN, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP, &geolocalizationpublicip,
            NL("Geolocate public IPs (tree tooltips)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_BOOLEAN, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_SHOWABOUTBOOT, &showaboutboot,
+           NL("Show About modal after main window starts"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
   AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_SAVEDSCREENPOSITION, &savedscreenposition,
            NL("Last main window position (x, y)"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
   AddValue(XFILECFG_VALUETYPE_STRING, XTRACEMONITOR_CFG_SECTION_APPLICATION, XTRACEMONITOR_CFG_SAVEDSCREENSIZE, &savedscreensize,
@@ -420,6 +422,7 @@ bool XTRACEMONITOR_CFG::DoDefault()
   savescreenposition                    = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
   savescreensize                        = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
   geolocalizationpublicip               = XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP_DEFAULT;
+  showaboutboot                         = XTRACEMONITOR_CFG_SHOWABOUTBOOT_DEFAULT;
   SetSavedScreenPosition(0, 0);
   SetSavedScreenSize(XTRACEMONITOR_WINDOW_WIDTH, XTRACEMONITOR_WINDOW_HEIGHT);
   udplistenport                         = XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;
@@ -615,6 +618,36 @@ bool XTRACEMONITOR_CFG::GetGeolocalizationPublicIP()
 void XTRACEMONITOR_CFG::SetGeolocalizationPublicIP(bool enable)
 {
   geolocalizationpublicip = enable;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_CFG::GetShowAboutBoot()
+* @brief      True when the About modal should open once after startup.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if About-on-boot is enabled.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_CFG::GetShowAboutBoot()
+{
+  return showaboutboot;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetShowAboutBoot(bool enable)
+* @brief      Enables or disables opening the About modal after startup.
+* @ingroup    UTILITIES
+*
+* @param[in]  enable : true to show About after the main window is running.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetShowAboutBoot(bool enable)
+{
+  showaboutboot = enable;
 }
 
 
@@ -1847,6 +1880,7 @@ void XTRACEMONITOR_CFG::Clean()
   savescreenposition   = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;
   savescreensize       = XTRACEMONITOR_CFG_SAVESCREENSIZE_DEFAULT;
   geolocalizationpublicip = XTRACEMONITOR_CFG_GEOLOCALIZATIONPUBLICIP_DEFAULT;
+  showaboutboot        = XTRACEMONITOR_CFG_SHOWABOUTBOOT_DEFAULT;
   savedscreenposition.Empty();
   savedscreensize.Empty();
   udplistenport        = XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;

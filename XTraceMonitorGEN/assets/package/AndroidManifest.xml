@@ -7,18 +7,32 @@
     <uses-sdk android:minSdkVersion="@GEN_ANDROID_MIN_SDK@"
               android:targetSdkVersion="@GEN_ANDROID_TARGET_SDK@" />
 
+    <!-- Do not require Wi-Fi hardware (ACCESS_WIFI_* otherwise imply required=true). -->
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
+    <uses-feature android:glEsVersion="0x00020000" android:required="false" />
+
+    <!-- Same network set as UI_System graphic example:
+         - INTERNET: HTTP + remote trace ingest
+         - ACCESS_NETWORK_STATE / ACCESS_WIFI_STATE: link status
+         - CHANGE_WIFI_MULTICAST_STATE: GEN XTrace / DIO UDP multicast
+         - NEARBY_WIFI_DEVICES: Wi-Fi device APIs on API 33+ (neverForLocation) -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+                     android:usesPermissionFlags="neverForLocation" />
 
     <application android:label="@GEN_ANDROID_APP_LABEL@"
                  android:icon="@drawable/icon"
-                 android:hasCode="false">
+                 android:hasCode="false"
+                 android:extractNativeLibs="true">
 
         <activity android:name="android.app.NativeActivity"
                   android:label="@GEN_ANDROID_APP_LABEL@"
                   android:exported="true"
-                  android:screenOrientation="user"
+                  android:launchMode="singleTask"
+                  android:screenOrientation="sensorLandscape"
                   android:configChanges="orientation|screenSize|keyboardHidden">
             <meta-data android:name="android.app.lib_name"
                        android:value="@GEN_ANDROID_LIB_NAME@" />

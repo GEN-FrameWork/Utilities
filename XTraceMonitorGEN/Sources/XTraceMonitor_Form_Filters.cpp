@@ -54,6 +54,7 @@
 
 #include "XTraceMonitor.h"
 #include "XTraceMonitor_CFG.h"
+#include "XTraceMonitor_TranslateID.h"
 
 #include "XMemory_Control.h"
 
@@ -652,6 +653,10 @@ bool XTRACEMONITOR_FORM_FILTERS::Show(bool show)
         {
           owner->form_about.Show(false);
         }
+      if(owner->form_dyndns.IsVisible())
+        {
+          owner->form_dyndns.Show(false);
+        }
 
       if(!ApplyGeometry()) return false;
 
@@ -664,7 +669,7 @@ bool XTRACEMONITOR_FORM_FILTERS::Show(bool show)
       GEN_USERINTERFACE.ModalLayer_Invalidate();
       GEN_USERINTERFACE.Elements_SetToRedraw();
 
-      owner->OpStatus_Log(NL("Filters modal open."));
+      owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_FILTERS_MODAL_OPEN);
     }
    else
     {
@@ -677,7 +682,7 @@ bool XTRACEMONITOR_FORM_FILTERS::Show(bool show)
 
       owner->InternetStatus_Update(true);
 
-      owner->OpStatus_Log(NL("Filters modal closed."));
+      owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_FILTERS_MODAL_CLOSED);
     }
 
   return true;
@@ -951,7 +956,7 @@ bool XTRACEMONITOR_FORM_FILTERS::OnAccept()
 
   if(!cfg.Save())
     {
-      owner->OpStatus_Log(NL("Filters: Aceptar - error al guardar CFG [filters]."));
+      owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_FILTERS_ACCEPT_SAVE_ERR);
       return false;
     }
 
@@ -963,7 +968,7 @@ bool XTRACEMONITOR_FORM_FILTERS::OnAccept()
   // Rebuild visible console from history with the new level/text gates (old gray/default lines drop out).
   owner->origins.ReplaySelectedToConsole();
 
-  owner->OpStatus_Log(NL("Filters: Aceptar - CFG [filters] guardado."));
+  owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_FILTERS_ACCEPT_SAVED);
   return ArmCloseAfterPress(filters_modal_btn_accept);
 }
 
@@ -984,7 +989,7 @@ bool XTRACEMONITOR_FORM_FILTERS::OnCancel()
   LoadCommittedFromCFG();
   SyncControlsFromDraft();
 
-  owner->OpStatus_Log(NL("Filters: Cancelar."));
+  owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_FILTERS_CANCEL);
   return ArmCloseAfterPress(filters_modal_btn_cancel);
 }
 
@@ -1005,7 +1010,7 @@ bool XTRACEMONITOR_FORM_FILTERS::OnDefault()
   ApplyDefaultsToDraft();
   if(filters_modal) GEN_USERINTERFACE.ModalLayer_Invalidate();
 
-  owner->OpStatus_Log(NL("Filters: Predeterminado."));
+  owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_FILTERS_DEFAULT);
   return HoldPressVisual(filters_modal_btn_default);
 }
 

@@ -50,6 +50,7 @@ class XTRACEMONITOR_GUI_VARSTATUS
     bool                            Resolve                                 ();
     bool                            Seed                                    ();
     bool                            Detach                                  ();
+    bool                            ApplyHeaderCaptions                     ();
 
     bool                            UpdateSplitter                          ();
     bool                            ApplyLayoutGeometry                     (double panel_w, double valor_h, double valor_y);

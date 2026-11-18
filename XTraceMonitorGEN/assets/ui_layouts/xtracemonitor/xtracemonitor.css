@@ -20,10 +20,11 @@
   --root-font-size: 16;
 }
 
-/* Config / Filters / About dialog panels (XML still owns size / visibility; CSS owns chrome tokens). */
+/* Config / Filters / About / DynDNS dialog panels (XML still owns size / visibility; CSS owns chrome tokens). */
 form.config-modal,
 form.filters-modal,
-form.about-modal {
+form.about-modal,
+form.dyndns-modal {
   background-color: var(--page-bg);
   border-width:     1;
   border-color:     var(--frame-line);

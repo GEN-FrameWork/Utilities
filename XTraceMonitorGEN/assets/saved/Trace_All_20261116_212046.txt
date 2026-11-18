@@ -1,0 +1,401 @@
+﻿S.O. version      	Microsoft Windows 10 Pro Build(19045)  64 bits
+Public IP         	90.171.39.21
+Local IPs         	["192.168.1.35"]
+Serial            	995114C0-38B566FF-52637332-002E4E3F
+User              	usuario
+Domain user       	DESKTOP-BC45NDS\usuario
+Manager server    	nodata
+Operability Status	Deactivated
+Window with Focus 	Arkitektura bioklimatikoa - Google Chrome
+[DNS Servers      	[192.168.18.1]
+
+
+[1] 16/11/2026 21:20:25.429  Extension           2.166.0    Application ROOT path: C:/IMTWin/assets/
+[1] 16/11/2026 21:20:25.429  Extension           2.166.0    IMT Win 2.166.0
+[0] 16/11/2026 21:20:25.430  Extension           2.166.0    [Log] INFO    Ini        01 - Activando LOG                        ... : Ok. 
+[0] 16/11/2026 21:20:25.438  Extension           2.166.0    [Log] INFO    Ini        S.O. Identification: Microsoft Windows 11 Pro Education Build(26300)  64 bits 
+[0] 16/11/2026 21:20:25.443  Extension           2.166.0    [Log] INFO    Ini        Total memory 2097151 Kb, free 1319548 Kb (62%). 
+[0] 16/11/2026 21:20:25.449  Extension           2.166.0    [Log] INFO    Ini        02 - Activating operations                ... : Ok. 
+[0] 16/11/2026 21:20:25.456  Extension           2.166.0    [Log] INFO    Ini        [Google Extension Connection] Request for information. 
+[0] 16/11/2026 21:20:25.460  Extension           2.166.0    [Log] INFO    Ini        03 - Modifying Windows settings           ... : Ok. 
+[0] 16/11/2026 21:20:25.465  Extension           2.166.0    [Log] INFO    Ini        04 - Screen capture control               ... : Ok. 
+[0] 16/11/2026 21:20:25.467  Extension           2.166.0    [Log] INFO    Ini        05 - Capture Screen title focused         ... : Ok. 
+[0] 16/11/2026 21:20:25.470  Extension           2.166.0    [Log] INFO    Ini        06 - General check                        ... : Ok. 
+[3] 16/11/2026 21:20:25.474  Extension           2.166.0    [Log] WARNING Ini        07 - Control Youtube in OneNote           ... : Deactivated. 
+[0] 16/11/2026 21:20:25.476  Extension           2.166.0    [Log] INFO    Status     [Operability Status] change to: Disabled. 
+[0] 16/11/2026 21:20:25.480  Extension           2.166.0    [Log] INFO    General    Execution of the application concluded 
+[0] 16/11/2026 21:20:24.713 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:26.651 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[3] 16/11/2026 20:20:23.672 IMT Win Application  2.166.0    Application in Extension mode...
+[3] 16/11/2026 20:20:23.672  Extension           2.166.0    [APP SHARED] sizeof MEM Share [96296] 
+[0] 16/11/2026 21:20:26.658 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 20:20:23.672  Extension           2.166.0    Activating shared memory: Ok.
+[0] 16/11/2026 21:20:24.728 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:23.612 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:23.621 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:25.652  Extension           2.166.0    [Log] INFO    End        01 - Deactivating operations              ... : Ok. 
+[0] 16/11/2026 20:20:23.817  Extension           2.166.0    [Log] INFO    Ini        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 21:20:25.662  Extension           2.166.0    [Log] INFO    End        02 - Disabling shared memory              ... : Ok. 
+[0] 16/11/2026 21:20:25.668  Extension           2.166.0    [Log] INFO    End        Exit of the Application completed. 
+[0] 16/11/2026 21:20:24.509 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:25.671  Extension           2.166.0    [Log] INFO    End        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 21:20:24.520 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:24.765 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:24.773 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:24.310 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:34.396 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:24.320 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:34.407 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:24.054 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:24.063 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:24.025 IMT Win Service      2.166.0    [Log] INFO    General    Command Is Screen blocked ... 
+[0] 16/11/2026 21:20:24.035 IMT Win Service      2.166.0    [Log] INFO    General    Answer command Is Screen blocked : 5#false 
+[1] 16/11/2026 20:20:24.112  Extension           2.166.0    Application ROOT path: C:/IMTWin/assets/
+[1] 16/11/2026 20:20:24.112  Extension           2.166.0    IMT Win 2.166.0
+[0] 16/11/2026 20:20:24.112  Extension           2.166.0    [Log] INFO    Ini        01 - Activando LOG                        ... : Ok. 
+[3] 16/11/2026 21:20:22.893 IMT Win Application  2.166.0    Application in Extension mode...
+[3] 16/11/2026 21:20:22.893  Extension           2.166.0    [APP SHARED] sizeof MEM Share [96296] 
+[0] 16/11/2026 21:20:22.893  Extension           2.166.0    Activating shared memory: Ok.
+[0] 16/11/2026 21:20:22.910  Extension           2.166.0    [Log] INFO    Ini        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 21:20:24.169 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:24.138 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[4] 16/11/2026 20:20:24.036 IMT Win Application  2.166.0    Activating shared memory: ERROR!
+[0] 16/11/2026 20:20:24.182  Extension           2.166.0    [Log] INFO    Ini        S.O. Identification: Microsoft Windows 10 Home Build(19045)  64 bits 
+[3] 16/11/2026 21:20:35.643 IMT Win Service      2.166.0    [Log] WARNING General    Agent application not detected... 
+[0] 16/11/2026 21:20:24.182 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:24.154 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[4] 16/11/2026 21:20:35.653 IMT Win Service      2.166.0    [Log] ERROR   General    Agent application executed: Error! 
+[0] 16/11/2026 20:20:24.243  Extension           2.166.0    [Log] INFO    Ini        Total memory 2097151 Kb, free 2097151 Kb (100%). 
+[0] 16/11/2026 21:20:24.902 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:25.456 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:24.910 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:25.456 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 20:20:24.302  Extension           2.166.0    [Log] INFO    Ini        02 - Activating operations                ... : Ok. 
+[0] 16/11/2026 21:20:24.491 IMT Win Service      2.166.0    [Log] INFO    General    [Wi-Fi] Active connections: Ok 
+[0] 16/11/2026 20:20:24.377  Extension           2.166.0    [Log] INFO    Ini        [Google Extension Connection] Request for information. 
+[0] 16/11/2026 21:20:24.424 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 20:20:24.437  Extension           2.166.0    [Log] INFO    Ini        03 - Modifying Windows settings           ... : Ok. 
+[0] 16/11/2026 21:20:24.443 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Disconnected. 
+[0] 16/11/2026 21:20:22.768 IMT Win Application  2.152.3    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:25.087 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:25.097 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 20:20:24.492  Extension           2.166.0    [Log] INFO    Ini        04 - Screen capture control               ... : Ok. 
+[1] 16/11/2026 21:20:23.260  Extension           2.166.0    Application ROOT path: C:/IMTWin/assets/
+[1] 16/11/2026 21:20:23.260  Extension           2.166.0    IMT Win 2.166.0
+[0] 16/11/2026 21:20:23.260  Extension           2.166.0    [Log] INFO    Ini        01 - Activando LOG                        ... : Ok. 
+[0] 16/11/2026 21:20:22.794 IMT Win Application  2.152.3    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:23.267  Extension           2.166.0    [Log] INFO    Ini        S.O. Identification: Microsoft Windows 11 Education Build(26200)  64 bits 
+[0] 16/11/2026 21:20:23.271  Extension           2.166.0    [Log] INFO    Ini        Total memory 2097151 Kb, free 1913112 Kb (91%). 
+[0] 16/11/2026 21:20:23.277  Extension           2.166.0    [Log] INFO    Ini        02 - Activating operations                ... : Ok. 
+[0] 16/11/2026 21:20:23.281  Extension           2.166.0    [Log] INFO    Ini        [Google Extension Connection] Request for information. 
+[0] 16/11/2026 21:20:23.287  Extension           2.166.0    [Log] INFO    Ini        03 - Modifying Windows settings           ... : Ok. 
+[3] 16/11/2026 21:20:22.497 IMT Win Service      2.166.0    [Log] WARNING General    Agent application not detected... 
+[0] 16/11/2026 21:20:23.290  Extension           2.166.0    [Log] INFO    Ini        04 - Screen capture control               ... : Ok. 
+[0] 16/11/2026 21:20:23.292  Extension           2.166.0    [Log] INFO    Ini        05 - Capture Screen title focused         ... : Ok. 
+[0] 16/11/2026 21:20:23.297  Extension           2.166.0    [Log] INFO    Ini        06 - General check                        ... : Ok. 
+[3] 16/11/2026 21:20:23.300  Extension           2.166.0    [Log] WARNING Ini        07 - Control Youtube in OneNote           ... : Deactivated. 
+[0] 16/11/2026 21:20:23.300  Extension           2.166.0    [Log] INFO    Status     [Operability Status] change to: Activated. 
+[0] 16/11/2026 21:20:24.632 IMT Win Service      2.166.0    [Log] INFO    General    [Wi-Fi] Auto mode on Ok 
+[0] 16/11/2026 21:20:23.313  Extension           2.166.0    [Log] INFO    General    Execution of the application concluded 
+[0] 16/11/2026 20:20:24.552  Extension           2.166.0    [Log] INFO    Ini        05 - Capture Screen title focused         ... : Ok. 
+[0] 16/11/2026 21:20:25.248 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:25.252 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:24.920 IMT Win Service      2.166.0    [Log] INFO    General    Regenerate Browse Extension files: Ok 
+[0] 16/11/2026 21:20:24.164 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:24.183 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 20:20:24.612  Extension           2.166.0    [Log] INFO    Ini        06 - General check                        ... : Ok. 
+[0] 16/11/2026 21:20:24.723 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:24.727 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Disconnected. 
+[3] 16/11/2026 20:20:24.677  Extension           2.166.0    [Log] WARNING Ini        07 - Control Youtube in OneNote           ... : Deactivated. 
+[0] 16/11/2026 21:20:23.488  Extension           2.166.0    [Log] INFO    End        01 - Deactivating operations              ... : Ok. 
+[0] 16/11/2026 21:20:23.490  Extension           2.166.0    [Log] INFO    End        02 - Disabling shared memory              ... : Ok. 
+[0] 16/11/2026 21:20:23.490  Extension           2.166.0    [Log] INFO    End        Exit of the Application completed. 
+[0] 16/11/2026 21:20:23.490  Extension           2.166.0    [Log] INFO    End        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 20:20:24.732  Extension           2.166.0    [Log] INFO    Status     [Operability Status] change to: Disabled. 
+[0] 16/11/2026 21:20:23.677 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 15:20:24.683 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 15:20:24.690 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 20:20:24.797  Extension           2.166.0    [Log] INFO    General    Execution of the application concluded 
+[0] 16/11/2026 21:20:23.717 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:24.755 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:25.051 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:24.855 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:25.058 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:24.769 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:26.566 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:24.870 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:26.566 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:24.833 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:24.845 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:24.927 IMT Win Service      2.166.0    [Log] INFO    General    Command Is Screen blocked ... 
+[3] 16/11/2026 21:20:23.626 IMT Win Application  2.166.0    Application in Extension mode...
+[3] 16/11/2026 21:20:23.630  Extension           2.166.0    [APP SHARED] sizeof MEM Share [96296] 
+[0] 16/11/2026 21:20:23.630  Extension           2.166.0    Activating shared memory: Ok.
+[0] 16/11/2026 21:20:24.939 IMT Win Service      2.166.0    [Log] INFO    General    Answer command Is Screen blocked : 5#false 
+[0] 16/11/2026 20:20:24.947  Extension           2.166.0    [Log] INFO    End        01 - Deactivating operations              ... : Ok. 
+[0] 16/11/2026 21:20:23.661  Extension           2.166.0    [Log] INFO    Ini        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 20:20:25.022  Extension           2.166.0    [Log] INFO    End        02 - Disabling shared memory              ... : Ok. 
+[0] 16/11/2026 21:20:26.301 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:26.306 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 20:20:25.082  Extension           2.166.0    [Log] INFO    End        Exit of the Application completed. 
+[0] 16/11/2026 21:20:24.900 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:24.916 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 20:20:25.142  Extension           2.166.0    [Log] INFO    End        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 21:20:25.428 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[3] 16/11/2026 20:20:25.200 IMT Win Service      2.166.0    [Log] WARNING General    Agent application not detected... 
+[0] 16/11/2026 21:20:25.435 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:26.020 IMT Win Service      2.166.0    [Log] INFO    General    Command System Info ... 
+[0] 16/11/2026 21:20:25.450 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:25.455 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[3] 16/11/2026 21:20:25.406 IMT Win Application  2.166.0    Application in Extension mode...
+[3] 16/11/2026 21:20:25.407  Extension           2.166.0    [APP SHARED] sizeof MEM Share [96296] 
+[0] 16/11/2026 21:20:25.408  Extension           2.166.0    Activating shared memory: Ok.
+[0] 16/11/2026 21:20:25.420  Extension           2.166.0    [Log] INFO    Ini        ----------------------------------------------------------------------------------------------- 
+[1] 16/11/2026 21:20:24.100  Extension           2.166.0    Application ROOT path: C:/IMTWin/assets/
+[1] 16/11/2026 21:20:24.100  Extension           2.166.0    IMT Win 2.166.0
+[0] 16/11/2026 21:20:24.104  Extension           2.166.0    [Log] INFO    Ini        01 - Activando LOG                        ... : Ok. 
+[0] 16/11/2026 21:20:24.131  Extension           2.166.0    [Log] INFO    Ini        S.O. Identification: Microsoft Windows 11 Pro Education Build(22631)  64 bits 
+[0] 16/11/2026 21:20:24.141  Extension           2.166.0    [Log] INFO    Ini        Total memory 2097151 Kb, free 2097151 Kb (100%). 
+[0] 16/11/2026 21:20:24.151  Extension           2.166.0    [Log] INFO    Ini        02 - Activating operations                ... : Ok. 
+[0] 16/11/2026 21:20:24.166  Extension           2.166.0    [Log] INFO    Ini        [Google Extension Connection] Request for information. 
+[0] 16/11/2026 21:20:25.797 IMT Win Application  2.166.0    [Log] INFO    Ini        03 - Control Internet Services            ... : Ok. 
+[0] 16/11/2026 21:20:25.805 IMT Win Application  2.166.0    [Log] INFO    Ini        04 - Eliminating installation waste       ... : Ok. 
+[0] 16/11/2026 20:20:25.514 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:24.183  Extension           2.166.0    [Log] INFO    Ini        03 - Modifying Windows settings           ... : Ok. 
+[0] 16/11/2026 21:20:25.813 IMT Win Application  2.166.0    [Log] INFO    Ini        05 - Modifying Windows settings           ... : Ok. 
+[0] 16/11/2026 20:20:25.523 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:24.191  Extension           2.166.0    [Log] INFO    Ini        04 - Screen capture control               ... : Ok. 
+[0] 16/11/2026 21:20:25.822 IMT Win Application  2.166.0    [Log] INFO    Ini        06 - Screen capture control               ... : Ok. 
+[0] 16/11/2026 21:20:25.829 IMT Win Application  2.166.0    [Log] INFO    Ini        07 - Capture Screen title focused         ... : Ok. 
+[0] 16/11/2026 21:20:25.837 IMT Win Application  2.166.0    [Log] INFO    Ini        08 - General check                        ... : Ok. 
+[0] 16/11/2026 21:20:24.210  Extension           2.166.0    [Log] INFO    Ini        05 - Capture Screen title focused         ... : Ok. 
+[3] 16/11/2026 21:20:25.848 IMT Win Application  2.166.0    [Log] WARNING Ini        09 - Control Youtube in OneNote           ... : Deactivated. 
+[0] 16/11/2026 21:20:24.221  Extension           2.166.0    [Log] INFO    Ini        06 - General check                        ... : Ok. 
+[3] 16/11/2026 21:20:24.231  Extension           2.166.0    [Log] WARNING Ini        07 - Control Youtube in OneNote           ... : Deactivated. 
+[0] 16/11/2026 21:20:24.251  Extension           2.166.0    [Log] INFO    Status     [Operability Status] change to: Disabled. 
+[4] 16/11/2026 21:20:23.533 IMT Win Service      2.166.0    [Log] ERROR   General    Agent application executed: Error! 
+[0] 16/11/2026 21:20:24.275  Extension           2.166.0    [Log] INFO    General    Execution of the application concluded 
+[0] 16/11/2026 21:20:25.656 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:35.376 IMT Win Service      2.166.0    [Log] INFO    General    Command Is Screen blocked ... 
+[0] 16/11/2026 21:20:25.661 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:35.400 IMT Win Service      2.166.0    [Log] INFO    General    Answer command Is Screen blocked : 5#false 
+[0] 16/11/2026 21:20:24.361  Extension           2.166.0    [Log] INFO    End        01 - Deactivating operations              ... : Ok. 
+[0] 16/11/2026 21:20:24.375  Extension           2.166.0    [Log] INFO    End        02 - Disabling shared memory              ... : Ok. 
+[3] 16/11/2026 21:20:25.486 IMT Win Application  2.166.0    Application in Extension mode...
+[3] 16/11/2026 21:20:25.486  Extension           2.166.0    [APP SHARED] sizeof MEM Share [96296] 
+[0] 16/11/2026 21:20:25.487  Extension           2.166.0    Activating shared memory: Ok.
+[0] 16/11/2026 21:20:25.495  Extension           2.166.0    [Log] INFO    Ini        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 21:20:24.391  Extension           2.166.0    [Log] INFO    End        Exit of the Application completed. 
+[0] 16/11/2026 21:20:26.020 IMT Win Application  2.166.0    [Log] INFO    Status     [Operability Status] change to: Disabled. 
+[0] 16/11/2026 21:20:24.406  Extension           2.166.0    [Log] INFO    End        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 21:20:25.246 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[4] 16/11/2026 20:20:25.660 IMT Win Service      2.166.0    [Log] ERROR   General    Agent application executed: Error! 
+[0] 16/11/2026 21:20:25.256 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:25.761 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:25.769 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:26.700 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:26.710 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:25.563 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:25.568 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[3] 16/11/2026 21:20:25.823 IMT Win Application  2.166.0    Application in Extension mode...
+[3] 16/11/2026 21:20:25.824  Extension           2.166.0    [APP SHARED] sizeof MEM Share [96296] 
+[0] 16/11/2026 21:20:25.824  Extension           2.166.0    Activating shared memory: Ok.
+[0] 16/11/2026 21:20:25.799 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:25.842  Extension           2.166.0    [Log] INFO    Ini        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 14:20:25.092 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:25.811 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:25.860 IMT Win Application  2.166.0    [Log] INFO    General    Capturing screen automatically: Ok 
+[0] 16/11/2026 14:20:25.142 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Disconnected. 
+[3] 16/11/2026 21:20:26.725 IMT Win Application  2.166.0    Application in Extension mode...
+[3] 16/11/2026 21:20:26.726  Extension           2.166.0    [APP SHARED] sizeof MEM Share [96296] 
+[0] 16/11/2026 21:20:26.726  Extension           2.166.0    Activating shared memory: Ok.
+[0] 16/11/2026 21:20:25.703 IMT Win Service      2.166.0    [Log] INFO    General    [Wi-Fi] Active connections: Ok 
+[0] 16/11/2026 21:20:26.778  Extension           2.166.0    [Log] INFO    Ini        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 21:20:26.024 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:26.048 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Disconnected. 
+[0] 16/11/2026 21:20:26.516 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:26.525 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[1] 16/11/2026 21:20:26.142  Extension           2.166.0    Application ROOT path: C:/IMTWin/assets/
+[1] 16/11/2026 21:20:26.144  Extension           2.166.0    IMT Win 2.166.0
+[0] 16/11/2026 21:20:26.145  Extension           2.166.0    [Log] INFO    Ini        01 - Activando LOG                        ... : Ok. 
+[0] 16/11/2026 21:20:24.861 IMT Win Service      2.166.0    [Log] INFO    General    Command Is Screen blocked ... 
+[0] 16/11/2026 21:20:26.150  Extension           2.166.0    [Log] INFO    Ini        S.O. Identification: Microsoft Windows 11 Education Build(26200)  64 bits 
+[0] 16/11/2026 21:20:26.155  Extension           2.166.0    [Log] INFO    Ini        Total memory 2097151 Kb, free 1153748 Kb (55%). 
+[0] 16/11/2026 21:20:24.865 IMT Win Service      2.166.0    [Log] INFO    General    Answer command Is Screen blocked : 5#false 
+[0] 16/11/2026 21:20:26.162  Extension           2.166.0    [Log] INFO    Ini        02 - Activating operations                ... : Ok. 
+[0] 16/11/2026 21:20:26.174  Extension           2.166.0    [Log] INFO    Ini        [Google Extension Connection] Request for information. 
+[0] 16/11/2026 21:20:26.179  Extension           2.166.0    [Log] INFO    Ini        03 - Modifying Windows settings           ... : Ok. 
+[0] 16/11/2026 21:20:26.184  Extension           2.166.0    [Log] INFO    Ini        04 - Screen capture control               ... : Ok. 
+[0] 16/11/2026 21:20:26.190  Extension           2.166.0    [Log] INFO    Ini        05 - Capture Screen title focused         ... : Ok. 
+[0] 16/11/2026 21:20:26.196  Extension           2.166.0    [Log] INFO    Ini        06 - General check                        ... : Ok. 
+[3] 16/11/2026 20:20:52.611 IMT Win Service      2.166.0    [Log] WARNING General    Agent application not detected... 
+[0] 16/11/2026 20:20:26.430 IMT Win Service      2.166.0    [Log] INFO    General    [Wi-Fi] Active connections: Ok 
+[0] 16/11/2026 21:20:27.260 IMT Win Service      2.166.0    [Log] INFO    General    Command Is Screen blocked ... 
+[4] 16/11/2026 20:20:52.629 IMT Win Service      2.166.0    [Log] ERROR   General    Agent application executed: Error! 
+[0] 16/11/2026 21:20:27.271 IMT Win Service      2.166.0    [Log] INFO    General    Answer command Is Screen blocked : 5#false 
+[3] 16/11/2026 21:20:26.202  Extension           2.166.0    [Log] WARNING Ini        07 - Control Youtube in OneNote           ... : Deactivated. 
+[0] 16/11/2026 21:20:26.208  Extension           2.166.0    [Log] INFO    Status     [Operability Status] change to: Disabled. 
+[0] 16/11/2026 21:20:26.216  Extension           2.166.0    [Log] INFO    General    Execution of the application concluded 
+[0] 16/11/2026 21:20:26.687 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:26.692 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[3] 16/11/2026 21:20:25.405 IMT Win Application  2.166.0    Application in Extension mode...
+[3] 16/11/2026 21:20:25.405  Extension           2.166.0    [APP SHARED] sizeof MEM Share [96296] 
+[0] 16/11/2026 21:20:25.405  Extension           2.166.0    Activating shared memory: Ok.
+[0] 16/11/2026 21:20:25.411  Extension           2.166.0    [Log] INFO    Ini        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 21:20:26.096 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:26.105 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:26.575 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:27.048 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:26.583 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:27.073 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:26.369  Extension           2.166.0    [Log] INFO    End        01 - Deactivating operations              ... : Ok. 
+[0] 16/11/2026 21:20:26.379  Extension           2.166.0    [Log] INFO    End        02 - Disabling shared memory              ... : Ok. 
+[0] 16/11/2026 21:20:26.387  Extension           2.166.0    [Log] INFO    End        Exit of the Application completed. 
+[0] 16/11/2026 21:20:26.394  Extension           2.166.0    [Log] INFO    End        ----------------------------------------------------------------------------------------------- 
+[3] 16/11/2026 20:20:26.426 IMT Win Service      2.166.0    [Log] WARNING General    Agent application not detected... 
+[0] 16/11/2026 21:20:26.373 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[4] 16/11/2026 20:20:26.450 IMT Win Service      2.166.0    [Log] ERROR   General    Agent application executed: Error! 
+[0] 16/11/2026 21:20:26.252 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:26.401 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:26.433 IMT Win Service      2.166.0    [Log] INFO    General    Command Is Screen blocked ... 
+[0] 16/11/2026 21:20:26.447 IMT Win Service      2.166.0    [Log] INFO    General    Answer command Is Screen blocked : 5#false 
+[0] 16/11/2026 21:20:26.371 IMT Win Service      2.166.0    [Log] INFO    General    [Wi-Fi] Active connections: Ok 
+[1] 16/11/2026 21:20:27.262  Extension           2.166.0    Application ROOT path: C:/IMTWin/assets/
+[1] 16/11/2026 21:20:27.264  Extension           2.166.0    IMT Win 2.166.0
+[0] 16/11/2026 21:20:27.264  Extension           2.166.0    [Log] INFO    Ini        01 - Activando LOG                        ... : Ok. 
+[0] 16/11/2026 21:20:26.315 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[1] 16/11/2026 21:20:26.311  Extension           2.166.0    Application ROOT path: C:/IMTWin/assets/
+[1] 16/11/2026 21:20:26.312  Extension           2.166.0    IMT Win 2.166.0
+[0] 16/11/2026 21:20:26.312  Extension           2.166.0    [Log] INFO    Ini        01 - Activando LOG                        ... : Ok. 
+[0] 16/11/2026 21:20:26.318  Extension           2.166.0    [Log] INFO    Ini        S.O. Identification: Microsoft Windows 11 Pro Education Build(26200)  64 bits 
+[0] 16/11/2026 21:20:26.322  Extension           2.166.0    [Log] INFO    Ini        Total memory 2097151 Kb, free 1264332 Kb (60%). 
+[0] 16/11/2026 21:20:26.327  Extension           2.166.0    [Log] INFO    Ini        02 - Activating operations                ... : Ok. 
+[0] 16/11/2026 21:20:26.331  Extension           2.166.0    [Log] INFO    Ini        [Google Extension Connection] Request for information. 
+[0] 16/11/2026 21:20:26.334  Extension           2.166.0    [Log] INFO    Ini        03 - Modifying Windows settings           ... : Ok. 
+[0] 16/11/2026 21:20:26.337  Extension           2.166.0    [Log] INFO    Ini        04 - Screen capture control               ... : Ok. 
+[0] 16/11/2026 21:20:26.339  Extension           2.166.0    [Log] INFO    Ini        05 - Capture Screen title focused         ... : Ok. 
+[0] 16/11/2026 21:20:26.342  Extension           2.166.0    [Log] INFO    Ini        06 - General check                        ... : Ok. 
+[3] 16/11/2026 21:20:26.344  Extension           2.166.0    [Log] WARNING Ini        07 - Control Youtube in OneNote           ... : Deactivated. 
+[0] 16/11/2026 21:20:26.348  Extension           2.166.0    [Log] INFO    Status     [Operability Status] change to: Disabled. 
+[0] 16/11/2026 21:20:27.316  Extension           2.166.0    [Log] INFO    Ini        S.O. Identification: Microsoft Windows 11 Pro Education Build(26100)  64 bits 
+[0] 16/11/2026 21:20:26.351  Extension           2.166.0    [Log] INFO    General    Execution of the application concluded 
+[0] 16/11/2026 20:20:26.583 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:27.326  Extension           2.166.0    [Log] INFO    Ini        Total memory 2097151 Kb, free 2097151 Kb (100%). 
+[0] 16/11/2026 20:20:26.589 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 20:20:26.690 IMT Win Service      2.166.0    [Log] INFO    General    [Wi-Fi] Auto mode on Ok 
+[0] 16/11/2026 21:20:27.336  Extension           2.166.0    [Log] INFO    Ini        02 - Activating operations                ... : Ok. 
+[0] 16/11/2026 21:20:27.358  Extension           2.166.0    [Log] INFO    Ini        [Google Extension Connection] Request for information. 
+[0] 16/11/2026 21:20:27.366  Extension           2.166.0    [Log] INFO    Ini        03 - Modifying Windows settings           ... : Ok. 
+[0] 16/11/2026 21:20:27.376  Extension           2.166.0    [Log] INFO    Ini        04 - Screen capture control               ... : Ok. 
+[0] 16/11/2026 21:20:26.330 IMT Win Service      2.166.0    [Log] INFO    General    [Wi-Fi] Auto mode on Ok 
+[0] 16/11/2026 21:20:27.386  Extension           2.166.0    [Log] INFO    Ini        05 - Capture Screen title focused         ... : Ok. 
+[0] 16/11/2026 21:20:27.396  Extension           2.166.0    [Log] INFO    Ini        06 - General check                        ... : Ok. 
+[3] 16/11/2026 21:20:27.404  Extension           2.166.0    [Log] WARNING Ini        07 - Control Youtube in OneNote           ... : Deactivated. 
+[0] 16/11/2026 21:20:27.414  Extension           2.166.0    [Log] INFO    Status     [Operability Status] change to: Disabled. 
+[0] 16/11/2026 21:20:27.424  Extension           2.166.0    [Log] INFO    General    Execution of the application concluded 
+[0] 16/11/2026 21:20:26.665 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:26.683 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:26.517  Extension           2.166.0    [Log] INFO    End        01 - Deactivating operations              ... : Ok. 
+[0] 16/11/2026 21:20:26.525  Extension           2.166.0    [Log] INFO    End        02 - Disabling shared memory              ... : Ok. 
+[0] 16/11/2026 21:20:26.532  Extension           2.166.0    [Log] INFO    End        Exit of the Application completed. 
+[0] 16/11/2026 21:20:26.538  Extension           2.166.0    [Log] INFO    End        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 21:20:27.556  Extension           2.166.0    [Log] INFO    End        01 - Deactivating operations              ... : Ok. 
+[0] 16/11/2026 21:20:26.914 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:26.919 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:26.724 IMT Win Service      2.166.0    [Log] INFO    General    [Wi-Fi] Auto mode on Ok 
+[0] 16/11/2026 21:20:27.618  Extension           2.166.0    [Log] INFO    End        02 - Disabling shared memory              ... : Ok. 
+[0] 16/11/2026 21:20:27.627  Extension           2.166.0    [Log] INFO    End        Exit of the Application completed. 
+[0] 16/11/2026 21:20:27.636  Extension           2.166.0    [Log] INFO    End        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 21:20:26.061  Extension           2.166.0    [Log] INFO    Ini        04 - Screen capture control               ... : Ok. 
+[0] 16/11/2026 21:20:26.066  Extension           2.166.0    [Log] INFO    Ini        05 - Capture Screen title focused         ... : Ok. 
+[0] 16/11/2026 21:20:26.071  Extension           2.166.0    [Log] INFO    Ini        06 - General check                        ... : Ok. 
+[3] 16/11/2026 21:20:26.075  Extension           2.166.0    [Log] WARNING Ini        07 - Control Youtube in OneNote           ... : Deactivated. 
+[0] 16/11/2026 21:20:26.079  Extension           2.166.0    [Log] INFO    Status     [Operability Status] change to: Disabled. 
+[0] 16/11/2026 21:20:26.084  Extension           2.166.0    [Log] INFO    General    Execution of the application concluded 
+[1] 16/11/2026 21:20:26.027  Extension           2.166.0    Application ROOT path: C:/IMTWin/assets/
+[1] 16/11/2026 21:20:26.027  Extension           2.166.0    IMT Win 2.166.0
+[0] 16/11/2026 21:20:26.028  Extension           2.166.0    [Log] INFO    Ini        01 - Activando LOG                        ... : Ok. 
+[0] 16/11/2026 21:20:26.037  Extension           2.166.0    [Log] INFO    Ini        S.O. Identification: Microsoft Windows 11 Home Build(26300)  64 bits 
+[0] 16/11/2026 21:20:26.041  Extension           2.166.0    [Log] INFO    Ini        Total memory 2097151 Kb, free 2097151 Kb (100%). 
+[0] 16/11/2026 21:20:26.046  Extension           2.166.0    [Log] INFO    Ini        02 - Activating operations                ... : Ok. 
+[0] 16/11/2026 21:20:26.052  Extension           2.166.0    [Log] INFO    Ini        [Google Extension Connection] Request for information. 
+[0] 16/11/2026 21:20:26.058  Extension           2.166.0    [Log] INFO    Ini        03 - Modifying Windows settings           ... : Ok. 
+[3] 16/11/2026 21:20:26.600 IMT Win Application  2.166.0    Application in Extension mode...
+[0] 16/11/2026 21:20:26.601  Extension           2.166.0    Activating shared memory: Ok.
+[3] 16/11/2026 21:20:26.601  Extension           2.166.0    [APP SHARED] sizeof MEM Share [96296] 
+[0] 16/11/2026 21:20:26.614  Extension           2.166.0    [Log] INFO    Ini        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 21:20:26.205 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:26.218 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:26.236  Extension           2.166.0    [Log] INFO    End        01 - Deactivating operations              ... : Ok. 
+[0] 16/11/2026 21:20:26.248  Extension           2.166.0    [Log] INFO    End        02 - Disabling shared memory              ... : Ok. 
+[0] 16/11/2026 21:20:26.253  Extension           2.166.0    [Log] INFO    End        Exit of the Application completed. 
+[0] 16/11/2026 21:20:26.257  Extension           2.166.0    [Log] INFO    End        ----------------------------------------------------------------------------------------------- 
+[0] 17/11/2026 02:20:26.697 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:29.390 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:29.398 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[3] 16/11/2026 21:20:28.301 IMT Win Application  2.166.0    Application in Extension mode...
+[0] 17/11/2026 02:20:26.716 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[3] 16/11/2026 21:20:28.303  Extension           2.166.0    [APP SHARED] sizeof MEM Share [96296] 
+[0] 16/11/2026 21:20:28.303  Extension           2.166.0    Activating shared memory: Ok.
+[0] 16/11/2026 21:20:21.545 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:21.552 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[1] 16/11/2026 21:20:27.239  Extension           2.166.0    Application ROOT path: C:/IMTWin/assets/
+[1] 16/11/2026 21:20:27.239  Extension           2.166.0    IMT Win 2.166.0
+[0] 16/11/2026 21:20:27.241  Extension           2.166.0    [Log] INFO    Ini        01 - Activando LOG                        ... : Ok. 
+[0] 16/11/2026 21:20:27.308  Extension           2.166.0    [Log] INFO    Ini        S.O. Identification: Microsoft Windows 11 Pro Education Build(26200)  64 bits 
+[0] 16/11/2026 21:20:27.320  Extension           2.166.0    [Log] INFO    Ini        Total memory 2097151 Kb, free 349628 Kb (16%). 
+[0] 16/11/2026 21:20:27.328  Extension           2.166.0    [Log] INFO    Ini        02 - Activating operations                ... : Ok. 
+[0] 16/11/2026 21:20:27.346  Extension           2.166.0    [Log] INFO    Ini        [Google Extension Connection] Request for information. 
+[0] 16/11/2026 21:20:27.360  Extension           2.166.0    [Log] INFO    Ini        03 - Modifying Windows settings           ... : Ok. 
+[0] 16/11/2026 21:20:27.367  Extension           2.166.0    [Log] INFO    Ini        04 - Screen capture control               ... : Ok. 
+[0] 16/11/2026 21:20:27.375  Extension           2.166.0    [Log] INFO    Ini        05 - Capture Screen title focused         ... : Ok. 
+[1] 16/11/2026 21:20:27.004  Extension           2.166.0    Application ROOT path: C:/IMTWin/assets/
+[1] 16/11/2026 21:20:27.005  Extension           2.166.0    IMT Win 2.166.0
+[0] 16/11/2026 21:20:27.006  Extension           2.166.0    [Log] INFO    Ini        01 - Activando LOG                        ... : Ok. 
+[3] 16/11/2026 21:20:28.587 IMT Win Application  2.166.0    Application in Extension mode...
+[3] 16/11/2026 21:20:28.587  Extension           2.166.0    [APP SHARED] sizeof MEM Share [96296] 
+[0] 16/11/2026 21:20:28.587  Extension           2.166.0    Activating shared memory: Ok.
+[0] 16/11/2026 21:20:27.382  Extension           2.166.0    [Log] INFO    Ini        06 - General check                        ... : Ok. 
+[0] 16/11/2026 21:20:27.012  Extension           2.166.0    [Log] INFO    Ini        S.O. Identification: Microsoft Windows 11 Pro Build(26200)  64 bits 
+[0] 16/11/2026 21:20:28.592  Extension           2.166.0    [Log] INFO    Ini        ----------------------------------------------------------------------------------------------- 
+[3] 16/11/2026 21:20:27.389  Extension           2.166.0    [Log] WARNING Ini        07 - Control Youtube in OneNote           ... : Deactivated. 
+[0] 16/11/2026 21:20:27.018  Extension           2.166.0    [Log] INFO    Ini        Total memory 2097151 Kb, free 2097151 Kb (100%). 
+[0] 16/11/2026 21:20:27.398  Extension           2.166.0    [Log] INFO    Status     [Operability Status] change to: Disabled. 
+[0] 16/11/2026 21:20:27.026  Extension           2.166.0    [Log] INFO    Ini        02 - Activating operations                ... : Ok. 
+[0] 16/11/2026 21:20:27.035  Extension           2.166.0    [Log] INFO    Ini        [Google Extension Connection] Request for information. 
+[0] 16/11/2026 21:20:27.412  Extension           2.166.0    [Log] INFO    General    Execution of the application concluded 
+[0] 16/11/2026 21:20:27.041  Extension           2.166.0    [Log] INFO    Ini        03 - Modifying Windows settings           ... : Ok. 
+[0] 16/11/2026 21:20:27.046  Extension           2.166.0    [Log] INFO    Ini        04 - Screen capture control               ... : Ok. 
+[0] 16/11/2026 21:20:27.052  Extension           2.166.0    [Log] INFO    Ini        05 - Capture Screen title focused         ... : Ok. 
+[0] 16/11/2026 21:20:27.056  Extension           2.166.0    [Log] INFO    Ini        06 - General check                        ... : Ok. 
+[3] 16/11/2026 21:20:27.061  Extension           2.166.0    [Log] WARNING Ini        07 - Control Youtube in OneNote           ... : Deactivated. 
+[0] 16/11/2026 21:20:27.067  Extension           2.166.0    [Log] INFO    Status     [Operability Status] change to: Disabled. 
+[0] 16/11/2026 21:20:27.332 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:27.073  Extension           2.166.0    [Log] INFO    General    Execution of the application concluded 
+[0] 16/11/2026 21:20:27.342 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[1] 16/11/2026 21:20:28.692  Extension           2.166.0    Application ROOT path: C:/IMTWin/assets/
+[1] 16/11/2026 21:20:28.692  Extension           2.166.0    IMT Win 2.166.0
+[0] 16/11/2026 21:20:28.692  Extension           2.166.0    [Log] INFO    Ini        01 - Activando LOG                        ... : Ok. 
+[0] 16/11/2026 21:20:28.703  Extension           2.166.0    [Log] INFO    Ini        S.O. Identification: Microsoft Windows 10 Pro Build(19045)  64 bits 
+[0] 16/11/2026 21:20:28.706  Extension           2.166.0    [Log] INFO    Ini        Total memory 2097151 Kb, free 2097151 Kb (100%). 
+[0] 16/11/2026 21:20:28.712  Extension           2.166.0    [Log] INFO    Ini        02 - Activating operations                ... : Ok. 
+[0] 16/11/2026 21:20:28.712  Extension           2.166.0    [Log] INFO    Ini        [Google Extension Connection] Request for information. 
+[0] 16/11/2026 21:20:28.723  Extension           2.166.0    [Log] INFO    Ini        03 - Modifying Windows settings           ... : Ok. 
+[0] 16/11/2026 21:20:28.723  Extension           2.166.0    [Log] INFO    Ini        04 - Screen capture control               ... : Ok. 
+[0] 16/11/2026 21:20:27.365 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:28.732  Extension           2.166.0    [Log] INFO    Ini        05 - Capture Screen title focused         ... : Ok. 
+[0] 16/11/2026 21:20:27.374 IMT Win Service      2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:28.732  Extension           2.166.0    [Log] INFO    Ini        06 - General check                        ... : Ok. 
+[3] 16/11/2026 21:20:28.732  Extension           2.166.0    [Log] WARNING Ini        07 - Control Youtube in OneNote           ... : Deactivated. 
+[0] 16/11/2026 21:20:28.746  Extension           2.166.0    [Log] INFO    Status     [Operability Status] change to: Disabled. 
+[0] 16/11/2026 21:20:28.752  Extension           2.166.0    [Log] INFO    General    Execution of the application concluded 
+[0] 16/11/2026 21:20:27.554  Extension           2.166.0    [Log] INFO    End        01 - Deactivating operations              ... : Ok. 
+[0] 16/11/2026 21:20:27.562  Extension           2.166.0    [Log] INFO    End        02 - Disabling shared memory              ... : Ok. 
+[0] 16/11/2026 21:20:27.571  Extension           2.166.0    [Log] INFO    End        Exit of the Application completed. 
+[0] 16/11/2026 21:20:27.577  Extension           2.166.0    [Log] INFO    End        ----------------------------------------------------------------------------------------------- 
+[0] 16/11/2026 14:20:26.201 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Checked... 
+[0] 16/11/2026 21:20:27.221  Extension           2.166.0    [Log] INFO    End        01 - Deactivating operations              ... : Ok. 
+[0] 16/11/2026 21:20:27.231  Extension           2.166.0    [Log] INFO    End        02 - Disabling shared memory              ... : Ok. 
+[0] 16/11/2026 14:20:26.227 IMT Win Application  2.166.0    [Log] INFO    Status     [Internet Connection] Status: Connected. 
+[0] 16/11/2026 21:20:27.239  Extension           2.166.0    [Log] INFO    End        Exit of the Application completed. 
+[0] 16/11/2026 21:20:27.245  Extension           2.166.0    [Log] INFO    End        ----------------------------------------------------------------------------------------------- 

@@ -64,44 +64,8 @@
       <element name="runstop-txt" type="text" xpos="center" ypos="center" text-align="center" sizefont="11" color="label_ink">#[BTN_STOP]</element>
     </element>
 
-    <element name="clear-btn" type="multioption" xpos="210" ypos="112" width="72" height="72">
-      <element type="button" name="clear-btn" selectablestatus="active">
-        <element type="animation"><image width="72" height="72">Clear/Active.png</image></element>
-      </element>
-      <element type="button" name="clear-btn" selectablestatus="preselect">
-        <element type="animation"><image width="72" height="72">Clear/Preselected.png</image></element>
-      </element>
-      <element type="button" name="clear-btn" selectablestatus="selected">
-        <element type="animation"><image width="72" height="72">Clear/Pressed.png</image></element>
-      </element>
-      <element type="button" name="clear-btn" selectablestatus="deactive">
-        <element type="animation"><image width="72" height="72">Clear/Disabled.png</image></element>
-      </element>
-    </element>
-    <element name="clear-lbl" type="form" xpos="203" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
-      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_CLEAR]</element>
-    </element>
-
-    <element name="delstatus-btn" type="multioption" xpos="291" ypos="112" width="72" height="72">
-      <element type="button" name="delstatus-btn" selectablestatus="active">
-        <element type="animation"><image width="72" height="72">Del_Status/Active.png</image></element>
-      </element>
-      <element type="button" name="delstatus-btn" selectablestatus="preselect">
-        <element type="animation"><image width="72" height="72">Del_Status/Preselected.png</image></element>
-      </element>
-      <element type="button" name="delstatus-btn" selectablestatus="selected">
-        <element type="animation"><image width="72" height="72">Del_Status/Pressed.png</image></element>
-      </element>
-      <element type="button" name="delstatus-btn" selectablestatus="deactive">
-        <element type="animation"><image width="72" height="72">Del_Status/Disabled.png</image></element>
-      </element>
-    </element>
-    <element name="delstatus-lbl" type="form" xpos="284" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
-      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_DELSTATUS]</element>
-    </element>
-
-    <!-- After Del status: Filtro, then DynDNS, Save, Configuracion (pitch 81). -->
-    <element name="filter-btn" type="multioption" xpos="372" ypos="112" width="72" height="72">
+    <!-- Toolbar order (pitch 81): Run/Stop, Filtro, Limpiar, Borrar estado, Guardar, DynDNS, Configuracion. -->
+    <element name="filter-btn" type="multioption" xpos="210" ypos="112" width="72" height="72">
       <element type="button" name="filter-btn" selectablestatus="active">
         <element type="animation"><image width="72" height="72">Filtros/Active.png</image></element>
       </element>
@@ -116,9 +80,9 @@
       </element>
     </element>
 
-    <element name="filter-active-btn" type="multioption" xpos="372" ypos="112" width="72" height="72" visible="false">
+    <element name="filter-active-btn" type="multioption" xpos="210" ypos="112" width="72" height="72" visible="false">
       <element type="button" name="filter-active-btn" selectablestatus="active">
-        <element type="animation" state="play" timedelay="50">
+        <element type="animation" state="play" timedelay="25">
           <image width="72" height="72">Filtro_Figuras/Active01.png</image>
           <image width="72" height="72">Filtro_Figuras/Active02.png</image>
           <image width="72" height="72">Filtro_Figuras/Active03.png</image>
@@ -170,7 +134,7 @@
         </element>
       </element>
       <element type="button" name="filter-active-btn" selectablestatus="preselect">
-        <element type="animation" state="play" timedelay="50">
+        <element type="animation" state="play" timedelay="25">
           <image width="72" height="72">Filtro_Figuras/Preselected01.png</image>
           <image width="72" height="72">Filtro_Figuras/Preselected02.png</image>
           <image width="72" height="72">Filtro_Figuras/Preselected03.png</image>
@@ -222,7 +186,7 @@
         </element>
       </element>
       <element type="button" name="filter-active-btn" selectablestatus="selected">
-        <element type="animation" state="play" timedelay="50">
+        <element type="animation" state="play" timedelay="25">
           <image width="72" height="72">Filtro_Figuras/Pressed01.png</image>
           <image width="72" height="72">Filtro_Figuras/Pressed02.png</image>
           <image width="72" height="72">Filtro_Figuras/Pressed03.png</image>
@@ -274,7 +238,7 @@
         </element>
       </element>
       <element type="button" name="filter-active-btn" selectablestatus="deactive">
-        <element type="animation" state="play" timedelay="50">
+        <element type="animation" state="play" timedelay="25">
           <image width="72" height="72">Filtro_Figuras/Disabled01.png</image>
           <image width="72" height="72">Filtro_Figuras/Disabled02.png</image>
           <image width="72" height="72">Filtro_Figuras/Disabled03.png</image>
@@ -326,29 +290,47 @@
         </element>
       </element>
     </element>
-    <element name="filter-lbl" type="form" xpos="365" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
+    <element name="filter-lbl" type="form" xpos="203" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_FILTER]</element>
     </element>
 
-    <element name="dyndns-btn" type="multioption" xpos="453" ypos="112" width="72" height="72">
-      <element type="button" name="dyndns-btn" selectablestatus="active">
-        <element type="animation"><image width="72" height="72">DynDNS/Active.png</image></element>
+    <element name="clear-btn" type="multioption" xpos="291" ypos="112" width="72" height="72">
+      <element type="button" name="clear-btn" selectablestatus="active">
+        <element type="animation"><image width="72" height="72">Clear/Active.png</image></element>
       </element>
-      <element type="button" name="dyndns-btn" selectablestatus="preselect">
-        <element type="animation"><image width="72" height="72">DynDNS/Preselected.png</image></element>
+      <element type="button" name="clear-btn" selectablestatus="preselect">
+        <element type="animation"><image width="72" height="72">Clear/Preselected.png</image></element>
       </element>
-      <element type="button" name="dyndns-btn" selectablestatus="selected">
-        <element type="animation"><image width="72" height="72">DynDNS/Pressed.png</image></element>
+      <element type="button" name="clear-btn" selectablestatus="selected">
+        <element type="animation"><image width="72" height="72">Clear/Pressed.png</image></element>
       </element>
-      <element type="button" name="dyndns-btn" selectablestatus="deactive">
-        <element type="animation"><image width="72" height="72">DynDNS/Disabled.png</image></element>
+      <element type="button" name="clear-btn" selectablestatus="deactive">
+        <element type="animation"><image width="72" height="72">Clear/Disabled.png</image></element>
       </element>
     </element>
-    <element name="dyndns-lbl" type="form" xpos="446" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
-      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_DYNDNS]</element>
+    <element name="clear-lbl" type="form" xpos="284" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
+      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_CLEAR]</element>
     </element>
 
-    <element name="save-btn" type="multioption" xpos="534" ypos="112" width="72" height="72">
+    <element name="delstatus-btn" type="multioption" xpos="372" ypos="112" width="72" height="72">
+      <element type="button" name="delstatus-btn" selectablestatus="active">
+        <element type="animation"><image width="72" height="72">Del_Status/Active.png</image></element>
+      </element>
+      <element type="button" name="delstatus-btn" selectablestatus="preselect">
+        <element type="animation"><image width="72" height="72">Del_Status/Preselected.png</image></element>
+      </element>
+      <element type="button" name="delstatus-btn" selectablestatus="selected">
+        <element type="animation"><image width="72" height="72">Del_Status/Pressed.png</image></element>
+      </element>
+      <element type="button" name="delstatus-btn" selectablestatus="deactive">
+        <element type="animation"><image width="72" height="72">Del_Status/Disabled.png</image></element>
+      </element>
+    </element>
+    <element name="delstatus-lbl" type="form" xpos="365" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
+      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_DELSTATUS]</element>
+    </element>
+
+    <element name="save-btn" type="multioption" xpos="453" ypos="112" width="72" height="72">
       <element type="button" name="save-btn" selectablestatus="active">
         <element type="animation"><image width="72" height="72">Save/Active.png</image></element>
       </element>
@@ -362,8 +344,26 @@
         <element type="animation"><image width="72" height="72">Save/Disabled.png</image></element>
       </element>
     </element>
-    <element name="save-lbl" type="form" xpos="527" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
+    <element name="save-lbl" type="form" xpos="446" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
       <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_SAVE]</element>
+    </element>
+
+    <element name="dyndns-btn" type="multioption" xpos="534" ypos="112" width="72" height="72">
+      <element type="button" name="dyndns-btn" selectablestatus="active">
+        <element type="animation"><image width="72" height="72">DynDNS/Active.png</image></element>
+      </element>
+      <element type="button" name="dyndns-btn" selectablestatus="preselect">
+        <element type="animation"><image width="72" height="72">DynDNS/Preselected.png</image></element>
+      </element>
+      <element type="button" name="dyndns-btn" selectablestatus="selected">
+        <element type="animation"><image width="72" height="72">DynDNS/Pressed.png</image></element>
+      </element>
+      <element type="button" name="dyndns-btn" selectablestatus="deactive">
+        <element type="animation"><image width="72" height="72">DynDNS/Disabled.png</image></element>
+      </element>
+    </element>
+    <element name="dyndns-lbl" type="form" xpos="527" ypos="126" width="86" height="14" backgroundcolor="0,0,0,0">
+      <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[BTN_DYNDNS]</element>
     </element>
 
     <element name="config-btn" type="multioption" xpos="615" ypos="112" width="72" height="72">
@@ -390,11 +390,11 @@
     <element name="netstatus_led" type="form" xpos="834" ypos="86" width="12" height="12"
              roundrect="6" backgroundcolor="63,185,80,100" border-width="0" color="63,185,80,100"></element>
     <element name="netstatus_state" type="text" xpos="850" ypos="86" width="260" height="16"
-             text-align="left" sizefont="12" color="label_ink" backgroundcolor="console_back">Conexion a internet</element>
+             text-align="left" sizefont="12" color="label_ink" backgroundcolor="console_back">#[TRANSLATE_114]</element>
     <element name="netstatus_ip" type="text" xpos="850" ypos="104" width="260" height="16"
-             text-align="left" sizefont="12" color="label_ink" backgroundcolor="console_back">IP Publica: --</element>
+             text-align="left" sizefont="12" color="label_ink" backgroundcolor="console_back">#[TRANSLATE_116]</element>
     <element name="netstatus_udp" type="text" xpos="850" ypos="122" width="260" height="16"
-             text-align="left" sizefont="12" color="label_ink" backgroundcolor="console_back">UDP Port: --</element>
+             text-align="left" sizefont="12" color="label_ink" backgroundcolor="console_back">#[TRANSLATE_118]</element>
 
     <element name="valor" type="propertylist" xpos="222" ypos="292" width="972" height="158"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
@@ -403,7 +403,7 @@
     <element name="tree" type="tree" xpos="6" ypos="665" width="210" height="489"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              color="label_ink" sizefont="12" rowheight="20" indentwidth="18"
-             overflow-y="auto" overflow-x="auto"></element>
+             overflow-y="auto" overflow-x="hidden"></element>
 
     <!-- Geo tooltip for public IPs: pastel yellow plate, never a stroke/frame, black ink; 6px text inset; app places it at the cursor. -->
     <element name="tree_geo_tip" type="tooltip" xpos="230" ypos="500" width="280" height="56"
@@ -413,22 +413,22 @@
       <text></text>
     </element>
 
-    <!-- IP counters under the tree: [diamond] IP Publica (n) [circle] IP Local (n), vertically centered -->
+    <!-- IP counters under the tree: [diamond] Publicas (n) [circle] Locales (n), vertically centered -->
     <element name="treestats" type="form" xpos="6" ypos="693" width="210" height="22"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              overflow-y="hidden" overflow-x="hidden">
       <element name="treestats_pub_icon" type="image" xpos="4" ypos="5" width="12" height="12" alpha="100">tree/ip.png</element>
       <element name="treestats_pub_txt" type="text" xpos="20" ypos="9" width="92" height="14"
-               text-align="left" sizefont="11" color="label_ink" backgroundcolor="0,0,0,0">IP Publica (0)</element>
+               text-align="left" sizefont="11" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_180]</element>
       <element name="treestats_loc_icon" type="image" xpos="120" ypos="5" width="12" height="12" alpha="100">tree/packet.png</element>
       <element name="treestats_loc_txt" type="text" xpos="136" ypos="9" width="70" height="14"
-               text-align="left" sizefont="11" color="label_ink" backgroundcolor="0,0,0,0">IP Local (0)</element>
+               text-align="left" sizefont="11" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_181]</element>
     </element>
 
     <element name="log_console" type="console" xpos="222" ypos="665" width="972" height="353"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              fontface="mono" sizefont="11" linespacing="3" maxlines="500"
-             autoscroll="true" wordwrap="false" overflow-y="auto" overflow-x="auto"></element>
+             autoscroll="false" wordwrap="false" overflow-y="auto" overflow-x="auto"></element>
 
     <element name="opstatus" type="form" xpos="222" ypos="693" width="972" height="22"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
@@ -492,6 +492,14 @@
           <image width="16" height="16">controls/checkbox_on.png</image>
         </element>
         <element name="chk_geolocalizationpublicip_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_158]</element>
+      </element>
+      <element name="chk_showaboutboot" type="checkbox" class="config-check" xpos="244" ypos="292" width="280" height="28"
+               allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
+        <element name="chk_showaboutboot_anim" type="animation" width="16" height="16">
+          <image width="16" height="16">controls/checkbox_off.png</image>
+          <image width="16" height="16">controls/checkbox_on.png</image>
+        </element>
+        <element name="chk_showaboutboot_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_177]</element>
       </element>
 
       <element name="chk_adddatetimeconsole" type="checkbox" class="config-check" xpos="24" ypos="270" width="320" height="28"
@@ -795,6 +803,61 @@
         <element type="button" name="about_modal_btn_accept" selectablestatus="deactive" width="160" height="53">
           <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
           <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Disabled.png</image></element>
+        </element>
+      </element>
+    </element>
+
+  </layout>
+
+  <layout name="dyndns_modal">
+
+    <element name="dyndns_modal" type="form" class="dyndns-modal" xpos="240" ypos="620" width="720" height="540" visible="0"
+             roundrect="8" border-width="1" border-color="frame_line" bckgrdcolor="24,28,36"
+             overflow-y="hidden" overflow-x="hidden">
+      <element name="dyndns_modal_title" type="text" class="form-title" xpos="16" ypos="496" width="688" height="28"
+               sizefont="18" color="label_ink">#[TRANSLATE_159]</element>
+
+      <!-- Console band: TITLE_TO_CONTENT below title, CONTENT_TO_BTNS above footer (H≈320). -->
+      <element name="dyndns_console" type="console" xpos="24" ypos="130" width="672" height="320"
+               roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
+               fontface="mono" sizefont="11" linespacing="3" maxlines="200"
+               autoscroll="true" wordwrap="false" overflow-y="scroll" overflow-x="auto"></element>
+
+      <element name="dyndns_modal_btn_accept" type="multioption" xpos="188" ypos="16" width="160" height="53">
+        <element type="button" name="dyndns_modal_btn_accept" selectablestatus="active" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Active.png</image></element>
+        </element>
+        <element type="button" name="dyndns_modal_btn_accept" selectablestatus="preselect" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Preselected.png</image></element>
+        </element>
+        <element type="button" name="dyndns_modal_btn_accept" selectablestatus="selected" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Pressed.png</image></element>
+        </element>
+        <element type="button" name="dyndns_modal_btn_accept" selectablestatus="deactive" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_137]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Aceptar/Disabled.png</image></element>
+        </element>
+      </element>
+
+      <element name="dyndns_modal_btn_cancel" type="multioption" xpos="372" ypos="16" width="160" height="53">
+        <element type="button" name="dyndns_modal_btn_cancel" selectablestatus="active" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_138]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar/Active.png</image></element>
+        </element>
+        <element type="button" name="dyndns_modal_btn_cancel" selectablestatus="preselect" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_138]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar/Preselected.png</image></element>
+        </element>
+        <element type="button" name="dyndns_modal_btn_cancel" selectablestatus="selected" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_138]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar/Pressed.png</image></element>
+        </element>
+        <element type="button" name="dyndns_modal_btn_cancel" selectablestatus="deactive" width="160" height="53">
+          <element type="text" xpos="center" ypos="center" sizefont="11" color="label_ink">#[TRANSLATE_138]</element>
+          <element type="animation" width="160" height="53"><image width="160" height="53">Cancelar/Disabled.png</image></element>
         </element>
       </element>
     </element>
