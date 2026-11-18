@@ -46,6 +46,7 @@ option(GRP_BITMAP_FILE_TGA_FEATURE                              "Graphics Bitmap
 option(GRP_VIDEO_FILE_AVI_FEATURE                               "Graphics Video File AVI"                                 ON )
 option(GRP_VECTOR_FILE_SVG_FEATURE                              "Graphics Vector File SVG"                                ON )
 option(GRP_2D_FEATURE                                           "Graphics 2D"                                             ON )
+option(GRP_STATISTICSCHARS_FEATURE                              "Graphics Statistics Charts"                              ON )
 
 option(INP_FEATURE                                              "Inputs"                                                  ON )
 

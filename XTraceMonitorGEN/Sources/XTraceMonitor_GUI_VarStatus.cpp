@@ -133,8 +133,8 @@ bool XTRACEMONITOR_GUI_VARSTATUS::Resolve()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
-* @fn         bool XTRACEMONITOR_GUI_VARSTATUS::Seed()
-* @brief      Clears the "valor" property list (no sample rows — filled by live status later).
+* @fn         bool XTRACEMONITOR_GUI_VARSTATUS::ApplyHeaderCaptions()
+* @brief      Applies translated Name/Value captions on the valor property list.
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the operation is successful; otherwise false.
@@ -151,6 +151,15 @@ bool XTRACEMONITOR_GUI_VARSTATUS::ApplyHeaderCaptions()
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_VARSTATUS::Seed()
+* @brief      Clears the valor property list and refreshes header captions.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_GUI_VARSTATUS::Seed()
 {
   if(!valorelement) return false;

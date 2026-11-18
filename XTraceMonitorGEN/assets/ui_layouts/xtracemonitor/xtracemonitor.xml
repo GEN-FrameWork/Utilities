@@ -7,6 +7,7 @@
 
   <fonts >
     <font name="default" file="Nunito-SemiBold.ttf"></font>
+    <font name="bold" file="Nunito-Bold.ttf"></font>
     <font name="cjk" file="NotoSansSC-Regular.otf"></font>
     <!-- Console mono: Roboto Mono SemiBold (closer to Nunito than Courier New). -->
     <font name="mono" file="RobotoMono-SemiBold.ttf"></font>
@@ -20,7 +21,7 @@
   <color name="frame_line">70,80,95,255</color>
   <color name="console_back">12,14,18,255</color>
   <color name="label_ink">200,208,220,255</color>
-  <!-- Same light blue as brand/toolbar.png GEN mark (main toolbar). -->
+  <!-- Accent blue aligned with brand/toolbar.png mark (main toolbar). -->
   <color name="gen_ink">102,153,255,255</color>
 
 
@@ -28,7 +29,12 @@
 
   <layout name="xtracemonitor" backgroundcolor="24,28,36">
 
-    <element name="brand_toolbar" type="image" xpos="16" ypos="126" width="97" height="72" alpha="95">brand/toolbar.png</element>
+    <!-- Square brand: same height as toolbar bubbles (72), width keeps 1:1 so no stretch. -->
+    <element name="brand_toolbar" type="image" xpos="16" ypos="112" width="72" height="72" alpha="95">brand/toolbar.png</element>
+    <!-- Version under brand: same Y as bubble legends; text filled at runtime; color = About gen_ink. -->
+    <element name="brand-ver-lbl" type="form" xpos="16" ypos="126" width="72" height="16" backgroundcolor="0,0,0,0" border-width="0">
+      <element name="brand-ver-txt" type="text" xpos="center" ypos="center" text-align="center" sizefont="13" fontface="bold" color="gen_ink" translate="false">Ver. 0.0.0</element>
+    </element>
 
     <element name="stop-btn" type="multioption" xpos="129" ypos="112" width="72" height="72">
       <element type="button" name="stop-btn" selectablestatus="active">
@@ -430,6 +436,29 @@
              fontface="mono" sizefont="11" linespacing="3" maxlines="500"
              autoscroll="false" wordwrap="false" overflow-y="auto" overflow-x="auto"></element>
 
+    <!-- Session-only console follow (top-right overlay); not written to CFG.
+         Icon-only: no under-icon legend form. Multioption face skips Draw_Option white erase. -->
+    <element name="console_track_btn" type="multioption" xpos="1146" ypos="346" width="40" height="40">
+      <element type="button" name="console_track_btn" selectablestatus="active" allocationtext="none" backgroundcolor="0,0,0,0" border-width="0">
+        <element type="animation" width="40" height="40">
+          <image width="40" height="40">controls/console_track_off.png</image>
+          <image width="40" height="40">controls/console_track_on.png</image>
+        </element>
+      </element>
+      <element type="button" name="console_track_btn" selectablestatus="preselect" allocationtext="none" backgroundcolor="0,0,0,0" border-width="0">
+        <element type="animation" width="40" height="40">
+          <image width="40" height="40">controls/console_track_off.png</image>
+          <image width="40" height="40">controls/console_track_on.png</image>
+        </element>
+      </element>
+      <element type="button" name="console_track_btn" selectablestatus="selected" allocationtext="none" backgroundcolor="0,0,0,0" border-width="0">
+        <element type="animation" width="40" height="40">
+          <image width="40" height="40">controls/console_track_off.png</image>
+          <image width="40" height="40">controls/console_track_on.png</image>
+        </element>
+      </element>
+    </element>
+
     <element name="opstatus" type="form" xpos="222" ypos="693" width="972" height="22"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
              overflow-y="hidden" overflow-x="hidden">
@@ -501,6 +530,13 @@
         </element>
         <element name="chk_showaboutboot_txt" type="text" sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_177]</element>
       </element>
+
+      <element name="lbl_maxlinesconsole" type="text" class="config-label" xpos="244" ypos="260" width="280" height="18"
+               sizefont="12" color="label_ink" backgroundcolor="0,0,0,0">#[TRANSLATE_214]</element>
+      <element name="edit_maxlinesconsole" type="edittext" class="config-edit" xpos="244" ypos="226" width="187" height="28"
+               sizefont="13" maxsizetext="7" inputmode="numeric" valuemin="50" valuemax="1000000" valuestep="50"
+               selectablestatus="active" roundrect="4" border-width="1" border-color="frame_line"
+               bckgrdcolor="64,72,84" color="label_ink">10000</element>
 
       <element name="chk_adddatetimeconsole" type="checkbox" class="config-check" xpos="24" ypos="270" width="320" height="28"
                allocationtext="none" selectablestatus="active" backgroundcolor="0,0,0,0" border-width="0">
@@ -771,8 +807,8 @@
 
       <element name="about_app_name" type="text" xpos="24" ypos="292" width="472" height="22"
                sizefont="16" color="label_ink" text-align="center" backgroundcolor="0,0,0,0">eXtended Trace Monitor</element>
-      <element name="about_version" type="text" xpos="24" ypos="268" width="472" height="20"
-               sizefont="13" color="gen_ink" text-align="center" backgroundcolor="0,0,0,0">0.1.0</element>
+      <element name="about_version" type="text" xpos="24" ypos="268" width="472" height="24"
+               sizefont="16" fontface="bold" color="gen_ink" text-align="center" backgroundcolor="0,0,0,0">Ver. 0.1.0</element>
 
       <element name="about_gen_tagline" type="text" xpos="24" ypos="220" width="472" height="20"
                sizefont="12" color="label_ink" text-align="center" backgroundcolor="0,0,0,0">#[TRANSLATE_157]</element>

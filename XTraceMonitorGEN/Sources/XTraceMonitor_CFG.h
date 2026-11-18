@@ -84,6 +84,7 @@ inline int XTRACEMONITOR_CFG_LevelMaskForColorIndex(int colorindex)
 #define XTRACEMONITOR_CFG_ADDDATETIMECONSOLE            NL("adddatetimeconsole")
 #define XTRACEMONITOR_CFG_ADDIPCONSOLE                  NL("addipconsole")
 #define XTRACEMONITOR_CFG_TEXTTRACKING                  NL("texttracking")
+#define XTRACEMONITOR_CFG_MAXLINESCONSOLE               NL("maxlinesconsole")
 
 #define XTRACEMONITOR_CFG_SECTION_DYNDNS                NL("dyndns")
 #define XTRACEMONITOR_CFG_DYNDNS_ACTIVE                 NL("active")
@@ -111,6 +112,9 @@ inline int XTRACEMONITOR_CFG_LevelMaskForColorIndex(int colorindex)
 #define XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT    false
 #define XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT          false
 #define XTRACEMONITOR_CFG_TEXTTRACKING_DEFAULT          false
+#define XTRACEMONITOR_CFG_MAXLINESCONSOLE_DEFAULT       10000
+#define XTRACEMONITOR_CFG_MAXLINESCONSOLE_MIN           50
+#define XTRACEMONITOR_CFG_MAXLINESCONSOLE_MAX           1000000
 
 // Persisted integer values for [application] colortheme (extensible: add 3, 4, … later).
 #define XTRACEMONITOR_CFG_COLORTHEME_INVALID            0
@@ -212,6 +216,10 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
     bool                            GetTextTracking                         ();
     void                            SetTextTracking                         (bool enable);
 
+    int                             GetMaxLinesConsole                      ();
+    void                            SetMaxLinesConsole                      (int maxlines);
+    int                             ResolveMaxLinesConsole                  (int maxlines);
+
     XSTRING*                        GetSavedScreenPosition                  ();
     void                            SetSavedScreenPosition                  (int x, int y);
     void                            SetSavedScreenPosition                  (XCHAR* value);
@@ -300,6 +308,7 @@ class XTRACEMONITOR_CFG : public APPFLOWCFG
     bool                            adddatetimeconsole;
     bool                            addipconsole;
     bool                            texttracking;
+    int                             maxlinesconsole;
 
     bool                            filters_istextactive;
     XSTRING                         filters_text;

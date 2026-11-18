@@ -4,8 +4,8 @@
 *
 * @class      APP_GEN_DEFINES
 * @brief      GEN defines of the Application
-* @ingroup    UTILS
-UTILS
+* @ingroup    UTILITIES
+*
 * @copyright  EndoraSoft. All rights reserved.
 *
 * @cond

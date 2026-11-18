@@ -116,6 +116,8 @@ bool XTRACEMONITOR_SERVER::Ini()
 {
 #if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
   server.SetPriority(priority);
+  // Accept WM_COPYDATA even before UDP/UART open; traces route to Local (no internet).
+  XTRACESERVER::SetCopyDataReceiver(&server);
   return OpenFromCFG();
 #else
   return false;
@@ -146,6 +148,9 @@ bool XTRACEMONITOR_SERVER::End()
 bool XTRACEMONITOR_SERVER::RestartFromCFG()
 {
   CloseAll();
+#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+  XTRACESERVER::SetCopyDataReceiver(&server);
+#endif
   return OpenFromCFG();
 }
 
@@ -224,7 +229,8 @@ bool XTRACEMONITOR_SERVER::Pump()
 {
 #if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
   if(!owner) return false;
-  if(!server.IsOpen()) return false;
+  // UDP/UART open OR pending WM_COPYDATA queue (IPC does not require a stream).
+  if(!server.IsOpen() && !server.GetCount()) return false;
 
   XDWORD fed = 0;
 
@@ -244,7 +250,11 @@ bool XTRACEMONITOR_SERVER::Pump()
 
       if(!MessagePassesFilters(msg)) continue;
 
-      if(FeedConsole(msg)) fed++;
+      if(FeedConsole(msg))
+        {
+          fedcount++;
+          fed++;
+        }
     }
 
   RefreshValorHighlightRedraw();
@@ -284,6 +294,53 @@ XDWORD XTRACEMONITOR_SERVER::GetQueuedCount()
 {
 #if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
   return server.GetCount();
+#else
+  return 0;
+#endif
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XDWORD XTRACEMONITOR_SERVER::GetPushedCount()
+* @brief      Total messages pushed into the GEN queue.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XDWORD XTRACEMONITOR_SERVER::GetPushedCount()
+{
+#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+  return server.GetPushedCount();
+#else
+  return 0;
+#endif
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XDWORD XTRACEMONITOR_SERVER::GetFedCount()
+* @brief      Total messages successfully painted to the console.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XDWORD XTRACEMONITOR_SERVER::GetFedCount()
+{
+  return fedcount;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         XDWORD XTRACEMONITOR_SERVER::GetMaxMessages()
+* @brief      GEN queue capacity.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+XDWORD XTRACEMONITOR_SERVER::GetMaxMessages()
+{
+#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+  return server.GetMaxMessages();
 #else
   return 0;
 #endif
@@ -364,6 +421,7 @@ bool XTRACEMONITOR_SERVER::OpenFromCFG()
 bool XTRACEMONITOR_SERVER::CloseAll()
 {
 #if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+  XTRACESERVER::SetCopyDataReceiver(NULL);
   server.End();
 #endif
   listenport_open = 0;
@@ -674,9 +732,10 @@ bool XTRACEMONITOR_SERVER::FeedConsole(XTRACESERVER_MSG& msg)
 *---------------------------------------------------------------------------------------------------------------------*/
 void XTRACEMONITOR_SERVER::Clean()
 {
-  owner          = NULL;
-  highpriority   = true;
-  priority       = XTHREADPRIORITY_HIGH;
+  owner           = NULL;
+  highpriority    = true;
+  priority        = XTHREADPRIORITY_HIGH;
   listenport_open = 0;
-  uart_open      = false;
+  uart_open       = false;
+  fedcount        = 0;
 }

@@ -34,9 +34,18 @@
 
 #include "XTraceMonitor_GUI_Console.h"
 
+#include "GRP2DRebuildAreas.h"
+
 #include "UI_BoundaryLine.h"
+#include "UI_Element.h"
+#include "UI_Element_Animation.h"
 #include "UI_Element_Console.h"
+#include "UI_Element_Option.h"
+#include "UI_Layout.h"
 #include "UI_Manager.h"
+#include "UI_Property_Scrolleable.h"
+#include "UI_Skin.h"
+#include "UI_SkinCanvas.h"
 
 #include "XTraceMonitor.h"
 #include "XTraceMonitor_CFG.h"
@@ -109,6 +118,19 @@ UI_ELEMENT_CONSOLE* XTRACEMONITOR_GUI_CONSOLE::GetElement()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         UI_ELEMENT* XTRACEMONITOR_GUI_CONSOLE::GetTrackButton()
+* @brief      Returns the session follow button, or NULL if unresolved.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+UI_ELEMENT* XTRACEMONITOR_GUI_CONSOLE::GetTrackButton()
+{
+  return track_btn;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool XTRACEMONITOR_GUI_CONSOLE::Resolve()
 * @brief      Resolves the layout console element pointer.
 * @ingroup    UTILITIES
@@ -121,8 +143,11 @@ bool XTRACEMONITOR_GUI_CONSOLE::Resolve()
   consoleelement = (UI_ELEMENT_CONSOLE*)GEN_USERINTERFACE.Element_Get(NL("log_console"), UI_ELEMENT_TYPE_CONSOLE);
   if(!consoleelement) return false;
 
-  // XML defaults autoscroll=true; align with CFG texttracking (often off).
-  ApplyTextTracking();
+  // Multioption root: faces keep bg alpha 0 so Draw_Option skips the white erase plate under the PNG bubble.
+  track_btn = GEN_USERINTERFACE.Element_Get(NL("console_track_btn"), UI_ELEMENT_TYPE_MULTIOPTION);
+
+  // Seed session follow from CFG (button is session-only after that).
+  SyncTextTrackingFromCFG();
   return true;
 }
 
@@ -156,7 +181,10 @@ bool XTRACEMONITOR_GUI_CONSOLE::SeedStartupLines()
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_GUI_CONSOLE::Detach()
 {
-  consoleelement = NULL;
+  consoleelement     = NULL;
+  track_btn          = NULL;
+  selection_dragging = false;
+  selection_anchor   = 0;
   return true;
 }
 
@@ -184,6 +212,39 @@ bool XTRACEMONITOR_GUI_CONSOLE::ApplyLayoutGeometry(double panel_w, double conso
   consoleelement->SetIntrinsicWidth(panel_w);
   consoleelement->SetIntrinsicHeight(console_h);
   consoleelement->SetYPosition(console_bot);
+
+  // Overlay follow button at the console top-right (session toggle; not CFG).
+  // Keep clear of the overlay scrollbar gutter so Option/Anim rebuilds cannot bake the thumb.
+  if(track_btn && track_btn->GetBoundaryLine())
+    {
+      const double btn_sz = 40.0;
+      const double pad    = 2.0;
+      const double gutter = (double)UI_PROPERTY_SCROLLEABLE_BARWIDTH + 4.0;
+      double       left   = consoleelement->GetXPosition();
+      double       top    = UI_BOUNDARYLINE_EdgeTop(console_bot, console_h);
+      double       btn_x  = left + panel_w - pad - gutter - btn_sz;
+      double       btn_y  = top + pad + btn_sz; // EdgeBottom
+
+      track_btn->GetBoundaryLine()->x      = btn_x;
+      track_btn->GetBoundaryLine()->y      = btn_y;
+      track_btn->GetBoundaryLine()->width  = btn_sz;
+      track_btn->GetBoundaryLine()->height = btn_sz;
+      track_btn->SetIntrinsicWidth(btn_sz);
+      track_btn->SetIntrinsicHeight(btn_sz);
+      track_btn->SetXPosition(btn_x);
+      track_btn->SetYPosition(btn_y);
+      track_btn->SetVisible(true);
+      track_btn->SetZLevel(consoleelement->GetZLevel() + 1);
+
+      UI_LAYOUT* layout = GEN_USERINTERFACE.Element_GetLayout(track_btn);
+      UI_SKIN*   skin   = layout ? layout->GetSkin() : NULL;
+      if(skin) skin->CalculeBoundaryLine_AllElements(track_btn, true);
+
+      PackTrackButton();
+      SyncTrackButton();
+      GEN_USERINTERFACE.Element_PutToLastPositionLayout(track_btn);
+    }
+
   return true;
 }
 
@@ -201,6 +262,64 @@ bool XTRACEMONITOR_GUI_CONSOLE::SetToRedraw()
 {
   if(!consoleelement) return false;
   GEN_USERINTERFACE.Elements_SetToRedraw(consoleelement);
+  // Draw_Console fills its rect; keep the overlay in the same dirty pass, after the console.
+  RefreshTrackOverlay();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::RefreshTrackOverlay()
+* @brief      Re-arms the session follow button above the console fill for the next paint.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the button exists; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::RefreshTrackOverlay()
+{
+  if(!track_btn) return false;
+
+  // Console fill + DrawScrollBars already own the pixels under this overlay. Drop any cached
+  // Option/Anim/rebuild plates WITHOUT restoring — a PutBitmapNoAlpha of a prior thumb capture
+  // is what produced the double scrollbar fragments.
+  UI_LAYOUT* layout = GEN_USERINTERFACE.Element_GetLayout(track_btn);
+  UI_SKINCANVAS* skin = (layout && layout->GetSkin() &&
+                         (layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS))
+                        ? (UI_SKINCANVAS*)layout->GetSkin() : NULL;
+  if(skin)
+    {
+      GRP2DREBUILDAREA* area = skin->GetRebuildAreaByElement(track_btn);
+      if(area)
+        {
+          XVECTOR<GRP2DREBUILDAREA*>* areas = skin->GetRebuildAreas();
+          if(areas) areas->Delete(area);
+          GEN_DELETE area;
+        }
+
+      if(track_btn->GetComposeElements())
+        {
+          for(XDWORD c=0; c<track_btn->GetComposeElements()->GetSize(); c++)
+            {
+              UI_ELEMENT* face = track_btn->GetComposeElements()->Get(c);
+              if(!face) continue;
+              skin->DiscardOptionBackdrop(face);
+              if(!face->GetComposeElements()) continue;
+              for(XDWORD d=0; d<face->GetComposeElements()->GetSize(); d++)
+                {
+                  UI_ELEMENT* kid = face->GetComposeElements()->Get(d);
+                  if(!kid) continue;
+                  if(kid->GetType() == UI_ELEMENT_TYPE_ANIMATION) skin->DiscardAnimBackdrop(kid);
+                  if(kid->GetType() == UI_ELEMENT_TYPE_TEXT)      skin->DiscardTextBackdrop(kid);
+                }
+            }
+        }
+    }
+
+  PackTrackButton();
+  GEN_USERINTERFACE.Element_PutToLastPositionLayout(track_btn);
+  GEN_USERINTERFACE.Elements_SetToRedraw(track_btn, true);
   return true;
 }
 
@@ -208,7 +327,7 @@ bool XTRACEMONITOR_GUI_CONSOLE::SetToRedraw()
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool XTRACEMONITOR_GUI_CONSOLE::ApplyTextTracking()
-* @brief      Mirrors CFG texttracking onto console autoscroll (follow live tail).
+* @brief      Applies the session follow flag onto console autoscroll (does not touch CFG).
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the console exists; otherwise false.
@@ -219,7 +338,285 @@ bool XTRACEMONITOR_GUI_CONSOLE::ApplyTextTracking()
   if(!consoleelement) return false;
 
   // OFF: keep displacement (user/manual scroll). ON: pin to live tail each paint.
-  consoleelement->SetAutoscroll(XTRACEMONITOR_CFG::GetInstance(false).GetTextTracking());
+  consoleelement->SetAutoscroll(tracking_session);
+  SyncTrackButton();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::SyncTextTrackingFromCFG()
+* @brief      Reseeds the session follow flag from CFG texttracking, then applies it.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the console exists; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::SyncTextTrackingFromCFG()
+{
+  tracking_session = XTRACEMONITOR_CFG::GetInstance(false).GetTextTracking();
+  return ApplyTextTracking();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::HitTest(int screen_x, int screen_y)
+* @brief      Returns whether a screen point hits a console text line.
+* @ingroup    UTILITIES
+*
+* @param[in]  screen_x : Screen X coordinate.
+* @param[in]  screen_y : Screen Y coordinate.
+*
+* @return     bool : true if a line was hit; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::HitTest(int screen_x, int screen_y)
+{
+  if(!consoleelement) return false;
+  if(HitTestTrackButton(screen_x, screen_y)) return false;
+
+  XDWORD lineindex = 0;
+  return consoleelement->HitTestLine(screen_x, screen_y, lineindex);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::HitTestTrackButton(int screen_x, int screen_y)
+* @brief      Returns whether a screen point hits the session follow button.
+* @ingroup    UTILITIES
+*
+* @param[in]  screen_x : Screen X coordinate.
+* @param[in]  screen_y : Screen Y coordinate.
+*
+* @return     bool : true if the button was hit; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::HitTestTrackButton(int screen_x, int screen_y)
+{
+  if(!track_btn || !track_btn->IsVisible() || !track_btn->GetBoundaryLine()) return false;
+
+  double x   = track_btn->GetXPosition();
+  double y   = track_btn->GetYPosition();
+  double w   = track_btn->GetBoundaryLine()->width;
+  double h   = track_btn->GetBoundaryLine()->height;
+  double top = UI_BOUNDARYLINE_EdgeTop(y, h);
+
+  if((double)screen_x < x || (double)screen_x >= (x + w)) return false;
+  if((double)screen_y < top || (double)screen_y >= y) return false;
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::HandleElementSelected(UI_ELEMENT* element)
+* @brief      Handles UI selection for the session follow button (no CFG write).
+* @ingroup    UTILITIES
+*
+* @param[in]  element : Selected UI element.
+*
+* @return     bool : true if the element was handled; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::HandleElementSelected(UI_ELEMENT* element)
+{
+  if(!element || !element->GetName() || !track_btn) return false;
+  if(element->GetName()->Compare(NL("console_track_btn"), true)) return false;
+
+  tracking_session = !tracking_session;
+  ApplyTextTracking();
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::HandleSelection(int screen_x, int screen_y, bool extend, bool dragging)
+* @brief      Updates console line selection from a click or drag (range of lines).
+* @ingroup    UTILITIES
+*
+* @param[in]  screen_x : Screen X coordinate.
+* @param[in]  screen_y : Screen Y coordinate.
+* @param[in]  extend : True to extend from the current anchor (Shift or active drag).
+* @param[in]  dragging : True while the mouse is held and dragging.
+*
+* @return     bool : true if the console consumed the gesture; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::HandleSelection(int screen_x, int screen_y, bool extend, bool dragging)
+{
+  if(!consoleelement) return false;
+  if(HitTestTrackButton(screen_x, screen_y)) return false;
+
+  XDWORD lineindex = 0;
+  if(!consoleelement->HitTestLine(screen_x, screen_y, lineindex)) return false;
+
+  if(extend || dragging)
+    {
+      if(!consoleelement->Selection_Has() && !dragging) selection_anchor = lineindex;
+      if(dragging && !selection_dragging) selection_anchor = lineindex;
+      consoleelement->Selection_Set(selection_anchor, lineindex);
+    }
+   else
+    {
+      selection_anchor = lineindex;
+      consoleelement->Selection_Set(lineindex, lineindex);
+    }
+
+  selection_dragging = dragging;
+  GEN_USERINTERFACE.Elements_SetToRedraw(consoleelement);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_GUI_CONSOLE::EndSelectionDrag()
+* @brief      Clears the in-progress console selection drag state.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_GUI_CONSOLE::EndSelectionDrag()
+{
+  selection_dragging = false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::CopySelection()
+* @brief      Copies the selected console lines (or the whole buffer if none) to the clipboard.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::CopySelection()
+{
+  if(!consoleelement) return false;
+  return consoleelement->Selection_CopyToClipboard();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::SelectAll()
+* @brief      Selects every line in the console buffer.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the console exists; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::SelectAll()
+{
+  if(!consoleelement) return false;
+
+  consoleelement->Selection_SelectAll();
+  GEN_USERINTERFACE.Elements_SetToRedraw(consoleelement);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::PackTrackButton()
+* @brief      Pins every multioption face glyph into the overlay slot.
+* @note       INTERNAL
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the button was packed; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::PackTrackButton()
+{
+  if(!track_btn || !track_btn->GetBoundaryLine() || !track_btn->GetComposeElements()) return false;
+
+  const double glyph = track_btn->GetBoundaryLine()->width;
+  const double fx    = track_btn->GetXPosition();
+  const double fy    = track_btn->GetYPosition();
+  if(glyph < 1.0) return false;
+
+  for(XDWORD c=0; c<track_btn->GetComposeElements()->GetSize(); c++)
+    {
+      UI_ELEMENT* face = track_btn->GetComposeElements()->Get(c);
+      if(!face || !face->GetBoundaryLine()) continue;
+      if((face->GetType() != UI_ELEMENT_TYPE_BUTTON) && (face->GetType() != UI_ELEMENT_TYPE_OPTION)) continue;
+
+      face->GetBoundaryLine()->x      = 0.0;
+      face->GetBoundaryLine()->y      = 0.0;
+      face->GetBoundaryLine()->width  = glyph;
+      face->GetBoundaryLine()->height = glyph;
+      face->SetXPosition(fx);
+      face->SetYPosition(fy);
+
+      UI_ELEMENT_OPTION*    opt  = (UI_ELEMENT_OPTION*)face;
+      UI_ELEMENT_ANIMATION* anim = opt->Get_UIAnimation();
+      if(!anim || !anim->GetBoundaryLine()) continue;
+
+      anim->GetBoundaryLine()->x      = 0.0;
+      anim->GetBoundaryLine()->y      = 0.0;
+      anim->GetBoundaryLine()->width  = glyph;
+      anim->GetBoundaryLine()->height = glyph;
+      anim->SetXPosition(fx);
+      anim->SetYPosition(fy);
+
+      if(anim->GetComposeElements())
+        {
+          for(XDWORD i=0; i<anim->GetComposeElements()->GetSize(); i++)
+            {
+              UI_ELEMENT* img = anim->GetComposeElements()->Get(i);
+              if(!img || !img->GetBoundaryLine()) continue;
+              img->GetBoundaryLine()->x      = 0.0;
+              img->GetBoundaryLine()->y      = 0.0;
+              img->GetBoundaryLine()->width  = glyph;
+              img->GetBoundaryLine()->height = glyph;
+              img->SetXPosition(fx);
+              img->SetYPosition(fy);
+              img->SetMustReDraw(true);
+            }
+        }
+
+      anim->SetMustReDraw(true);
+      face->SetMustReDraw(true);
+    }
+
+  track_btn->SetMustReDraw(true);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::SyncTrackButton()
+* @brief      Mirrors the session follow flag onto every face glyph (0=off, 1=on).
+* @note       INTERNAL
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the button was updated; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::SyncTrackButton()
+{
+  if(!track_btn || !track_btn->GetComposeElements()) return false;
+
+  const XDWORD frame = tracking_session ? 1 : 0;
+
+  for(XDWORD c=0; c<track_btn->GetComposeElements()->GetSize(); c++)
+    {
+      UI_ELEMENT* face = track_btn->GetComposeElements()->Get(c);
+      if(!face) continue;
+      if((face->GetType() != UI_ELEMENT_TYPE_BUTTON) && (face->GetType() != UI_ELEMENT_TYPE_OPTION)) continue;
+
+      UI_ELEMENT_OPTION*    opt  = (UI_ELEMENT_OPTION*)face;
+      UI_ELEMENT_ANIMATION* anim = opt->Get_UIAnimation();
+      if(anim) anim->IndexImage_Set(frame);
+    }
+
+  GEN_USERINTERFACE.Elements_SetToRedraw(track_btn, true);
   return true;
 }
 
@@ -234,6 +631,10 @@ bool XTRACEMONITOR_GUI_CONSOLE::ApplyTextTracking()
 *---------------------------------------------------------------------------------------------------------------------*/
 void XTRACEMONITOR_GUI_CONSOLE::Clean()
 {
-  owner          = NULL;
-  consoleelement = NULL;
+  owner              = NULL;
+  consoleelement     = NULL;
+  track_btn          = NULL;
+  tracking_session   = false;
+  selection_dragging = false;
+  selection_anchor   = 0;
 }

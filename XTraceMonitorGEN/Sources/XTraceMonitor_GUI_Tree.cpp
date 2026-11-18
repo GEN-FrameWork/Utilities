@@ -239,15 +239,7 @@ bool XTRACEMONITOR_GUI_TREE::Seed()
   if(!owner) return false;
 
   owner->origins.SetOwner(owner);
-
-  UI_ELEMENT_CONSOLE* console = owner->gui_console.GetElement();
-  if(console)
-    {
-      XDWORD cap = console->GetMaxLinesOff();
-      if(cap < console->GetMaxLines()) cap = console->GetMaxLines();
-      if(cap < XTRACEMONITOR_ORIGINS_HISTORY_DEFAULT_MAX) cap = XTRACEMONITOR_ORIGINS_HISTORY_DEFAULT_MAX;
-      owner->origins.SetHistoryMax(cap);
-    }
+  owner->origins.ApplyHistoryMaxFromCFG();
 
   return owner->origins.SeedTree();
 }
@@ -593,6 +585,7 @@ bool XTRACEMONITOR_GUI_TREE::ShowGeoTooltipForIP(XDWORD publicIP, UI_ELEMENT_TRE
   raise_chrome(NL("delstatus-btn")  , UI_ELEMENT_TYPE_MULTIOPTION);
   raise_chrome(NL("filter-btn")     , UI_ELEMENT_TYPE_MULTIOPTION);
   raise_chrome(NL("brand_toolbar")  , UI_ELEMENT_TYPE_IMAGE);
+  raise_chrome(NL("brand-ver-lbl")  , UI_ELEMENT_TYPE_FORM);
   raise_chrome(NL("runstop-lbl")    , UI_ELEMENT_TYPE_FORM);
   raise_chrome(NL("clear-lbl")      , UI_ELEMENT_TYPE_FORM);
   raise_chrome(NL("delstatus-lbl")  , UI_ELEMENT_TYPE_FORM);

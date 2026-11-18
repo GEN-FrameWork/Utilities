@@ -190,8 +190,11 @@ bool XTRACEMONITOR_FORM_ABOUT::RefreshContent()
     {
       XSTRING ver;
       ver.Empty();
-      ver.AddFormat(NL("%d.%d.%d"), APPLICATION_VERSION, APPLICATION_SUBVERSION, APPLICATION_SUBVERSIONERR);
+      ver.AddFormat(NL("Ver. %d.%d.%d"), APPLICATION_VERSION, APPLICATION_SUBVERSION, APPLICATION_SUBVERSIONERR);
       about_version->GetText()->Set(ver.Get());
+      about_version->SetFontFace(NL("bold"));
+      about_version->SetSizeFont(16);
+      // text-align center + full modal width keeps it centered under about_brand.
 
       // Same light blue as the GEN Framework mark on the main toolbar (not theme label_ink).
       if(about_version->GetColor())
@@ -344,7 +347,8 @@ bool XTRACEMONITOR_FORM_ABOUT::ApplyGeometry()
   const double url_to_copy    = 14.0;
   const double brand_y        = modal_h - title_pad - title_h - title_to_brand - brand_h;
   const double name_y         = brand_y - brand_to_name - line_h;
-  const double ver_y          = name_y - line_gap - 20.0;
+  const double ver_h          = 24.0;
+  const double ver_y          = name_y - line_gap - ver_h;
   const double tag_y          = ver_y - ver_to_tag - 20.0;
   const double gen_y          = tag_y - tag_to_gen - gen_h;
   const double url_y          = gen_y - gen_to_url - 18.0;
@@ -353,7 +357,7 @@ bool XTRACEMONITOR_FORM_ABOUT::ApplyGeometry()
 
   place_child((UI_ELEMENT*)about_brand, (modal_w - brand_w) * 0.5, brand_y, brand_w, brand_h);
   place_child((UI_ELEMENT*)about_app_name    , pad, name_y, text_w, line_h);
-  place_child((UI_ELEMENT*)about_version     , pad, ver_y , text_w, 20.0);
+  place_child((UI_ELEMENT*)about_version     , pad, ver_y , text_w, ver_h);
   place_child((UI_ELEMENT*)about_gen_tagline , pad, tag_y , text_w, 20.0);
   place_child((UI_ELEMENT*)about_gen_dark , (modal_w - gen_w) * 0.5, gen_y, gen_w, gen_h);
   place_child((UI_ELEMENT*)about_gen_light, (modal_w - gen_w) * 0.5, gen_y, gen_w, gen_h);

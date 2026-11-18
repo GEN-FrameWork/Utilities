@@ -2,12 +2,29 @@
 *
 * @file       XTraceMonitor_Origins.h
 *
+* @class      XTRACEMONITOR_ORIGINS
 * @brief      Tree origins + single console history (BelongsTo + replay)
 * @ingroup    UTILITIES
 *
 * @copyright  EndoraSoft. All rights reserved.
 *
-*---------------------------------------------------------------------------------------------------------------------*/
+* @cond
+* Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+* documentation files(the "Software"), to deal in the Software without restriction, including without limitation
+* the rights to use, copy, modify, merge, publish, distribute, sublicense, and/ or sell copies of the Software,
+* and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+* the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+* THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+* @endcond
+*
+* --------------------------------------------------------------------------------------------------------------------*/
 
 #pragma once
 
@@ -32,15 +49,14 @@ enum XTRACEMONITOR_ORIGIN_KIND
 };
 
 #define XTRACEMONITOR_ORIGIN_UART_IP              0xFFFFFFFFu
+// WM_COPYDATA local IP packed by XWINDOWSTRACE (1.1.1.1); maps to Local (no internet).
+#define XTRACEMONITOR_ORIGIN_COPYDATA_LOCALIP     0x01010101u
 #define XTRACEMONITOR_ORIGINS_HISTORY_DEFAULT_MAX 8000
 #define XTRACEMONITOR_SAVED_DIR                   NL("saved")
 
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
 
 struct UI_ELEMENT_TREE_NODE;
-class  UI_ELEMENT_TREE;
-class  UI_ELEMENT_CONSOLE;
-class  UI_ELEMENT_PROPERTYLIST;
 class  XTRACEMONITOR;
 
 class XTRACEMONITOR_ORIGIN
@@ -52,7 +68,7 @@ class XTRACEMONITOR_ORIGIN
     XTRACEMONITOR_ORIGIN_KIND       kind;
     XDWORD                          publicIP;
     XDWORD                          localIP;
-    bool                            public_from_peer;               // legacy IP* label
+    bool                            public_from_peer;
     XSTRING                         name;
     UI_ELEMENT_TREE_NODE*           node;
     XTRACE_STATUS_MSGS              status_msgs;
@@ -111,22 +127,27 @@ class XTRACEMONITOR_ORIGINS
     bool                            RebuildSelectedValor            ();
 
     void                            SetHistoryMax                   (XDWORD maxlines);
+    XDWORD                          GetHistoryMax                   ();
+    bool                            ApplyHistoryMaxFromCFG          ();
 
-    bool                            RefreshIPCounters               ();
     bool                            QueuePublicIPGeolocation        ();
+    bool                            RefreshIPCounters               ();
 
   private:
 
     XTRACEMONITOR_ORIGIN*           AddOrigin                       (XTRACEMONITOR_ORIGIN_KIND kind, XDWORD publicIP, XDWORD localIP, XCHAR* label, XCHAR* icon, UI_ELEMENT_TREE_NODE* father, bool public_from_peer = false);
     XTRACEMONITOR_ORIGIN*           FindExact                       (XDWORD publicIP, XDWORD localIP);
     XTRACEMONITOR_ORIGIN*           FindCFGByPublicIP               (XDWORD publicIP);
+    XTRACEMONITOR_ORIGIN*           ResolveOwnerOrigin              (XDWORD publicIP, XDWORD localIP);
 
+    XDWORD                          CountLinesForOrigin             (XTRACEMONITOR_ORIGIN* origin);
+    bool                            RecycleOriginIfNeeded           (XTRACEMONITOR_ORIGIN* origin);
     bool                            FormatIPLabel                   (XDWORD ip, bool starred, XSTRING& out);
     bool                            IconForIP                       (XDWORD ip, XCHAR*& icon);
-    bool                            TrimHistory                     ();
+    bool                            SanitizeFileToken               (XSTRING& token);
     bool                            ResolveCFGOriginName            (XDWORD publicIP, XSTRING& out);
     bool                            BuildSaveFileName               (XTRACEMONITOR_ORIGIN* origin, XSTRING& out);
-    bool                            SanitizeFileToken               (XSTRING& token);
+    bool                            BuildRecycleStatusLabel         (XTRACEMONITOR_ORIGIN* origin, XSTRING& out);
 
     void                            Clean                           ();
 
@@ -140,3 +161,5 @@ class XTRACEMONITOR_ORIGINS
     XTRACEMONITOR_ORIGIN*           uart;
     XTRACEMONITOR_ORIGIN*           selected;
 };
+
+/*---- INLINE FUNCTIONS + PROTOTYPES ---------------------------------------------------------------------------------*/

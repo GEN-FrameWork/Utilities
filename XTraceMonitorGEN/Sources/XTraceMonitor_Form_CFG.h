@@ -95,11 +95,13 @@ class XTRACEMONITOR_FORM_CFG
     bool                            SyncRadiosFromDraft                     ();
     bool                            SyncChecksFromDraft                     ();
     bool                            SyncPortFromDraft                       ();
+    bool                            SyncMaxLinesFromDraft                   ();
     bool                            SyncUARTFromDraft                       ();
     bool                            SyncDynDNSFromDraft                     ();
     int                             ReadDraftFromRadios                     ();
     bool                            ReadDraftFromChecks                     ();
     bool                            ReadDraftFromPort                       ();
+    bool                            ReadDraftFromMaxLines                   ();
     bool                            ReadDraftFromUART                       ();
     bool                            ReadDraftFromDynDNS                     ();
     bool                            ApplyUARTFieldVisual                    ();
@@ -136,6 +138,8 @@ class XTRACEMONITOR_FORM_CFG
     UI_ELEMENT_CHECKBOX*            chk_texttracking;
     UI_ELEMENT*                     lbl_udplistenport;
     UI_ELEMENT_COMBO*               edit_udplistenport;
+    UI_ELEMENT*                     lbl_maxlinesconsole;
+    UI_ELEMENT_EDITTEXT*            edit_maxlinesconsole;
     UI_ELEMENT*                     lbl_uartport;
     UI_ELEMENT_COMBO*               edit_uartport;
 
@@ -172,6 +176,8 @@ class XTRACEMONITOR_FORM_CFG
 
     int                             udplistenport_committed;
     int                             udplistenport_draft;
+    int                             maxlinesconsole_committed;
+    int                             maxlinesconsole_draft;
 
     XSTRING                         uartport_committed;
     XSTRING                         uartport_draft;

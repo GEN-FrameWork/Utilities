@@ -150,6 +150,8 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
   chk_texttracking         = (UI_ELEMENT_CHECKBOX*)GEN_USERINTERFACE.Element_Get(NL("chk_texttracking")      , UI_ELEMENT_TYPE_CHECKBOX);
   lbl_udplistenport        = GEN_USERINTERFACE.Element_Get(NL("lbl_udplistenport"), UI_ELEMENT_TYPE_TEXT);
   edit_udplistenport       = (UI_ELEMENT_COMBO*)GEN_USERINTERFACE.Element_Get(NL("edit_udplistenport"), UI_ELEMENT_TYPE_COMBO);
+  lbl_maxlinesconsole      = GEN_USERINTERFACE.Element_Get(NL("lbl_maxlinesconsole"), UI_ELEMENT_TYPE_TEXT);
+  edit_maxlinesconsole     = (UI_ELEMENT_EDITTEXT*)GEN_USERINTERFACE.Element_Get(NL("edit_maxlinesconsole"), UI_ELEMENT_TYPE_EDITTEXT);
   lbl_uartport             = GEN_USERINTERFACE.Element_Get(NL("lbl_uartport"), UI_ELEMENT_TYPE_TEXT);
   edit_uartport            = (UI_ELEMENT_COMBO*)GEN_USERINTERFACE.Element_Get(NL("edit_uartport"), UI_ELEMENT_TYPE_COMBO);
   dyndns_group             = (UI_ELEMENT_RADIOGROUP*)GEN_USERINTERFACE.Element_Get(NL("dyndns_group"), UI_ELEMENT_TYPE_RADIOGROUP);
@@ -181,6 +183,11 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
       return false;
     }
 
+  if(!lbl_maxlinesconsole || !edit_maxlinesconsole)
+    {
+      return false;
+    }
+
   if(!lbl_uartport || !edit_uartport)
     {
       return false;
@@ -204,6 +211,7 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
   if(!SyncRadiosFromDraft()) return false;
   if(!SyncChecksFromDraft()) return false;
   if(!SyncPortFromDraft()) return false;
+  if(!SyncMaxLinesFromDraft()) return false;
   if(!SyncUARTFromDraft()) return false;
   if(!RebuildTargetCombos()) return false;
   if(!SyncDynDNSFromDraft()) return false;
@@ -371,6 +379,12 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   place_child((UI_ELEMENT*)chk_geolocalizationpublicip, save_chk_x, save_y, save_chk_w, chk_h);
   save_y -= (chk_h + save_gap);
   place_child((UI_ELEMENT*)chk_showaboutboot, save_chk_x, save_y, save_chk_w, chk_h);
+  save_y -= (port_label_h + save_gap);
+  place_child(lbl_maxlinesconsole, save_chk_x, save_y, save_chk_w, port_label_h);
+  save_y -= (port_lbl_gap + port_edit_h);
+  // ~1/3 narrower than the checkbox column; edittext (spin +/- only, no combo menu).
+  const double maxlines_edit_w = save_chk_w * (2.0 / 3.0);
+  place_child((UI_ELEMENT*)edit_maxlinesconsole, save_chk_x, save_y, maxlines_edit_w, port_edit_h);
 
   // Añadir + seguimiento — left column under Color Theme (prior layout restored).
   const double add_chk_w  = 320.0;
@@ -406,6 +420,8 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
       if(chk_savescreensize)       skin->CalculeBoundaryLine_AllElements(chk_savescreensize, true);
       if(chk_geolocalizationpublicip) skin->CalculeBoundaryLine_AllElements(chk_geolocalizationpublicip, true);
       if(chk_showaboutboot)        skin->CalculeBoundaryLine_AllElements(chk_showaboutboot, true);
+      if(lbl_maxlinesconsole)      skin->CalculeBoundaryLine_AllElements(lbl_maxlinesconsole, true);
+      if(edit_maxlinesconsole)     skin->CalculeBoundaryLine_AllElements(edit_maxlinesconsole, true);
       if(chk_adddatetimeconsole)   skin->CalculeBoundaryLine_AllElements(chk_adddatetimeconsole, true);
       if(chk_addipconsole)         skin->CalculeBoundaryLine_AllElements(chk_addipconsole, true);
       if(chk_texttracking)         skin->CalculeBoundaryLine_AllElements(chk_texttracking, true);
@@ -501,6 +517,10 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
     place_child((UI_ELEMENT*)chk_geolocalizationpublicip, save_chk_x, sy, save_chk_w, chk_h);
     sy -= (chk_h + save_gap);
     place_child((UI_ELEMENT*)chk_showaboutboot, save_chk_x, sy, save_chk_w, chk_h);
+    sy -= (port_label_h + save_gap);
+    place_child(lbl_maxlinesconsole, save_chk_x, sy, save_chk_w, port_label_h);
+    sy -= (port_lbl_gap + port_edit_h);
+    place_child((UI_ELEMENT*)edit_maxlinesconsole, save_chk_x, sy, save_chk_w * (2.0 / 3.0), port_edit_h);
 
     double ay = theme_y - add_margin - chk_h;
     place_child((UI_ELEMENT*)chk_adddatetimeconsole, left_x, ay, add_chk_w, chk_h);
@@ -592,6 +612,8 @@ bool XTRACEMONITOR_FORM_CFG::ApplyGeometry()
   if(chk_savescreensize)       chk_savescreensize->SetMustReDraw(true);
   if(chk_geolocalizationpublicip) chk_geolocalizationpublicip->SetMustReDraw(true);
   if(chk_showaboutboot)        chk_showaboutboot->SetMustReDraw(true);
+  if(lbl_maxlinesconsole)      lbl_maxlinesconsole->SetMustReDraw(true);
+  if(edit_maxlinesconsole)     edit_maxlinesconsole->SetMustReDraw(true);
   if(chk_adddatetimeconsole)   chk_adddatetimeconsole->SetMustReDraw(true);
   if(chk_addipconsole)         chk_addipconsole->SetMustReDraw(true);
   if(chk_texttracking)         chk_texttracking->SetMustReDraw(true);
@@ -779,6 +801,7 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
       savedscreenposition_draft      = savedscreenposition_committed;
       savedscreensize_draft          = savedscreensize_committed;
       udplistenport_draft            = udplistenport_committed;
+      maxlinesconsole_draft          = maxlinesconsole_committed;
       uartport_draft                 = uartport_committed;
       dyndns_active_draft            = dyndns_active_committed;
       dyndns_login_draft             = dyndns_login_committed;
@@ -786,6 +809,7 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
       if(!SyncRadiosFromDraft()) return false;
       if(!SyncChecksFromDraft()) return false;
       if(!SyncPortFromDraft()) return false;
+      if(!SyncMaxLinesFromDraft()) return false;
       if(!SyncUARTFromDraft()) return false;
       if(!RebuildTargetCombos()) return false;
       if(!SyncDynDNSFromDraft()) return false;
@@ -952,6 +976,11 @@ bool XTRACEMONITOR_FORM_CFG::HandleElementChangeContents(UI_ELEMENT* element)
       return ReadDraftFromPort();
     }
 
+  if(edit_maxlinesconsole && (element == (UI_ELEMENT*)edit_maxlinesconsole))
+    {
+      return ReadDraftFromMaxLines();
+    }
+
   if(edit_uartport && (element == (UI_ELEMENT*)edit_uartport))
     {
       return ReadDraftFromUART();
@@ -1083,6 +1112,9 @@ bool XTRACEMONITOR_FORM_CFG::LoadCommittedFromCFG()
 
   udplistenport_committed = cfg.ResolveUDPListenPort(cfg.GetUDPListenPort());
   udplistenport_draft     = udplistenport_committed;
+
+  maxlinesconsole_committed = cfg.GetMaxLinesConsole();
+  maxlinesconsole_draft     = maxlinesconsole_committed;
 
   if(cfg.GetUARTPort()) uartport_committed = (*cfg.GetUARTPort());
                    else uartport_committed.Empty();
@@ -1254,6 +1286,25 @@ bool XTRACEMONITOR_FORM_CFG::SyncPortFromDraft()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool XTRACEMONITOR_FORM_CFG::SyncMaxLinesFromDraft()
+* @brief      Applies draft max console lines to the numeric combo.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::SyncMaxLinesFromDraft()
+{
+  if(!edit_maxlinesconsole) return false;
+
+  maxlinesconsole_draft = XTRACEMONITOR_CFG::GetInstance(false).ResolveMaxLinesConsole(maxlinesconsole_draft);
+  edit_maxlinesconsole->SetNumericValue(maxlinesconsole_draft);
+  GEN_USERINTERFACE.Elements_SetToRedraw(edit_maxlinesconsole);
+  if(lbl_maxlinesconsole) GEN_USERINTERFACE.Elements_SetToRedraw(lbl_maxlinesconsole);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool XTRACEMONITOR_FORM_CFG::SyncUARTFromDraft()
 * @brief      Applies draft UART serial-line string to the edittext.
 * @ingroup    UTILITIES
@@ -1345,6 +1396,32 @@ bool XTRACEMONITOR_FORM_CFG::ReadDraftFromPort()
 
   udplistenport_draft = XTRACEMONITOR_CFG::GetInstance(false).ResolveUDPListenPort(edit_udplistenport->GetNumericValue());
   edit_udplistenport->SetNumericValue(udplistenport_draft);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_FORM_CFG::ReadDraftFromMaxLines()
+* @brief      Reads and clamps max console lines from the numeric combo.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_FORM_CFG::ReadDraftFromMaxLines()
+{
+  if(!edit_maxlinesconsole) return false;
+
+  if(GEN_USERINTERFACE.EditText_GetFocus() == (UI_ELEMENT*)edit_maxlinesconsole)
+    {
+      if(edit_maxlinesconsole->GetText() && !edit_maxlinesconsole->GetText()->IsEmpty())
+        {
+          maxlinesconsole_draft = XTRACEMONITOR_CFG::GetInstance(false).ResolveMaxLinesConsole(edit_maxlinesconsole->GetNumericValue());
+        }
+      return true;
+    }
+
+  maxlinesconsole_draft = XTRACEMONITOR_CFG::GetInstance(false).ResolveMaxLinesConsole(edit_maxlinesconsole->GetNumericValue());
+  edit_maxlinesconsole->SetNumericValue(maxlinesconsole_draft);
   return true;
 }
 
@@ -1769,6 +1846,7 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   colortheme_draft = XTRACEMONITOR_CFG::GetInstance(false).ResolveColorTheme(colortheme_draft);
   ReadDraftFromChecks();
   ReadDraftFromPort();
+  ReadDraftFromMaxLines();
   ReadDraftFromUART();
   ReadDraftFromDynDNS();
   if(chk_dyndns_active) dyndns_active_draft = chk_dyndns_active->GetStatus();
@@ -1797,11 +1875,13 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   // window back to the values loaded when the modal opened. Live geometry is captured below
   // via PersistScreenGeometryToCFG when the matching save checkboxes are on.
   cfg.SetUDPListenPort(udplistenport_draft);
+  cfg.SetMaxLinesConsole(maxlinesconsole_draft);
   if(uart_ok) cfg.SetUARTPort(&uartport_draft);
   cfg.SetAddDateTimeConsole(adddatetimeconsole_draft);
   cfg.SetAddIPConsole(addipconsole_draft);
   cfg.SetTextTracking(texttracking_draft);
-  owner->gui_console.ApplyTextTracking();
+  owner->gui_console.SyncTextTrackingFromCFG();
+  owner->origins.ApplyHistoryMaxFromCFG();
 
   cfg.SetDynDNSActive(dyndns_active_draft);
   if(dyndns_active_draft)
@@ -1845,6 +1925,7 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   savedscreenposition_committed = savedscreenposition_draft;
   savedscreensize_committed     = savedscreensize_draft;
   udplistenport_committed       = udplistenport_draft;
+  maxlinesconsole_committed     = maxlinesconsole_draft;
   dyndns_active_committed       = dyndns_active_draft;
   if(dyndns_active_committed)
     {
@@ -1929,6 +2010,7 @@ bool XTRACEMONITOR_FORM_CFG::OnCancel()
   savedscreenposition_draft      = savedscreenposition_committed;
   savedscreensize_draft          = savedscreensize_committed;
   udplistenport_draft            = udplistenport_committed;
+  maxlinesconsole_draft          = maxlinesconsole_committed;
   uartport_draft                 = uartport_committed;
   dyndns_active_draft            = dyndns_active_committed;
   dyndns_login_draft             = dyndns_login_committed;
@@ -1936,6 +2018,7 @@ bool XTRACEMONITOR_FORM_CFG::OnCancel()
   SyncRadiosFromDraft();
   SyncChecksFromDraft();
   SyncPortFromDraft();
+  SyncMaxLinesFromDraft();
   SyncUARTFromDraft();
   SyncDynDNSFromDraft();
   ApplyDynDNSFieldsEnabled();
@@ -1971,6 +2054,7 @@ bool XTRACEMONITOR_FORM_CFG::OnDefault()
   savedscreenposition_draft.Format(NL("%d, %d"), 0, 0);
   savedscreensize_draft.Format(NL("%d, %d"), XTRACEMONITOR_WINDOW_WIDTH, XTRACEMONITOR_WINDOW_HEIGHT);
   udplistenport_draft      = XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;
+  maxlinesconsole_draft    = XTRACEMONITOR_CFG_MAXLINESCONSOLE_DEFAULT;
   uartport_draft           = XTRACEMONITOR_CFG_UARTPORT_DEFAULT;
   dyndns_active_draft      = XTRACEMONITOR_CFG_DYNDNS_ACTIVE_DEFAULT;
   dyndns_login_draft.Empty();
@@ -1979,6 +2063,7 @@ bool XTRACEMONITOR_FORM_CFG::OnDefault()
   SyncRadiosFromDraft();
   SyncChecksFromDraft();
   SyncPortFromDraft();
+  SyncMaxLinesFromDraft();
   SyncUARTFromDraft();
   SyncDynDNSFromDraft();
   ApplyDynDNSFieldsEnabled();
@@ -2020,6 +2105,8 @@ void XTRACEMONITOR_FORM_CFG::Clean()
   chk_texttracking          = NULL;
   lbl_udplistenport         = NULL;
   edit_udplistenport        = NULL;
+  lbl_maxlinesconsole       = NULL;
+  edit_maxlinesconsole      = NULL;
   lbl_uartport              = NULL;
   edit_uartport             = NULL;
   dyndns_group              = NULL;
@@ -2051,6 +2138,8 @@ void XTRACEMONITOR_FORM_CFG::Clean()
   savedscreensize_draft.Empty();
   udplistenport_committed   = XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;
   udplistenport_draft       = XTRACEMONITOR_CFG_UDPLISTENPORT_DEFAULT;
+  maxlinesconsole_committed = XTRACEMONITOR_CFG_MAXLINESCONSOLE_DEFAULT;
+  maxlinesconsole_draft     = XTRACEMONITOR_CFG_MAXLINESCONSOLE_DEFAULT;
   uartport_committed        = XTRACEMONITOR_CFG_UARTPORT_DEFAULT;
   uartport_draft            = XTRACEMONITOR_CFG_UARTPORT_DEFAULT;
   uartport_valid            = true;

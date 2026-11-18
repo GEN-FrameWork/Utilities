@@ -1372,5 +1372,19 @@
       <text lang="German"><![CDATA[Konsole konnte nicht gespeichert werden.]]></text>
       <text lang="Chinese"><![CDATA[保存控制台失败。]]></text>
     </sentence>
+    <sentence id="00214" fixed="0">
+      <text lang="Spanish"><![CDATA[Max. numero lineas consola]]></text>
+      <text lang="English"><![CDATA[Max. console line count]]></text>
+      <text lang="French"><![CDATA[Max. lignes console]]></text>
+      <text lang="German"><![CDATA[Max. Konsolenzeilen]]></text>
+      <text lang="Chinese"><![CDATA[控制台最大行数]]></text>
+    </sentence>
+    <sentence id="00215" fixed="0">
+      <text lang="Spanish"><![CDATA[Reciclada consola %s]]></text>
+      <text lang="English"><![CDATA[Recycled console %s]]></text>
+      <text lang="French"><![CDATA[Console recyclée %s]]></text>
+      <text lang="German"><![CDATA[Konsole recycelt %s]]></text>
+      <text lang="Chinese"><![CDATA[已回收控制台 %s]]></text>
+    </sentence>
   </translations>
 </lng>

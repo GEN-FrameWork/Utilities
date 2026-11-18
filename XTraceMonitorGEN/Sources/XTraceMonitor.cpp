@@ -582,7 +582,13 @@ bool XTRACEMONITOR::AppProc_FirstUpdate()
   inpdevice = GEN_INPMANAGER.GetDevice(INPDEVICE_TYPE_KEYBOARD);
   if(inpdevice)
     {
-      button[XTRACEMONITOR_BUTTON_ESC] = inpdevice->GetButton(INPBUTTON_ID_ESCAPE);
+      button[XTRACEMONITOR_BUTTON_ESC]         = inpdevice->GetButton(INPBUTTON_ID_ESCAPE);
+      button[XTRACEMONITOR_BUTTON_A]           = inpdevice->GetButton(INPBUTTON_ID_A);
+      button[XTRACEMONITOR_BUTTON_C]           = inpdevice->GetButton(INPBUTTON_ID_C);
+      button[XTRACEMONITOR_BUTTON_CTRL_LEFT]   = inpdevice->GetButton(INPBUTTON_ID_CONTROL_LEFT);
+      button[XTRACEMONITOR_BUTTON_CTRL_RIGHT]  = inpdevice->GetButton(INPBUTTON_ID_CONTROL_RIGHT);
+      button[XTRACEMONITOR_BUTTON_SHIFT_LEFT]  = inpdevice->GetButton(INPBUTTON_ID_SHIFT_LEFT);
+      button[XTRACEMONITOR_BUTTON_SHIFT_RIGHT] = inpdevice->GetButton(INPBUTTON_ID_SHIFT_RIGHT);
     }
 
   inpdevice = GEN_INPMANAGER.GetDevice(INPDEVICE_TYPE_MOUSE);
@@ -694,6 +700,12 @@ bool XTRACEMONITOR::AppProc_Update()
                                                   XTM_ProbeApplyTipActions();
 #endif
 
+                                                  // Saturation sparkline keeps sampling/painting under modals (background).
+                                                  // InternetStatus still skips while modal (TextBackdrop path).
+                                                  // SatChart before InternetStatus so both share the same 1 Hz window
+                                                  // (InternetStatus_Update resets netstatus_timer when due; SatChart
+                                                  // resets it itself when the modal suppresses InternetStatus).
+                                                  SatChart_Update(false);
                                                   if(!GEN_USERINTERFACE.Element_IsModalActive())
                                                     {
                                                       InternetStatus_Update(false);
@@ -703,6 +715,12 @@ bool XTRACEMONITOR::AppProc_Update()
                                                   const double t_input0 = XTM_ProbeNowMs();
 #endif
                                                   UpdateInput();
+                                                  // Console fill wipes its rect; re-arm the follow overlay only when
+                                                  // the console itself will repaint (every-frame dirty baked scrollbar ghosts).
+                                                  if(gui_console.GetElement() && gui_console.GetElement()->MustReDraw())
+                                                    {
+                                                      gui_console.RefreshTrackOverlay();
+                                                    }
 #if XTM_FPS_PROBE
                                                   const double ms_input = XTM_ProbeNowMs() - t_input0;
                                                   // Re-apply tip after UpdateGeoTooltip so probe owns tip state.
@@ -868,6 +886,8 @@ bool XTRACEMONITOR::UpdateInput()
             }
 
           bool mouseheld = (button[XTRACEMONITOR_BUTTON_MOUSE] && button[XTRACEMONITOR_BUTTON_MOUSE]->IsPressed());
+          bool shiftdown = (button[XTRACEMONITOR_BUTTON_SHIFT_LEFT]  && button[XTRACEMONITOR_BUTTON_SHIFT_LEFT]->IsPressed()) ||
+                           (button[XTRACEMONITOR_BUTTON_SHIFT_RIGHT] && button[XTRACEMONITOR_BUTTON_SHIFT_RIGHT]->IsPressed());
 
           if(mouseheld)
             {
@@ -876,12 +896,23 @@ bool XTRACEMONITOR::UpdateInput()
                 {
                   edit_owned = GEN_USERINTERFACE.EditText_OnPointer(now_cursor_x, now_cursor_y, true);
                 }
-              if(bar_owned || edit_owned) cursor->GetMotion()->Reset();
+              if(bar_owned || edit_owned)
+                {
+                  cursor->GetMotion()->Reset();
+                }
+               else if(!GEN_USERINTERFACE.Element_IsModalActive() &&
+                       (shiftdown || gui_console.HitTest(now_cursor_x, now_cursor_y)))
+                {
+                  // Click-drag (or Shift-drag) selects a contiguous range of console lines.
+                  gui_console.HandleSelection(now_cursor_x, now_cursor_y, shiftdown, true);
+                  cursor->GetMotion()->Reset();
+                }
             }
            else
             {
               bar_owned  = GEN_USERINTERFACE.ScrollBar_OnPointer(cursor_x, cursor_y, false);
               edit_owned = GEN_USERINTERFACE.EditText_OnPointer(cursor_x, cursor_y, false);
+              gui_console.EndSelectionDrag();
             }
 
           if(button[XTRACEMONITOR_BUTTON_TOUCHSCREEN])
@@ -915,12 +946,16 @@ bool XTRACEMONITOR::UpdateInput()
         {
           int click_x = now_cursor_x;
           int click_y = now_cursor_y;
+          bool shiftdown = (button[XTRACEMONITOR_BUTTON_SHIFT_LEFT]  && button[XTRACEMONITOR_BUTTON_SHIFT_LEFT]->IsPressed()) ||
+                           (button[XTRACEMONITOR_BUTTON_SHIFT_RIGHT] && button[XTRACEMONITOR_BUTTON_SHIFT_RIGHT]->IsPressed());
 
           // If the motion branch did not run (or stalled), end the EditText gesture here.
           if(!edit_owned)
             {
               edit_owned = GEN_USERINTERFACE.EditText_OnPointer(click_x, click_y, false);
             }
+
+          gui_console.EndSelectionDrag();
 
           if(GEN_USERINTERFACE.Element_IsModalActive())
             {
@@ -941,9 +976,18 @@ bool XTRACEMONITOR::UpdateInput()
             {
               form_about.Show(true);
             }
+           else if(!bar_owned && !edit_owned && gui_console.HitTestTrackButton(click_x, click_y))
+            {
+              // Session follow overlay (console top-right); before tree so the button wins the hit.
+              GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_SELECCTION, click_x, click_y);
+            }
            else if(gui_tree.HandleClick(click_x, click_y))
             {
               // Tree owns the click (select / expand); do not forward as generic UI selection.
+            }
+           else if(!bar_owned && !edit_owned && gui_console.HandleSelection(click_x, click_y, shiftdown, false))
+            {
+              // Console line selection (click / Shift+click).
             }
            else if(!bar_owned && !edit_owned)
             {
@@ -951,6 +995,23 @@ bool XTRACEMONITOR::UpdateInput()
             }
 
           if(cursor) cursor->GetMotion()->Reset();
+        }
+    }
+
+  // Console clipboard: Ctrl+A select all, Ctrl+C copy selection (or whole buffer if none).
+  if(!GEN_USERINTERFACE.Element_IsModalActive() && !GEN_USERINTERFACE.EditText_HasFocus())
+    {
+      const bool ctrl_down = (button[XTRACEMONITOR_BUTTON_CTRL_LEFT]  && button[XTRACEMONITOR_BUTTON_CTRL_LEFT]->IsPressed()) ||
+                             (button[XTRACEMONITOR_BUTTON_CTRL_RIGHT] && button[XTRACEMONITOR_BUTTON_CTRL_RIGHT]->IsPressed());
+
+      if(ctrl_down && button[XTRACEMONITOR_BUTTON_A] && button[XTRACEMONITOR_BUTTON_A]->IsPressedWithRelease())
+        {
+          gui_console.SelectAll();
+        }
+
+      if(ctrl_down && button[XTRACEMONITOR_BUTTON_C] && button[XTRACEMONITOR_BUTTON_C]->IsPressedWithRelease())
+        {
+          gui_console.CopySelection();
         }
     }
 
@@ -1030,9 +1091,7 @@ bool XTRACEMONITOR::Ini_Graphics(GRPSCREEN* screen)
   {
     XSTRING title;
 
-    title  = TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_WINDOW_TITLE);
-    title += NL(" ");
-    title.AddFormat(NL("%d.%d.%d"), APPLICATION_VERSION, APPLICATION_SUBVERSION, APPLICATION_SUBVERSIONERR);
+    title = TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_WINDOW_TITLE);
 
     screen->GetTitle()->Set(title.Get());
   }
@@ -1378,9 +1437,12 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
 
   if(GetMainScreen())
     {
-      InternetStatus_ApplyGeometry((double)GetMainScreen()->GetWidth());
+      const double sw = (double)GetMainScreen()->GetWidth();
+      InternetStatus_ApplyGeometry(sw);
+      SatChart_ApplyGeometry(sw);
     }
   InternetStatus_Update(true);
+  SatChart_Update(true);
 
   if(!OpStatus_Resolve())
     {
@@ -1631,6 +1693,7 @@ bool XTRACEMONITOR::DrawFrame()
   if(!GEN_USERINTERFACE.Element_IsModalActive())
     {
       InternetStatus_RepaintAfterChrome();
+      SatChart_RepaintAfterChrome();
     }
   xtm_probe_ms_net = XTM_ProbeNowMs() - t_net0;
 #else
@@ -1638,6 +1701,7 @@ bool XTRACEMONITOR::DrawFrame()
   if(!GEN_USERINTERFACE.Element_IsModalActive())
     {
       InternetStatus_RepaintAfterChrome();
+      SatChart_RepaintAfterChrome();
     }
 #endif
 
@@ -1775,6 +1839,7 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
   if(!GEN_USERINTERFACE.Element_IsModalActive())
     {
       InternetStatus_ApplyGeometry(W);
+      SatChart_ApplyGeometry(W);
     }
 
   if(!compose) return true;
@@ -1900,6 +1965,7 @@ bool XTRACEMONITOR::Layout_ApplyConsoleAboveOpStatus(bool dirty)
                   GEN_DELETE area;
                 };
               drop_area(console);
+              drop_area(gui_console.GetTrackButton());
               drop_area(opstatus_form);
               if(opstatus_text) skin->DiscardTextBackdrop(opstatus_text);
               // Collapse path: expanded FormBackdrop is taller than the new foot. Draw_Form's
@@ -2096,11 +2162,14 @@ bool XTRACEMONITOR::InternetStatus_Resolve()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
-* @fn         bool XTRACEMONITOR::InternetStatus_ApplyGeometry(double canvas_w)
-* @brief      Right-aligns the net-status cluster under the caption on the live canvas width.
+* @fn         bool XTRACEMONITOR::InternetStatus_WipeCluster(double left, double top, double right, double bottom)
+* @brief      Opaque page wipe over a netstatus AABB (repair / language-shrink path).
 * @ingroup    UTILITIES
 *
-* @param[in]  canvas_w : Live canvas width in pixels.
+* @param[in]  left : Left edge of the wipe rectangle.
+* @param[in]  top : Top edge of the wipe rectangle.
+* @param[in]  right : Right edge of the wipe rectangle.
+* @param[in]  bottom : Bottom edge of the wipe rectangle.
 *
 * @return     bool : true if the operation is successful; otherwise false.
 *
@@ -2139,6 +2208,15 @@ bool XTRACEMONITOR::InternetStatus_WipeCluster(double left, double top, double r
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::InternetStatus_PaintCluster()
+* @brief      Redraws the netstatus frame, LED and text lines after a page wipe.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::InternetStatus_PaintCluster()
 {
   if(!netstatus_led || !netstatus_state || !netstatus_ip || !netstatus_udp) return false;
@@ -2170,6 +2248,15 @@ bool XTRACEMONITOR::InternetStatus_PaintCluster()
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::InternetStatus_RepaintAfterChrome()
+* @brief      Ghost/resize repair: wipe union AABB then paint the netstatus cluster.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if a repair wipe was applied; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::InternetStatus_RepaintAfterChrome()
 {
   if(!netstatus_led || !netstatus_state || !netstatus_ip || !netstatus_udp) return false;
@@ -2199,6 +2286,345 @@ bool XTRACEMONITOR::InternetStatus_RepaintAfterChrome()
   if(!InternetStatus_WipeCluster(wipe_l, wipe_t, wipe_r, wipe_b))
     return false;
   return InternetStatus_PaintCluster();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::SatChart_ApplyGeometry(double canvas_w)
+* @brief      Places the saturation sparkline to the right of the toolbar bubbles
+*             (2× the inter-bubble gap), same vertical band as the 72px icons.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::SatChart_ApplyGeometry(double canvas_w)
+{
+  if(canvas_w < 32.0) return false;
+
+  UI_ELEMENT* config_btn = GEN_USERINTERFACE.Element_Get(NL("config-btn"), UI_ELEMENT_TYPE_MULTIOPTION);
+  UI_ELEMENT* config_lbl = GEN_USERINTERFACE.Element_Get(NL("config-lbl"), UI_ELEMENT_TYPE_FORM);
+  if(!config_btn || !config_btn->GetBoundaryLine()) return false;
+
+  const double btn_x = config_btn->GetXPosition();
+  const double btn_w = config_btn->GetBoundaryLine()->width;
+  const double btn_y = config_btn->GetYPosition();   // bubble bottom
+  const double btn_h = config_btn->GetBoundaryLine()->height;
+
+  double bubbles_right = UI_BOUNDARYLINE_EdgeRight(btn_x, btn_w);
+  // Height = bubble + legend text under it (same band as toolbar icons + captions).
+  double band_top    = UI_BOUNDARYLINE_EdgeTop(btn_y, btn_h);
+  double band_bottom = btn_y;
+  if(config_lbl && config_lbl->GetBoundaryLine())
+    {
+      const double lbl_x = config_lbl->GetXPosition();
+      const double lbl_w = config_lbl->GetBoundaryLine()->width;
+      const double lbl_y = config_lbl->GetYPosition();
+      const double lbl_h = config_lbl->GetBoundaryLine()->height;
+      const double lbl_r = UI_BOUNDARYLINE_EdgeRight(lbl_x, lbl_w);
+      const double lbl_t = UI_BOUNDARYLINE_EdgeTop(lbl_y, lbl_h);
+      if(lbl_r > bubbles_right) bubbles_right = lbl_r;
+      if(lbl_y > band_bottom) band_bottom = lbl_y;
+      if(lbl_t < band_top)    band_top    = lbl_t;
+    }
+
+  const double top    = band_top;
+  const double bottom = band_bottom;
+
+  // Horizontal: X = center between last bubble(+legend) and the visible netstatus frame
+  // as they sit at minimum window width. Derived from frame_w (not wipe AABB / current
+  // canvas), so it stays put when the window grows and recenters if the frame remasures.
+  if(!netstatus_form || !netstatus_form->GetBoundaryLine()) return false;
+
+  const double frame_w = netstatus_form->GetBoundaryLine()->width;
+  if(frame_w < 8.0) return false;
+
+  const double min_w           = (double)XTRACEMONITOR_WINDOW_WIDTH;
+  const double net_left_at_min = min_w - XTRACEMONITOR_LAYOUT_MARGIN - frame_w;
+
+  const double space_l = bubbles_right;
+  const double space_r = net_left_at_min;
+  const double space_w = space_r - space_l;
+  if(space_w < XTRACEMONITOR_SAT_CHART_MIN_W) return false;
+
+  double width = XTRACEMONITOR_SAT_CHART_W;
+  if(width > space_w) width = space_w;
+  if(width < XTRACEMONITOR_SAT_CHART_MIN_W) width = XTRACEMONITOR_SAT_CHART_MIN_W;
+  if(width > space_w) return false;
+
+  const double left = space_l + (space_w - width) * 0.5;
+
+  const double prev_l = sat_l;
+  const double prev_t = sat_t;
+  const double prev_r = sat_r;
+  const double prev_b = sat_b;
+  const bool   had    = sat_geom_valid;
+
+  sat_l = left;
+  sat_t = top;
+  sat_r = left + width;
+  sat_b = bottom;
+  sat_geom_valid = true;
+  sat_dirty = true;
+
+  if(had)
+    {
+      double wipe_l = (prev_l < sat_l) ? prev_l : sat_l;
+      double wipe_t = (prev_t < sat_t) ? prev_t : sat_t;
+      double wipe_r = (prev_r > sat_r) ? prev_r : sat_r;
+      double wipe_b = (prev_b > sat_b) ? prev_b : sat_b;
+      InternetStatus_WipeCluster(wipe_l - 2.0, wipe_t - 2.0, wipe_r + 2.0, wipe_b + 2.0);
+    }
+
+  return SatChart_Paint();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::SatChart_Sample()
+* @brief      Appends one 1 Hz saturation sample from GEN queue counters.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::SatChart_Sample()
+{
+  const XDWORD pushed  = traceserver.GetPushedCount();
+  const XDWORD fed     = traceserver.GetFedCount();
+  const XDWORD dropped = traceserver.GetDroppedCount();
+  const XDWORD queued  = traceserver.GetQueuedCount();
+  const XDWORD maxq    = traceserver.GetMaxMessages();
+
+  XTRACEMONITOR_SAT_SAMPLE sample;
+  sample.in_rate   = 0.0f;
+  sample.fed_rate  = 0.0f;
+  sample.drop_rate = 0.0f;
+  sample.queue_pct = (maxq > 0) ? ((float)queued / (float)maxq) : 0.0f;
+  if(sample.queue_pct < 0.0f) sample.queue_pct = 0.0f;
+  if(sample.queue_pct > 1.0f) sample.queue_pct = 1.0f;
+
+  if(sat_have_prev)
+    {
+      sample.in_rate   = (float)(pushed  - sat_prev_pushed);
+      sample.fed_rate  = (float)(fed     - sat_prev_fed);
+      sample.drop_rate = (float)(dropped - sat_prev_dropped);
+      if(sample.in_rate   < 0.0f) sample.in_rate   = 0.0f;
+      if(sample.fed_rate  < 0.0f) sample.fed_rate  = 0.0f;
+      if(sample.drop_rate < 0.0f) sample.drop_rate = 0.0f;
+    }
+
+  sat_prev_pushed  = pushed;
+  sat_prev_fed     = fed;
+  sat_prev_dropped = dropped;
+  sat_have_prev    = true;
+
+  sat_samples[sat_head] = sample;
+  sat_head = (sat_head + 1) % XTRACEMONITOR_SAT_HISTORY_MAX;
+  if(sat_count < (XDWORD)XTRACEMONITOR_SAT_HISTORY_MAX) sat_count++;
+
+  sat_last_in        = sample.in_rate;
+  sat_last_fed       = sample.fed_rate;
+  sat_last_drop      = sample.drop_rate;
+  sat_last_queue_pct = sample.queue_pct;
+  sat_dirty          = true;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::SatChart_Paint()
+* @brief      Lightweight canvas sparkline (in/out rates + queue fill + drop). Avoids
+*             UI statisticschart SVG rebuild, which collapsed XTM frame rate.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::SatChart_Paint()
+{
+  if(!sat_geom_valid || !sat_dirty) return sat_geom_valid;
+
+  UI_LAYOUT* layout = GEN_USERINTERFACE.Layouts_Get(NL("xtracemonitor"));
+  if(!layout || !layout->GetSkin() || layout->GetSkin()->GetDrawMode() != UI_SKIN_DRAWMODE_CANVAS) return false;
+
+  UI_SKINCANVAS* skin   = (UI_SKINCANVAS*)layout->GetSkin();
+  GRP2DCANVAS*   canvas = skin ? skin->GetCanvas() : NULL;
+  if(!canvas) return false;
+
+  XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
+  const bool light = (cfg.ResolveColorTheme(cfg.GetColorTheme()) == XTRACEMONITOR_CFG_COLORTHEME_LIGHT);
+
+  const double pad  = XTRACEMONITOR_SAT_CHART_PAD;
+  const double left = sat_l;
+  const double top  = sat_t;
+  const double right  = sat_r;
+  const double bottom = sat_b;
+  const XDWORD text_sf = (XDWORD)XTRACEMONITOR_SAT_CHART_TEXT_SIZE;
+
+  // Transparent plate: wipe with page color (no filled frame).
+  InternetStatus_WipeCluster(left - 1.0, top - 1.0, right + 1.0, bottom + 1.0);
+
+  // Text OUTSIDE the plot: top-right, 4px from widget edges; +6px extra gap above the plot top axis.
+  // Layout: [sat_t + 4][text][4+6 px][plot_t ... plot_b][pad][sat_b]
+  const double text_gap_extra = 6.0;
+  const double text_baseline  = top + pad + (double)text_sf;
+  const double plot_t = text_baseline + pad + text_gap_extra;  // top axis — text stays above this
+  const double plot_l = left + pad;
+  const double plot_r = right - pad;
+  const double plot_b = bottom - pad;
+  const double plot_w = plot_r - plot_l;
+  const double plot_h = plot_b - plot_t;
+  if((plot_w < 8.0) || (plot_h < 8.0))
+    {
+      sat_dirty = false;
+      return true;
+    }
+
+  XSTRING iotxt;
+  iotxt.Format(NL("in %.0f / out %.0f"), (double)sat_last_in, (double)sat_last_fed);
+  GRP2DCOLOR_RGBA8 ink(light ? 40 : 220, light ? 44 : 226, light ? 52 : 235, 255);
+  if(canvas->Vectorfont_GetConfig())
+    {
+      canvas->Vectorfont_GetConfig()->SetColor(&ink);
+      canvas->Vectorfont_GetConfig()->SetSize((double)text_sf);
+    }
+  double tw = skin->GetWidthString(iotxt.Get(), text_sf);
+  if(tw < 1.0) tw = (double)iotxt.GetSize() * (double)text_sf * 0.55;
+  double tx = right - pad - tw;
+  if(tx < left + pad) tx = left + pad;
+  // Never let the baseline reach/pass the plot top axis.
+  double ty = text_baseline;
+  if(ty > (plot_t - 1.0)) ty = plot_t - 1.0;
+  canvas->VectorFont_Printf(tx, ty, NL("%s"), iotxt.Get());
+
+  // Axis ink: white on dark theme, black on light.
+  GRP2DCOLOR_RGBA8 axis(light ? 0 : 255, light ? 0 : 255, light ? 0 : 255, 220);
+  GRP2DCOLOR_RGBA8 noline(0, 0, 0, 0);
+  canvas->SetLineColor(&axis);
+  canvas->SetLineWidth(1.0f);
+  canvas->SetFillColor(&noline);
+  canvas->Line(plot_l, plot_b, plot_r, plot_b);   // X
+  canvas->Line(plot_l, plot_b, plot_l, plot_t);   // Y
+
+  if(sat_count < 1)
+    {
+      sat_dirty = false;
+      return true;
+    }
+
+  // 1 sample = 1 px. Fills left→right; when full, newest stays at the right and
+  // oldest scroll off the left (no horizontal stretch/compress).
+  const XDWORD cols = (XDWORD)plot_w;
+  if(cols < 2)
+    {
+      sat_dirty = false;
+      return true;
+    }
+
+  const XDWORD n = (sat_count < cols) ? sat_count : cols;
+  float ymax = 1.0f;
+  for(XDWORD i = 0; i < n; i++)
+    {
+      const XDWORD idx = (sat_head + XTRACEMONITOR_SAT_HISTORY_MAX - n + i) % XTRACEMONITOR_SAT_HISTORY_MAX;
+      const XTRACEMONITOR_SAT_SAMPLE& s = sat_samples[idx];
+      if(s.in_rate  > ymax) ymax = s.in_rate;
+      if(s.fed_rate > ymax) ymax = s.fed_rate;
+    }
+
+  if(n < 2)
+    {
+      sat_dirty = false;
+      return true;
+    }
+
+  auto sample_at = [&](XDWORD i) -> const XTRACEMONITOR_SAT_SAMPLE&
+    {
+      const XDWORD idx = (sat_head + XTRACEMONITOR_SAT_HISTORY_MAX - n + i) % XTRACEMONITOR_SAT_HISTORY_MAX;
+      return sat_samples[idx];
+    };
+
+  auto draw_rate = [&](int which, const GRP2DCOLOR_RGBA8& color)
+    {
+      canvas->SetLineColor(&color);
+      canvas->SetLineWidth(1.2f);
+      bool have = false;
+      double prev_x = 0.0;
+      double prev_y = 0.0;
+      for(XDWORD i = 0; i < n; i++)
+        {
+          const XTRACEMONITOR_SAT_SAMPLE& s = sample_at(i);
+          const float v = (which == 0) ? s.in_rate : s.fed_rate;
+          const double x = plot_l + (double)i;
+          double y = plot_b - (((double)v / (double)ymax) * plot_h);
+          if(y < plot_t) y = plot_t;
+          if(y > plot_b) y = plot_b;
+          if(have) canvas->Line(prev_x, prev_y, x, y);
+          prev_x = x;
+          prev_y = y;
+          have = true;
+        }
+    };
+
+  GRP2DCOLOR_RGBA8 col_in (80, 180, 255, 255);
+  GRP2DCOLOR_RGBA8 col_fed(80, 200, 120, 255);
+  draw_rate(0, col_in);
+  draw_rate(1, col_fed);
+
+  // Redraw axes on top so series never hide them.
+  canvas->SetLineColor(&axis);
+  canvas->SetLineWidth(1.0f);
+  canvas->Line(plot_l, plot_b, plot_r, plot_b);
+  canvas->Line(plot_l, plot_b, plot_l, plot_t);
+
+  sat_dirty = false;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::SatChart_Update(bool force)
+* @brief      1 Hz sampler + canvas sparkline paint.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::SatChart_Update(bool force)
+{
+  if(!force && netstatus_timer &&
+     (netstatus_timer->GetMeasureMilliSeconds() < (XDWORD)XTRACEMONITOR_NETSTATUS_POLL_MS))
+    {
+      return true;
+    }
+
+  SatChart_Sample();
+
+  // Own the 1 Hz tick while a modal suppresses InternetStatus_Update.
+  if(GEN_USERINTERFACE.Element_IsModalActive() && netstatus_timer)
+    netstatus_timer->Reset();
+
+  if(!sat_geom_valid && GetMainScreen())
+    {
+      SatChart_ApplyGeometry((double)GetMainScreen()->GetWidth());
+    }
+
+  return SatChart_Paint();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::SatChart_RepaintAfterChrome()
+* @brief      Repaints the sparkline when chrome/netstatus repair is armed.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::SatChart_RepaintAfterChrome()
+{
+  if(!sat_geom_valid) return false;
+
+  if((netstatus_ghost_frames <= 0) && (netstatus_repair_frames <= 0) && !sat_dirty)
+    return false;
+
+  sat_dirty = true;
+  return SatChart_Paint();
 }
 
 
@@ -2236,6 +2662,17 @@ bool XTRACEMONITOR::InternetStatus_DropStaleCaches()
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::InternetStatus_ApplyGeometry(double canvas_w)
+* @brief      Right-aligns the net-status cluster under the caption on the live canvas width.
+* @ingroup    UTILITIES
+*
+* @param[in]  canvas_w : Live canvas width in pixels.
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::InternetStatus_ApplyGeometry(double canvas_w)
 {
   if(!netstatus_led || !netstatus_state || !netstatus_ip || !netstatus_udp) return false;
@@ -2573,7 +3010,9 @@ bool XTRACEMONITOR::InternetStatus_Update(bool force)
     {
       if(GetMainScreen())
         {
-          InternetStatus_ApplyGeometry((double)GetMainScreen()->GetWidth());
+          const double sw = (double)GetMainScreen()->GetWidth();
+          InternetStatus_ApplyGeometry(sw);
+          SatChart_ApplyGeometry(sw);
         }
        else
         {
@@ -2627,6 +3066,18 @@ bool XTRACEMONITOR::OpStatus_Resolve()
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_FormatLine(const XTRACEMONITOR_OPSTATUS_ENTRY& entry, XSTRING& out)
+* @brief      Builds one status foot line from a translate ID and optional Format args.
+* @ingroup    UTILITIES
+*
+* @param[in]  entry : Stored status entry (ID + args).
+* @param[out] out : Formatted line in the current language.
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::OpStatus_FormatLine(const XTRACEMONITOR_OPSTATUS_ENTRY& entry, XSTRING& out)
 {
   out.Empty();
@@ -2652,18 +3103,54 @@ bool XTRACEMONITOR::OpStatus_FormatLine(const XTRACEMONITOR_OPSTATUS_ENTRY& entr
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_Log(XDWORD translate_id)
+* @brief      Appends a status foot line with no Format arguments.
+* @ingroup    UTILITIES
+*
+* @param[in]  translate_id : XTRACEMONITOR_TRANSLATEID sentence.
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::OpStatus_Log(XDWORD translate_id)
 {
   return OpStatus_Log(translate_id, NULL, NULL);
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_Log(XDWORD translate_id, XCHAR* arg0)
+* @brief      Appends a status foot line with one Format argument.
+* @ingroup    UTILITIES
+*
+* @param[in]  translate_id : XTRACEMONITOR_TRANSLATEID sentence.
+* @param[in]  arg0 : First Format argument (not translated).
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::OpStatus_Log(XDWORD translate_id, XCHAR* arg0)
 {
   return OpStatus_Log(translate_id, arg0, NULL);
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_Log(XDWORD translate_id, XCHAR* arg0, XCHAR* arg1)
+* @brief      Appends a status foot entry (ID + args) and refreshes the foot text.
+* @ingroup    UTILITIES
+*
+* @param[in]  translate_id : XTRACEMONITOR_TRANSLATEID sentence.
+* @param[in]  arg0 : First Format argument (optional, not translated).
+* @param[in]  arg1 : Second Format argument (optional, not translated).
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::OpStatus_Log(XDWORD translate_id, XCHAR* arg0, XCHAR* arg1)
 {
   if(!translate_id) return false;
@@ -2701,6 +3188,15 @@ bool XTRACEMONITOR::OpStatus_Log(XDWORD translate_id, XCHAR* arg0, XCHAR* arg1)
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_Refresh()
+* @brief      Rebuilds visible opstatus lines from stored IDs and applies foot geometry.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::OpStatus_Refresh()
 {
   if(!opstatus_form || !opstatus_text) return false;
@@ -2753,6 +3249,15 @@ bool XTRACEMONITOR::OpStatus_Refresh()
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_DisableScroll()
+* @brief      Forces hidden overflow on the opstatus form and textbox (no scroll bars).
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::OpStatus_DisableScroll()
 {
   if(!opstatus_form || !opstatus_text) return false;
@@ -2777,6 +3282,17 @@ bool XTRACEMONITOR::OpStatus_DisableScroll()
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_ApplyGeometry(XDWORD visible_lines)
+* @brief      Sizes the opstatus foot for collapsed or expanded visible line count.
+* @ingroup    UTILITIES
+*
+* @param[in]  visible_lines : Number of lines to show when expanded.
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::OpStatus_ApplyGeometry(XDWORD visible_lines)
 {
   if(!opstatus_form || !opstatus_text) return false;
@@ -2867,6 +3383,17 @@ bool XTRACEMONITOR::OpStatus_ApplyGeometry(XDWORD visible_lines)
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_SetExpanded(bool expanded)
+* @brief      Expands or collapses the opstatus foot multi-line view.
+* @ingroup    UTILITIES
+*
+* @param[in]  expanded : true to show the history stack; false for one line.
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::OpStatus_SetExpanded(bool expanded)
 {
   opstatus_expanded = expanded;
@@ -2874,12 +3401,33 @@ bool XTRACEMONITOR::OpStatus_SetExpanded(bool expanded)
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_ToggleExpanded()
+* @brief      Toggles the opstatus foot between collapsed and expanded.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::OpStatus_ToggleExpanded()
 {
   return OpStatus_SetExpanded(!opstatus_expanded);
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_HitTest(int screen_x, int screen_y)
+* @brief      Returns whether a screen point lies inside the opstatus foot.
+* @ingroup    UTILITIES
+*
+* @param[in]  screen_x : Screen X coordinate.
+* @param[in]  screen_y : Screen Y coordinate.
+*
+* @return     bool : true if the point is inside the foot; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::OpStatus_HitTest(int screen_x, int screen_y)
 {
   if(!opstatus_form || !opstatus_form->GetBoundaryLine()) return false;
@@ -2897,6 +3445,15 @@ bool XTRACEMONITOR::OpStatus_HitTest(int screen_x, int screen_y)
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_OnClick()
+* @brief      Handles opstatus click / double-click expand toggle.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the operation is successful; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::OpStatus_OnClick()
 {
   if(!opstatus_click_timer) return false;
@@ -2919,6 +3476,15 @@ bool XTRACEMONITOR::OpStatus_OnClick()
 }
 
 
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR::OpStatus_UpdateInput()
+* @brief      OpStatus input hook (double-click handled from UpdateInput release edge).
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the opstatus form is resolved; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::OpStatus_UpdateInput()
 {
   // Double-click is handled on IsPressedWithRelease in UpdateInput (same edge as SELECCTION).
@@ -2929,12 +3495,13 @@ bool XTRACEMONITOR::OpStatus_UpdateInput()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
-* @fn         bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible)
+* @fn         bool XTRACEMONITOR::Toolbar_SlotSetVisible(UI_ELEMENT* element, bool visible, XCHAR* legend_element_name)
 * @brief      Shows or hides a shared-slot toolbar control without fade transition (avoids Stop/Run ghosts).
 * @ingroup    UTILITIES
 *
 * @param[in]  element : Element to show or hide.
 * @param[in]  visible : True to show; false to hide and restore the slot background.
+* @param[in]  legend_element_name : Optional legend text element name under the slot.
 *
 * @return     bool : true if the operation is successful; otherwise false.
 *
@@ -3377,6 +3944,124 @@ bool XTRACEMONITOR::Toolbar_RelayoutLabels()
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool XTRACEMONITOR::BrandToolbar_SetVersion()
+* @brief      Fills brand-ver-lbl with APPLICATION_* version, About gen_ink color, centered under brand.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR::BrandToolbar_SetVersion()
+{
+  UI_ELEMENT_IMAGE* brand = (UI_ELEMENT_IMAGE*)GEN_USERINTERFACE.Element_Get(NL("brand_toolbar"), UI_ELEMENT_TYPE_IMAGE);
+  UI_ELEMENT_FORM*  lbl   = (UI_ELEMENT_FORM*)GEN_USERINTERFACE.Element_Get(NL("brand-ver-lbl"), UI_ELEMENT_TYPE_FORM);
+  if(!brand || !lbl || !brand->GetBoundaryLine() || !lbl->GetBoundaryLine()) return false;
+
+  UI_ELEMENT_TEXT* txt = NULL;
+  XVECTOR<UI_ELEMENT*>* kids = lbl->GetComposeElements();
+  if(kids)
+    {
+      for(XDWORD c=0; c<kids->GetSize(); c++)
+        {
+          UI_ELEMENT* kid = kids->Get(c);
+          if(kid && kid->GetType() == UI_ELEMENT_TYPE_TEXT)
+            {
+              txt = (UI_ELEMENT_TEXT*)kid;
+              break;
+            }
+        }
+    }
+  if(!txt || !txt->GetText()) return false;
+
+  XSTRING ver;
+  ver.AddFormat(NL("Ver. %d.%d.%d"), APPLICATION_VERSION, APPLICATION_SUBVERSION, APPLICATION_SUBVERSIONERR);
+  txt->GetText()->Set(ver.Get());
+  txt->SetFontFace(NL("bold"));
+
+  if(txt->GetColor())
+    {
+      txt->GetColor()->SetRed  ((XBYTE)XTRACEMONITOR_ABOUTMODAL_VERSION_R);
+      txt->GetColor()->SetGreen((XBYTE)XTRACEMONITOR_ABOUTMODAL_VERSION_G);
+      txt->GetColor()->SetBlue ((XBYTE)XTRACEMONITOR_ABOUTMODAL_VERSION_B);
+      txt->GetColor()->SetAlpha(255);
+      txt->GetColor()->SetValid(true);
+      txt->SetColorSet(true);
+    }
+
+  UI_LAYOUT* layout = GEN_USERINTERFACE.Layouts_Get(NL("xtracemonitor"));
+  UI_SKINCANVAS* skin = NULL;
+  if(layout && layout->GetSkin() && layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS)
+    skin = (UI_SKINCANVAS*)layout->GetSkin();
+
+  XDWORD sf = txt->GetSizeFont();
+  if(sf < 1) sf = 13;
+  txt->SetSizeFont(sf);
+
+  double tw = 0.0;
+  if(skin)
+    {
+      GRP2DCANVAS* canvas = skin->GetCanvas();
+      XSTRING prev_face;
+      if(canvas)
+        {
+          XSTRING* selected = canvas->VectorFont_GetSelected();
+          if(selected && !selected->IsEmpty()) prev_face = selected->Get();
+          canvas->VectorFont_Select(NL("bold"));
+        }
+      tw = skin->GetWidthString(txt->GetText()->Get(), sf);
+      if(canvas)
+        {
+          if(!prev_face.IsEmpty()) canvas->VectorFont_Select(prev_face.Get());
+           else                    canvas->VectorFont_Select(GRP2DCANVAS_VECTORFONT_DEFAULT);
+        }
+    }
+  if(tw < 1.0) tw = (double)txt->GetText()->GetSize() * (double)sf * 0.55;
+
+  double new_w = tw + XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_PAD;
+  if(new_w < XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_MIN_W) new_w = XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_MIN_W;
+  // Center under brand: label may be wider than the icon ("Ver. x.x.x").
+  const double brand_w = brand->GetBoundaryLine()->width;
+
+  const double brand_cx = brand->GetXPosition() + (brand_w * 0.5);
+  const double new_x    = brand_cx - (new_w * 0.5);
+  // Same vertical band as the bubble legends (runstop-lbl / filter-lbl / …).
+  UI_ELEMENT* ref_lbl = GEN_USERINTERFACE.Element_Get(NL("runstop-lbl"), UI_ELEMENT_TYPE_FORM);
+  double lbl_y = (ref_lbl && ref_lbl->GetBoundaryLine()) ? ref_lbl->GetYPosition() : 126.0;
+  double lbl_h = lbl->GetBoundaryLine()->height > 0.0 ? lbl->GetBoundaryLine()->height : 16.0;
+  if(lbl_h < (double)sf + 2.0) lbl_h = (double)sf + 2.0;
+
+  lbl->GetBoundaryLine()->x      = new_x;
+  lbl->GetBoundaryLine()->y      = lbl_y;
+  lbl->GetBoundaryLine()->width  = new_w;
+  lbl->GetBoundaryLine()->height = lbl_h;
+  lbl->SetIntrinsicWidth(new_w);
+  lbl->SetIntrinsicHeight(lbl_h);
+  lbl->SetXPosition(new_x);
+  lbl->SetYPosition(lbl_y);
+
+  UI_BOUNDARYLINE* vis = lbl->GetVisibleRect();
+  if(vis)
+    {
+      vis->x = new_x; vis->y = lbl_y; vis->width = new_w; vis->height = lbl_h;
+    }
+
+  if(txt->GetBoundaryLine())
+    {
+      txt->GetBoundaryLine()->width  = new_w;
+      txt->GetBoundaryLine()->height = lbl_h;
+      txt->SetIntrinsicWidth(new_w);
+      txt->SetIntrinsicHeight(lbl_h);
+      txt->SetXPosition(new_x);
+      txt->SetYPosition(lbl_y);
+    }
+
+  txt->SetMustReDraw(true);
+  lbl->SetMustReDraw(true);
+  GEN_USERINTERFACE.Elements_SetToRedraw(lbl, true);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool XTRACEMONITOR::UserInterface_AfterLanguageChange()
 * @brief      After Layouts_ApplyTranslations: fit toolbar legends, resize netstatus, refresh content dirt.
 * @ingroup    UTILITIES
@@ -3385,6 +4070,7 @@ bool XTRACEMONITOR::Toolbar_RelayoutLabels()
 bool XTRACEMONITOR::UserInterface_AfterLanguageChange()
 {
   Toolbar_RelayoutLabels();
+  BrandToolbar_SetVersion();
 
   // Radiogroup titles are plain XSTRING attributes (not #[TRANSLATE] masks).
   auto set_group_title = [](XCHAR* name, XTRACEMONITOR_TRANSLATEID id)
@@ -3404,9 +4090,7 @@ bool XTRACEMONITOR::UserInterface_AfterLanguageChange()
   if(GetMainScreen() && GetMainScreen()->GetTitle())
     {
       XSTRING title;
-      title  = TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_WINDOW_TITLE);
-      title += NL(" ");
-      title.AddFormat(NL("%d.%d.%d"), APPLICATION_VERSION, APPLICATION_SUBVERSION, APPLICATION_SUBVERSIONERR);
+      title = TL(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_WINDOW_TITLE);
       GetMainScreen()->GetTitle()->Set(title.Get());
 
       UI_LAYOUT* chrome = GEN_USERINTERFACE.Layouts_Get(NL("chrome"));
@@ -3612,13 +4296,23 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
   if(form_about.IsVisible()) form_about.ApplyGeometry();
   if(form_dyndns.IsVisible()) form_dyndns.ApplyGeometry();
 
+  BrandToolbar_SetVersion();
+
   GEN_USERINTERFACE.Layout_PutBackground();
   GEN_USERINTERFACE.Elements_SetToRedraw();
   BrandMonitor_RepaintAfterChrome();
   if(GetMainScreen())
-    InternetStatus_ApplyGeometry((double)GetMainScreen()->GetWidth());
+    {
+      const double sw = (double)GetMainScreen()->GetWidth();
+      InternetStatus_ApplyGeometry(sw);
+      SatChart_ApplyGeometry(sw);
+    }
    else
-    InternetStatus_RepaintAfterChrome();
+    {
+      InternetStatus_RepaintAfterChrome();
+      sat_dirty = true;
+      SatChart_Paint();
+    }
 
   OpStatus_Log(light ? (XDWORD)XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_COLOR_THEME_LIGHT
                      : (XDWORD)XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_COLOR_THEME_DARK);
@@ -4100,6 +4794,7 @@ bool XTRACEMONITOR::UserInterface_ElementSelected(UI_ELEMENT* element)
   if(form_filters.HandleElementSelected(element)) return true;
   if(form_about.HandleElementSelected(element)) return true;
   if(form_dyndns.HandleElementSelected(element)) return true;
+  if(gui_console.HandleElementSelected(element)) return true;
 
   if(!name->Compare(NL("stop-btn"), true))
     {
@@ -4422,6 +5117,22 @@ void XTRACEMONITOR::Clean()
   netstatus_ghost_b         = 0.0;
   netstatus_ghost_frames    = 0;
   netstatus_repair_frames   = 0;
+  sat_count                 = 0;
+  sat_head                  = 0;
+  sat_prev_pushed           = 0;
+  sat_prev_fed              = 0;
+  sat_prev_dropped          = 0;
+  sat_have_prev             = false;
+  sat_l                     = 0.0;
+  sat_t                     = 0.0;
+  sat_r                     = 0.0;
+  sat_b                     = 0.0;
+  sat_geom_valid            = false;
+  sat_dirty                 = false;
+  sat_last_in               = 0.0f;
+  sat_last_fed              = 0.0f;
+  sat_last_drop             = 0.0f;
+  sat_last_queue_pct        = 0.0f;
   layout_applied_w          = 0;
   layout_applied_h          = 0;
   resize_recover_frames     = 0;

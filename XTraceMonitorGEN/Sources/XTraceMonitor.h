@@ -74,6 +74,12 @@ enum XTRACEMONITORXFSMSTATES
 enum XTRACEMONITOR_BUTTONS
 {
   XTRACEMONITOR_BUTTON_ESC                  = 0 ,
+  XTRACEMONITOR_BUTTON_A                        ,
+  XTRACEMONITOR_BUTTON_C                        ,
+  XTRACEMONITOR_BUTTON_CTRL_LEFT                ,
+  XTRACEMONITOR_BUTTON_CTRL_RIGHT               ,
+  XTRACEMONITOR_BUTTON_SHIFT_LEFT               ,
+  XTRACEMONITOR_BUTTON_SHIFT_RIGHT              ,
   XTRACEMONITOR_BUTTON_MOUSE                    ,
   XTRACEMONITOR_BUTTON_TOUCHSCREEN              ,
 
@@ -115,6 +121,14 @@ enum XTRACEMONITOR_BUTTONS
 #define XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_MIN_W      86.0   // XML default legend width
 #define XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_PAD        8.0    // text ↔ legend form edges
 #define XTRACEMONITOR_NETSTATUS_POLL_MS             1000   // UI refresh from GEN-cached InternetStatus
+#define XTRACEMONITOR_SAT_CHART_W                   220.0  // sparkline widget width; visible samples = plot px
+#define XTRACEMONITOR_SAT_CHART_PAD                 4.0    // plot inner pad + text margin from widget TL
+#define XTRACEMONITOR_SAT_CHART_TEXT_SIZE           11     // same as toolbar bubble legends
+#define XTRACEMONITOR_SAT_CHART_BUBBLE_GAP          9.0    // edge gap between toolbar bubbles (xpos step 81 - 72)
+#define XTRACEMONITOR_SAT_CHART_AFTER_BUBBLES_GAP   (XTRACEMONITOR_SAT_CHART_BUBBLE_GAP * 4.0) // 4× inter-bubble gap (was 2×; doubled again)
+#define XTRACEMONITOR_SAT_CHART_MIN_W               120.0
+// Live toolbar sparkline paints on GRP2DCANVAS (not UI statisticschart): SVG rebuild + sharp
+// overlay dropped XTM from ~60 to ~45 fps when updated every second.
 
 #define XTRACEMONITOR_OPSTATUS_MAXLINES             20
 #define XTRACEMONITOR_OPSTATUS_MAXARGS              2
@@ -129,6 +143,15 @@ enum XTRACEMONITOR_BUTTONS
 * @brief      Status foot line: translate ID + optional Format args (rebuilt on language change).
 *
 *---------------------------------------------------------------------------------------------------------------------*/
+struct XTRACEMONITOR_SAT_SAMPLE
+{
+  float                         in_rate;     // msg/s pushed into GEN queue
+  float                         fed_rate;    // msg/s painted to console
+  float                         drop_rate;   // msg/s dropped by bounded queue
+  float                         queue_pct;   // 0..1 occupancy
+};
+
+
 struct XTRACEMONITOR_OPSTATUS_ENTRY
 {
   XDWORD  id;
@@ -239,6 +262,12 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            InternetStatus_PaintCluster             ();
     bool                            InternetStatus_RepaintAfterChrome       ();
 
+    bool                            SatChart_ApplyGeometry                  (double canvas_w);
+    bool                            SatChart_Sample                         ();
+    bool                            SatChart_Paint                          ();
+    bool                            SatChart_Update                         (bool force = false);
+    bool                            SatChart_RepaintAfterChrome             ();
+
     bool                            OpStatus_Resolve                        ();
     bool                            OpStatus_Log                            (XDWORD translate_id);
     bool                            OpStatus_Log                            (XDWORD translate_id, XCHAR* arg0);
@@ -258,6 +287,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     bool                            Toolbar_ApplyFilterBtnVisibility        ();
     bool                            Toolbar_SlotSetVisible                  (UI_ELEMENT* element, bool visible, XCHAR* legend_element_name = NULL);
     bool                            Toolbar_RelayoutLabels                  ();
+    bool                            BrandToolbar_SetVersion                 ();
     bool                            UserInterface_AfterLanguageChange       ();
     static bool                     Filters_IsNonDefaultCommitted           ();
 
@@ -325,6 +355,25 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     // Short post-resize / theme window for chrome caption rebuild vs netstatus AABB.
     // Must NOT run wipe+PaintCluster every idle DrawFrame (that alone dropped ~60→48 FPS).
     int                             netstatus_repair_frames;
+
+    // Queue saturation sparkline (canvas): 1 Hz ring; paint shows last plot_w px (1 sample/px).
+    XTRACEMONITOR_SAT_SAMPLE        sat_samples[XTRACEMONITOR_SAT_HISTORY_MAX];
+    XDWORD                          sat_count;
+    XDWORD                          sat_head;          // next write index in ring
+    XDWORD                          sat_prev_pushed;
+    XDWORD                          sat_prev_fed;
+    XDWORD                          sat_prev_dropped;
+    bool                            sat_have_prev;
+    double                          sat_l;
+    double                          sat_t;
+    double                          sat_r;
+    double                          sat_b;
+    bool                            sat_geom_valid;
+    bool                            sat_dirty;
+    float                           sat_last_in;
+    float                           sat_last_fed;
+    float                           sat_last_drop;
+    float                           sat_last_queue_pct;
 
     XTRACEMONITOR_FORM_CFG          form_cfg;
     XTRACEMONITOR_FORM_FILTERS      form_filters;

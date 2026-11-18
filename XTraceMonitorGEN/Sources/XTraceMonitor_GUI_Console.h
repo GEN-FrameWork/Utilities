@@ -37,6 +37,7 @@
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
 
 class XTRACEMONITOR;
+class UI_ELEMENT;
 class UI_ELEMENT_CONSOLE;
 
 class XTRACEMONITOR_GUI_CONSOLE
@@ -54,15 +55,32 @@ class XTRACEMONITOR_GUI_CONSOLE
     bool                            ApplyLayoutGeometry                     (double panel_w, double console_h, double console_bot);
     bool                            SetToRedraw                             ();
     bool                            ApplyTextTracking                       ();
+    bool                            SyncTextTrackingFromCFG                 ();
+    bool                            RefreshTrackOverlay                     ();
+
+    bool                            HandleSelection                         (int screen_x, int screen_y, bool extend, bool dragging);
+    void                            EndSelectionDrag                        ();
+    bool                            CopySelection                           ();
+    bool                            SelectAll                               ();
+    bool                            HitTest                                 (int screen_x, int screen_y);
+    bool                            HitTestTrackButton                      (int screen_x, int screen_y);
+    bool                            HandleElementSelected                   (UI_ELEMENT* element);
 
     UI_ELEMENT_CONSOLE*             GetElement                              ();
+    UI_ELEMENT*                     GetTrackButton                          ();
 
   private:
 
     void                            Clean                                   ();
+    bool                            PackTrackButton                         ();
+    bool                            SyncTrackButton                         ();
 
     XTRACEMONITOR*                  owner;
     UI_ELEMENT_CONSOLE*             consoleelement;
+    UI_ELEMENT*                     track_btn;
+    bool                            tracking_session;
+    bool                            selection_dragging;
+    XDWORD                          selection_anchor;
 };
 
 /*---- INLINE FUNCTIONS + PROTOTYPES ---------------------------------------------------------------------------------*/

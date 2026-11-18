@@ -4,7 +4,7 @@
 *
 * @class      APPUPDATECREATOR
 * @brief      Application Update Creator class
-* @ingroup    UTILS
+* @ingroup    UTILITIES
 *
 * @copyright  EndoraSoft. All rights reserved.
 *

@@ -43,6 +43,10 @@
 // Cap lines drained into the UI console per Pump() to keep the frame budget.
 #define XTRACEMONITOR_SERVER_MAX_PUMP_PER_FRAME     128
 
+// Saturation sparkline ring capacity (1 Hz). Visible samples = plot width in px
+// (1 sample/px, right-aligned scroll); keep headroom above XTRACEMONITOR_SAT_CHART_W.
+#define XTRACEMONITOR_SAT_HISTORY_MAX               1024
+
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
 
 class XTRACEMONITOR;
@@ -70,6 +74,9 @@ class XTRACEMONITOR_SERVER
 
     XDWORD                          GetDroppedCount                         ();
     XDWORD                          GetQueuedCount                          ();
+    XDWORD                          GetPushedCount                          ();
+    XDWORD                          GetFedCount                             ();
+    XDWORD                          GetMaxMessages                          ();
 
   private:
 
@@ -83,6 +90,8 @@ class XTRACEMONITOR_SERVER
     XTHREADPRIORITY                 priority;
     XWORD                           listenport_open;
     bool                            uart_open;
+
+    XDWORD                          fedcount;
 
 #if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
     XTRACESERVER                    server;

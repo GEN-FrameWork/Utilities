@@ -249,6 +249,8 @@ bool XTRACEMONITOR_CFG::DoVariableMapping()
            NL("Prefix each console line with source IP"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
   AddValue(XFILECFG_VALUETYPE_BOOLEAN, XTRACEMONITOR_CFG_SECTION_CONSOLE, XTRACEMONITOR_CFG_TEXTTRACKING, &texttracking,
            NL("Follow / auto-scroll console text"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
+  AddValue(XFILECFG_VALUETYPE_INT, XTRACEMONITOR_CFG_SECTION_CONSOLE, XTRACEMONITOR_CFG_MAXLINESCONSOLE, &maxlinesconsole,
+           NL("Max stored lines per console before 95% recycle"), APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
 
   AddRemark(XTRACEMONITOR_CFG_SECTION_DYNDNS, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
   AddRemark(XTRACEMONITOR_CFG_SECTION_DYNDNS, NL(" DynDNS access (password stored AES+Base64)"), 0, 2);
@@ -431,6 +433,7 @@ bool XTRACEMONITOR_CFG::DoDefault()
   adddatetimeconsole                    = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
   addipconsole                          = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;
   texttracking                          = XTRACEMONITOR_CFG_TEXTTRACKING_DEFAULT;
+  maxlinesconsole                       = XTRACEMONITOR_CFG_MAXLINESCONSOLE_DEFAULT;
 
   filters_istextactive                  = XTRACEMONITOR_CFG_FILTERS_ISTEXTFILTERACTIVE_DEFAULT;
   filters_text.Empty();
@@ -738,6 +741,47 @@ bool XTRACEMONITOR_CFG::GetTextTracking()
 void XTRACEMONITOR_CFG::SetTextTracking(bool enable)
 {
   texttracking = enable;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         int XTRACEMONITOR_CFG::GetMaxLinesConsole()
+* @brief      Max stored lines per console origin before recycle.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+int XTRACEMONITOR_CFG::GetMaxLinesConsole()
+{
+  return ResolveMaxLinesConsole(maxlinesconsole);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_CFG::SetMaxLinesConsole(int maxlines)
+* @brief      Sets max stored lines per console origin.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_CFG::SetMaxLinesConsole(int maxlines)
+{
+  maxlinesconsole = ResolveMaxLinesConsole(maxlines);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         int XTRACEMONITOR_CFG::ResolveMaxLinesConsole(int maxlines)
+* @brief      Clamps maxlinesconsole into the valid range.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+int XTRACEMONITOR_CFG::ResolveMaxLinesConsole(int maxlines)
+{
+  if(maxlines < XTRACEMONITOR_CFG_MAXLINESCONSOLE_MIN) return XTRACEMONITOR_CFG_MAXLINESCONSOLE_MIN;
+  if(maxlines > XTRACEMONITOR_CFG_MAXLINESCONSOLE_MAX) return XTRACEMONITOR_CFG_MAXLINESCONSOLE_MAX;
+  return maxlines;
 }
 
 
@@ -1888,6 +1932,7 @@ void XTRACEMONITOR_CFG::Clean()
   adddatetimeconsole   = XTRACEMONITOR_CFG_ADDDATETIMECONSOLE_DEFAULT;
   addipconsole         = XTRACEMONITOR_CFG_ADDIPCONSOLE_DEFAULT;
   texttracking         = XTRACEMONITOR_CFG_TEXTTRACKING_DEFAULT;
+  maxlinesconsole      = XTRACEMONITOR_CFG_MAXLINESCONSOLE_DEFAULT;
   filters_istextactive = XTRACEMONITOR_CFG_FILTERS_ISTEXTFILTERACTIVE_DEFAULT;
   filters_text.Empty();
   filters_levels       = XTRACEMONITOR_CFG_FILTERS_LEVELFILTER_DEFAULT;
