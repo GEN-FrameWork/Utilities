@@ -41,6 +41,7 @@
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
 
 class  XTRACEMONITOR;
+class  UI_ELEMENT;
 class  UI_ELEMENT_TREE;
 struct UI_ELEMENT_TREE_NODE;
 class  UI_ELEMENT_FORM;
@@ -83,6 +84,16 @@ class XTRACEMONITOR_GUI_TREE
 
     bool                            PublicIPFromNode                        (UI_ELEMENT_TREE_NODE* node, XDWORD& publicIP);
     bool                            ShowGeoTooltipForIP                     (XDWORD publicIP, UI_ELEMENT_TREE_NODE* node, int screen_x, int screen_y);
+    bool                            GeoTooltipKey                           (XDWORD publicIP, int& state, int& map_state, XSTRING& map_path);
+    bool                            GeoTooltipKeyCurrent                    (XDWORD publicIP);
+    bool                            GeoTooltipAnchorCurrent                 (int screen_x, int screen_y);
+    bool                            GeoTooltipHits                          (UI_ELEMENT* element);
+    bool                            GeoTooltipElementMeets                  (UI_ELEMENT* element, double left, double top, double right, double bottom);
+    bool                            GeoTooltipDirtyCovered                  (double left, double top, double right, double bottom);
+    bool                            GeoTooltipFlushClear                    ();
+    bool                            GeoTooltipNeedsRepair                   ();
+    bool                            WipeGeoTooltipPlate                     ();
+    bool                            GeoTooltipRepairOrHold                  ();
     bool                            CursorOverTooltip                       (int screen_x, int screen_y);
     bool                            ResetGeoTooltipHover                    ();
 
@@ -104,6 +115,30 @@ class XTRACEMONITOR_GUI_TREE
     XDWORD                          geotooltip_ip;
     XTIMER*                         geotooltip_hover_timer;
     XDWORD                          geotooltip_hover_ip;
+
+    // Last plate actually shown. RebuildAllAreas drops the under-tip snapshot when the
+    // tip is not dirty, so a later move/hide must wipe that rect itself or the old
+    // plate stays on screen. redraw_latched means the next frame still has that snapshot.
+    bool                            geotooltip_plate_valid;
+    bool                            geotooltip_redraw_latched;
+    XDWORD                          geotooltip_cache_ip;
+    int                             geotooltip_cache_state;
+    int                             geotooltip_cache_map_state;
+    XSTRING                         geotooltip_cache_map_path;
+    XDWORD                          geotooltip_cache_lang;
+    int                             geotooltip_cache_x;
+    int                             geotooltip_cache_y;
+    int                             geotooltip_cache_screen_w;
+    int                             geotooltip_cache_screen_h;
+
+    // Rect last wiped. For a few frames after hide, the console / valor / tree are
+    // forced dirty so a rebuild snapshot that captured the plate cannot put it back.
+    bool                            geotooltip_clear_valid;
+    int                             geotooltip_clear_frames;
+    double                          geotooltip_clear_l;
+    double                          geotooltip_clear_t;
+    double                          geotooltip_clear_r;
+    double                          geotooltip_clear_b;
 };
 
 /*---- INLINE FUNCTIONS + PROTOTYPES ---------------------------------------------------------------------------------*/

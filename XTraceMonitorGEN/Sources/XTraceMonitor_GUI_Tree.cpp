@@ -36,6 +36,7 @@
 
 #include "GRPBitmap.h"
 #include "GRPScreen.h"
+#include "GRP2DCanvas.h"
 
 #include "UI_BoundaryLine.h"
 #include "UI_Element_Form.h"
@@ -46,6 +47,7 @@
 
 #include "UI_Element_Console.h"
 #include "UI_Element_Tooltip.h"
+#include "UI_SkinCanvas.h"
 
 #include "XFactory.h"
 #include "XTimer.h"
@@ -268,6 +270,8 @@ bool XTRACEMONITOR_GUI_TREE::Detach()
   geotooltip_node    = NULL;
   geotooltip_ip      = 0;
   geotooltip_hover_ip = 0;
+  geotooltip_plate_valid    = false;
+  geotooltip_redraw_latched = false;
   return true;
 }
 
@@ -504,7 +508,376 @@ bool XTRACEMONITOR_GUI_TREE::HideGeoTooltip()
   geotooltip_node = NULL;
   geotooltip_ip   = 0;
   ResetGeoTooltipHover();
-  if(geotooltip) geotooltip->Hide();
+  if(geotooltip && geotooltip->IsVisible())
+    {
+      // Always wipe, even if a redraw was latched. The latched snapshot is the
+      // console as it was when the plate was already on screen, so restoring it
+      // paints the plate back. A fast jump into the console hits this path.
+      if(geotooltip_plate_valid) WipeGeoTooltipPlate();
+      geotooltip->Hide();
+      if(geotooltip_clear_valid) geotooltip_clear_frames = 5;
+    }
+  geotooltip_plate_valid      = false;
+  geotooltip_redraw_latched   = false;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_TREE::GeoTooltipKey(XDWORD publicIP, int& state, int& map_state, XSTRING& map_path)
+* @brief      Reads the geo/map fields that change the tooltip body. Missing entry is state -1.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_TREE::GeoTooltipKey(XDWORD publicIP, int& state, int& map_state, XSTRING& map_path)
+{
+  state     = -1;
+  map_state = 0;
+  map_path.Empty();
+  if(!owner) return false;
+
+  XTRACEMONITOR_GEOIP_ENTRY geo;
+  if(!owner->geoip.TryGet(publicIP, geo)) return true;
+
+  state     = (int)geo.state;
+  map_state = (int)geo.map_state;
+  map_path  = geo.map_path;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_TREE::GeoTooltipKeyCurrent(XDWORD publicIP)
+* @brief      True when the visible plate already shows this IP, geo/map state, path and language.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_TREE::GeoTooltipKeyCurrent(XDWORD publicIP)
+{
+  if(!geotooltip_plate_valid || (geotooltip_cache_ip != publicIP)) return false;
+
+  int state = -1;
+  int map_state = 0;
+  XSTRING map_path;
+  if(!GeoTooltipKey(publicIP, state, map_state, map_path)) return false;
+  if(state != geotooltip_cache_state) return false;
+  if(map_state != geotooltip_cache_map_state) return false;
+  if(map_path.Compare(geotooltip_cache_map_path)) return false;
+  if(GEN_XTRANSLATION.GetActual() != geotooltip_cache_lang) return false;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_TREE::GeoTooltipAnchorCurrent(int screen_x, int screen_y)
+* @brief      True when the cursor and the screen size still match the last placement.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_TREE::GeoTooltipAnchorCurrent(int screen_x, int screen_y)
+{
+  if(!geotooltip_plate_valid) return false;
+  if((screen_x != geotooltip_cache_x) || (screen_y != geotooltip_cache_y)) return false;
+
+  int sw = 0;
+  int sh = 0;
+  if(owner && owner->GetMainScreen())
+    {
+      sw = (int)owner->GetMainScreen()->GetWidth();
+      sh = (int)owner->GetMainScreen()->GetHeight();
+    }
+  return (sw == geotooltip_cache_screen_w) && (sh == geotooltip_cache_screen_h);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_TREE::GeoTooltipHits(UI_ELEMENT* element)
+* @brief      True when the element box meets the current tooltip plate (small pad).
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_TREE::GeoTooltipHits(UI_ELEMENT* element)
+{
+  if(!element || !element->IsVisible() || !element->GetBoundaryLine()) return false;
+  if(!geotooltip || !geotooltip->GetBoundaryLine()) return false;
+
+  const double pad  = 4.0;
+  const double ax   = geotooltip->GetXPosition() - pad;
+  const double ab   = geotooltip->GetYPosition() + pad;
+  const double aw   = geotooltip->GetBoundaryLine()->width  + (pad * 2.0);
+  const double ah   = geotooltip->GetBoundaryLine()->height + (pad * 2.0);
+  const double atop = ab - ah;
+
+  const double bx   = element->GetXPosition();
+  const double bb   = element->GetYPosition();
+  const double bw   = element->GetBoundaryLine()->width;
+  const double bh   = element->GetBoundaryLine()->height;
+  const double btop = bb - bh;
+
+  if(((ax + aw) <= bx) || ((bx + bw) <= ax) || (ab <= btop) || (bb <= atop)) return false;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_TREE::GeoTooltipElementMeets(UI_ELEMENT* element, double left, double top, double right, double bottom)
+* @brief      True when the element box meets an explicit screen rect.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_TREE::GeoTooltipElementMeets(UI_ELEMENT* element, double left, double top, double right, double bottom)
+{
+  if(!element || !element->IsVisible() || !element->GetBoundaryLine()) return false;
+
+  const double bx   = element->GetXPosition();
+  const double bb   = element->GetYPosition();
+  const double bw   = element->GetBoundaryLine()->width;
+  const double bh   = element->GetBoundaryLine()->height;
+  const double btop = bb - bh;
+
+  if((right <= bx) || ((bx + bw) <= left) || (bottom <= btop) || (bb <= top)) return false;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_TREE::GeoTooltipDirtyCovered(double left, double top, double right, double bottom)
+* @brief      Marks every widget under a wiped plate so it repaints over leftover ink.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_TREE::GeoTooltipDirtyCovered(double left, double top, double right, double bottom)
+{
+  auto dirty = [&](UI_ELEMENT* el)
+    {
+      if(el && (el != (UI_ELEMENT*)geotooltip) && GeoTooltipElementMeets(el, left, top, right, bottom))
+        GEN_USERINTERFACE.Elements_SetToRedraw(el, true);
+    };
+  auto dirty_named = [&](XCHAR* name, UI_ELEMENT_TYPE type)
+    {
+      dirty(GEN_USERINTERFACE.Element_Get(name, type));
+    };
+
+  dirty(treeelement);
+  dirty_named(NL("log_console")    , UI_ELEMENT_TYPE_CONSOLE);
+  dirty_named(NL("valor")          , UI_ELEMENT_TYPE_PROPERTYLIST);
+  dirty_named(NL("opstatus")       , UI_ELEMENT_TYPE_FORM);
+  dirty_named(NL("stop-btn")       , UI_ELEMENT_TYPE_MULTIOPTION);
+  dirty_named(NL("run-btn")        , UI_ELEMENT_TYPE_MULTIOPTION);
+  dirty_named(NL("clear-btn")      , UI_ELEMENT_TYPE_MULTIOPTION);
+  dirty_named(NL("delstatus-btn")  , UI_ELEMENT_TYPE_MULTIOPTION);
+  dirty_named(NL("filter-btn")     , UI_ELEMENT_TYPE_MULTIOPTION);
+  dirty_named(NL("brand_toolbar")  , UI_ELEMENT_TYPE_IMAGE);
+  dirty_named(NL("brand-ver-lbl")  , UI_ELEMENT_TYPE_FORM);
+  dirty_named(NL("runstop-lbl")    , UI_ELEMENT_TYPE_FORM);
+  dirty_named(NL("clear-lbl")      , UI_ELEMENT_TYPE_FORM);
+  dirty_named(NL("delstatus-lbl")  , UI_ELEMENT_TYPE_FORM);
+  dirty_named(NL("filter-lbl")     , UI_ELEMENT_TYPE_FORM);
+  dirty_named(NL("netstatus")      , UI_ELEMENT_TYPE_FORM);
+  dirty_named(NL("netstatus_state"), UI_ELEMENT_TYPE_TEXT);
+  dirty_named(NL("netstatus_ip")   , UI_ELEMENT_TYPE_TEXT);
+  dirty_named(NL("netstatus_udp")  , UI_ELEMENT_TYPE_TEXT);
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_TREE::GeoTooltipFlushClear()
+* @brief      For a few frames after hide, force the widgets under the old plate to redraw.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_TREE::GeoTooltipFlushClear()
+{
+  if(geotooltip_clear_frames <= 0 || !geotooltip_clear_valid) return true;
+
+  // While a new plate is up, do not redraw the console over it. The frames are
+  // only there to cover a hide whose snapshot still held the old ink.
+  if(!geotooltip || !geotooltip->IsVisible())
+    {
+      GeoTooltipDirtyCovered(geotooltip_clear_l, geotooltip_clear_t, geotooltip_clear_r, geotooltip_clear_b);
+    }
+
+  geotooltip_clear_frames--;
+  if(geotooltip_clear_frames <= 0) geotooltip_clear_valid = false;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_TREE::GeoTooltipNeedsRepair()
+* @brief      True when chrome, the tree, or a repair window will paint over the stationary plate.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_TREE::GeoTooltipNeedsRepair()
+{
+  if(!owner || !geotooltip || !geotooltip->IsVisible()) return false;
+
+  if(owner->chrome_theme_dirty) return true;
+  if(owner->resize_recover_frames > 0) return true;
+  if(owner->netstatus_repair_frames > 0) return true;
+  if(owner->netstatus_ghost_frames > 0) return true;
+  if(owner->brand_repair_frames > 0) return true;
+  if(owner->sat_repair_frames > 0) return true;
+
+  auto dirty_hit = [&](UI_ELEMENT* el) -> bool
+    {
+      return (el && el->MustReDraw() && GeoTooltipHits(el));
+    };
+  auto dirty_named = [&](XCHAR* name, UI_ELEMENT_TYPE type) -> bool
+    {
+      return dirty_hit(GEN_USERINTERFACE.Element_Get(name, type));
+    };
+
+  if(dirty_hit(treeelement)) return true;
+  if(dirty_named(NL("log_console")    , UI_ELEMENT_TYPE_CONSOLE)) return true;
+  if(dirty_named(NL("valor")          , UI_ELEMENT_TYPE_PROPERTYLIST)) return true;
+  if(dirty_named(NL("opstatus")       , UI_ELEMENT_TYPE_FORM)) return true;
+  if(dirty_named(NL("stop-btn")       , UI_ELEMENT_TYPE_MULTIOPTION)) return true;
+  if(dirty_named(NL("run-btn")        , UI_ELEMENT_TYPE_MULTIOPTION)) return true;
+  if(dirty_named(NL("clear-btn")      , UI_ELEMENT_TYPE_MULTIOPTION)) return true;
+  if(dirty_named(NL("delstatus-btn")  , UI_ELEMENT_TYPE_MULTIOPTION)) return true;
+  if(dirty_named(NL("filter-btn")     , UI_ELEMENT_TYPE_MULTIOPTION)) return true;
+  if(dirty_named(NL("brand_toolbar")  , UI_ELEMENT_TYPE_IMAGE)) return true;
+  if(dirty_named(NL("brand-ver-lbl")  , UI_ELEMENT_TYPE_FORM)) return true;
+  if(dirty_named(NL("runstop-lbl")    , UI_ELEMENT_TYPE_FORM)) return true;
+  if(dirty_named(NL("clear-lbl")      , UI_ELEMENT_TYPE_FORM)) return true;
+  if(dirty_named(NL("delstatus-lbl")  , UI_ELEMENT_TYPE_FORM)) return true;
+  if(dirty_named(NL("filter-lbl")     , UI_ELEMENT_TYPE_FORM)) return true;
+  if(dirty_named(NL("netstatus")      , UI_ELEMENT_TYPE_FORM)) return true;
+  if(dirty_named(NL("netstatus_state"), UI_ELEMENT_TYPE_TEXT)) return true;
+  if(dirty_named(NL("netstatus_ip")   , UI_ELEMENT_TYPE_TEXT)) return true;
+  if(dirty_named(NL("netstatus_udp")  , UI_ELEMENT_TYPE_TEXT)) return true;
+  return false;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_TREE::WipeGeoTooltipPlate()
+* @brief      Erases the current plate and dirties whatever it covered.
+* @note       Always, including when a redraw was latched. A fast jump onto the console
+*             leaves the console snapshot holding the plate; deleting that snapshot and
+*             repainting the console is what actually clears it.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_TREE::WipeGeoTooltipPlate()
+{
+  if(!geotooltip || !geotooltip_plate_valid || !geotooltip->GetBoundaryLine()) return false;
+
+  const double extra = 16.0;
+  const double ox    = geotooltip->GetXPosition();
+  const double oy    = geotooltip->GetYPosition();
+  const double ow    = geotooltip->GetBoundaryLine()->width;
+  const double oh    = geotooltip->GetBoundaryLine()->height;
+
+  geotooltip_clear_l     = ox - extra;
+  geotooltip_clear_b     = oy + extra;
+  geotooltip_clear_r     = ox + ow + extra;
+  geotooltip_clear_t     = geotooltip_clear_b - (oh + (extra * 2.0));
+  geotooltip_clear_valid = true;
+
+  // EraseElementRebuildArea pads another 8 px and drops every rebuild snapshot
+  // that crosses the plate (console included) instead of restoring it.
+  geotooltip->SetXPosition(geotooltip_clear_l);
+  geotooltip->SetYPosition(geotooltip_clear_b);
+  geotooltip->GetBoundaryLine()->x      = geotooltip_clear_l;
+  geotooltip->GetBoundaryLine()->y      = geotooltip_clear_b;
+  geotooltip->GetBoundaryLine()->width  = ow + (extra * 2.0);
+  geotooltip->GetBoundaryLine()->height = oh + (extra * 2.0);
+
+  UI_LAYOUT* layout = GEN_USERINTERFACE.Element_GetLayout(geotooltip);
+  if(layout && layout->GetSkin() && (layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS))
+    {
+      ((UI_SKINCANVAS*)layout->GetSkin())->EraseElementRebuildArea(geotooltip);
+    }
+
+  geotooltip->SetXPosition(ox);
+  geotooltip->SetYPosition(oy);
+  geotooltip->GetBoundaryLine()->x      = ox;
+  geotooltip->GetBoundaryLine()->y      = oy;
+  geotooltip->GetBoundaryLine()->width  = ow;
+  geotooltip->GetBoundaryLine()->height = oh;
+
+  // The layout background is a flat color, not a bitmap, so EraseElementRebuildArea
+  // drops snapshots and then returns without painting. The gutter between the tree
+  // and the console is nobody's widget: the yellow plate stays there. Draw_Console
+  // then samples those pixels (2 px outside the frame) and strokes them back as the
+  // panel seed. Fill the plate with the page color before that sample.
+  if(layout && layout->GetSkin() && (layout->GetSkin()->GetDrawMode() == UI_SKIN_DRAWMODE_CANVAS))
+    {
+      GRP2DCANVAS* canvas = ((UI_SKINCANVAS*)layout->GetSkin())->GetCanvas();
+      if(canvas)
+        {
+          XBYTE pr = 24;
+          XBYTE pg = 28;
+          XBYTE pb = 36;
+          UI_COLOR* page = (layout->GetBackground()) ? layout->GetBackground()->GetColor() : NULL;
+          if(page && ((page->GetRed() + page->GetGreen() + page->GetBlue()) > 8))
+            {
+              pr = (XBYTE)page->GetRed();
+              pg = (XBYTE)page->GetGreen();
+              pb = (XBYTE)page->GetBlue();
+            }
+
+          GRP2DCOLOR_RGBA8 fill(pr, pg, pb, 255);
+          GRP2DCOLOR_RGBA8 noline(0, 0, 0, 0);
+          canvas->SetFillColor(&fill);
+          canvas->SetLineColor(&noline);
+          canvas->SetLineWidth(0.0f);
+          canvas->Rectangle(geotooltip_clear_l, geotooltip_clear_b, geotooltip_clear_r, geotooltip_clear_t, true);
+        }
+    }
+
+  GeoTooltipDirtyCovered(geotooltip_clear_l, geotooltip_clear_t, geotooltip_clear_r, geotooltip_clear_b);
+
+  if(owner && owner->sat_geom_valid)
+    {
+      const bool miss = (geotooltip_clear_r < owner->sat_l) || (geotooltip_clear_l > owner->sat_r) ||
+                        (geotooltip_clear_b < owner->sat_t) || (geotooltip_clear_t > owner->sat_b);
+      if(!miss)
+        {
+          owner->sat_dirty = true;
+          if(owner->sat_repair_frames < 3) owner->sat_repair_frames = 3;
+        }
+    }
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_TREE::GeoTooltipRepairOrHold()
+* @brief      Keeps the plate last. Marks it dirty only when something underneath is about to paint over it.
+* @ingroup    UTILITIES
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_TREE::GeoTooltipRepairOrHold()
+{
+  if(!geotooltip) return false;
+
+  GEN_USERINTERFACE.Element_PutToLastPositionLayout(geotooltip);
+  if(GeoTooltipNeedsRepair())
+    {
+      geotooltip->SetMustReDraw(true);
+      GEN_USERINTERFACE.Elements_SetToRedraw(geotooltip);
+      geotooltip_redraw_latched = true;
+    }
+   else
+    {
+      geotooltip_redraw_latched = false;
+    }
   return true;
 }
 
@@ -520,12 +893,41 @@ bool XTRACEMONITOR_GUI_TREE::ShowGeoTooltipForIP(XDWORD publicIP, UI_ELEMENT_TRE
 {
   if(!owner || !geotooltip || !treeelement || !node) return false;
 
+  // Same IP, geo/map, language, cursor and screen: do not rebuild the body.
+  // A stationary plate is not dirty, so RebuildAllAreas drops its under-snapshot.
+  // The next move or hide wipes that rect itself (see WipeGeoTooltipPlate).
+  const bool key_now = GeoTooltipKeyCurrent(publicIP);
+  if(key_now && geotooltip->IsVisible() && GeoTooltipAnchorCurrent(screen_x, screen_y))
+    {
+      geotooltip_node = node;
+      geotooltip_ip   = publicIP;
+      return GeoTooltipRepairOrHold();
+    }
+
+  // Move/resize always erases the previous rect. Skipping this when a redraw
+  // was latched left a trail of plates on the console under a fast cursor.
+  if(geotooltip_plate_valid && geotooltip->IsVisible())
+    WipeGeoTooltipPlate();
+
   // Re-assert borderless each show (theme / style reapply must not revive a stroke).
   geotooltip->SetBorderWidth(0.0);
 
-  XSTRING body;
-  owner->geoip.FormatTooltipText(publicIP, body);
-  geotooltip->SetContent(body);
+  if(!key_now)
+    {
+      XSTRING body;
+      owner->geoip.FormatTooltipText(publicIP, body);
+      geotooltip->SetContent(body);
+
+      int state = -1;
+      int map_state = 0;
+      XSTRING map_path;
+      GeoTooltipKey(publicIP, state, map_state, map_path);
+      geotooltip_cache_ip        = publicIP;
+      geotooltip_cache_state     = state;
+      geotooltip_cache_map_state = map_state;
+      geotooltip_cache_map_path  = map_path;
+      geotooltip_cache_lang      = GEN_XTRANSLATION.GetActual();
+    }
 
   // Grow the tip when a map PNG is ready; otherwise keep the compact text plate.
   // Box = content + same 6 px padding used for text/map on every edge.
@@ -644,11 +1046,21 @@ bool XTRACEMONITOR_GUI_TREE::ShowGeoTooltipForIP(XDWORD publicIP, UI_ELEMENT_TRE
 
   geotooltip_node = node;
   geotooltip_ip   = publicIP;
-  // Must stay last in the layout list AND dirty every frame: chrome preselect redraw would
-  // otherwise paint toolbar / bubble labels over a tip that is not marked for redraw.
   GEN_USERINTERFACE.Element_PutToLastPositionLayout(geotooltip);
   geotooltip->SetMustReDraw(true);
   GEN_USERINTERFACE.Elements_SetToRedraw(geotooltip);
+
+  geotooltip_plate_valid    = true;
+  geotooltip_redraw_latched = true;
+  geotooltip_cache_x        = screen_x;
+  geotooltip_cache_y        = screen_y;
+  geotooltip_cache_screen_w = 0;
+  geotooltip_cache_screen_h = 0;
+  if(owner->GetMainScreen())
+    {
+      geotooltip_cache_screen_w = (int)owner->GetMainScreen()->GetWidth();
+      geotooltip_cache_screen_h = (int)owner->GetMainScreen()->GetHeight();
+    }
   return geotooltip->ShowAt(tip_left, tip_bottom);
 }
 
@@ -663,6 +1075,7 @@ bool XTRACEMONITOR_GUI_TREE::ShowGeoTooltipForIP(XDWORD publicIP, UI_ELEMENT_TRE
 bool XTRACEMONITOR_GUI_TREE::UpdateGeoTooltip(int screen_x, int screen_y, bool mouse_pressed_edge)
 {
   if(!owner || !treeelement || !geotooltip) return false;
+  GeoTooltipFlushClear();
   if(!XTRACEMONITOR_CFG::GetInstance(false).GetGeolocalizationPublicIP())
     {
       return HideGeoTooltip();
@@ -707,12 +1120,7 @@ bool XTRACEMONITOR_GUI_TREE::UpdateGeoTooltip(int screen_x, int screen_y, bool m
       // New hover target (or tip not yet shown): restart the dwell clock.
       if(geotooltip_hover_ip != hit_ip)
         {
-          if(geotooltip->IsVisible())
-            {
-              geotooltip_node = NULL;
-              geotooltip_ip   = 0;
-              geotooltip->Hide();
-            }
+          if(geotooltip->IsVisible()) HideGeoTooltip();
           geotooltip_hover_ip = hit_ip;
           if(geotooltip_hover_timer) geotooltip_hover_timer->Reset();
         }
@@ -731,11 +1139,13 @@ bool XTRACEMONITOR_GUI_TREE::UpdateGeoTooltip(int screen_x, int screen_y, bool m
 
   if(over_tip && geotooltip_ip)
     {
-      // Keep tip while cursor travels onto the tip itself; stay above chrome redraws.
-      GEN_USERINTERFACE.Element_PutToLastPositionLayout(geotooltip);
-      geotooltip->SetMustReDraw(true);
-      GEN_USERINTERFACE.Elements_SetToRedraw(geotooltip);
-      return true;
+      // Keep the anchor. Refresh the body when geo/map arrives; otherwise only
+      // repaint if chrome or the tree is about to cover the plate.
+      if(geotooltip_plate_valid && !GeoTooltipKeyCurrent(geotooltip_ip))
+        {
+          return ShowGeoTooltipForIP(geotooltip_ip, geotooltip_node, geotooltip_cache_x, geotooltip_cache_y);
+        }
+      return GeoTooltipRepairOrHold();
     }
 
   return HideGeoTooltip();
@@ -927,4 +1337,20 @@ void XTRACEMONITOR_GUI_TREE::Clean()
   geotooltip_ip      = 0;
   geotooltip_hover_timer = NULL;
   geotooltip_hover_ip    = 0;
+  geotooltip_plate_valid      = false;
+  geotooltip_redraw_latched   = false;
+  geotooltip_cache_ip         = 0;
+  geotooltip_cache_state      = -1;
+  geotooltip_cache_map_state  = 0;
+  geotooltip_cache_lang       = 0;
+  geotooltip_cache_x          = 0;
+  geotooltip_cache_y          = 0;
+  geotooltip_cache_screen_w   = 0;
+  geotooltip_cache_screen_h   = 0;
+  geotooltip_clear_valid      = false;
+  geotooltip_clear_frames     = 0;
+  geotooltip_clear_l          = 0.0;
+  geotooltip_clear_t          = 0.0;
+  geotooltip_clear_r          = 0.0;
+  geotooltip_clear_b          = 0.0;
 }
