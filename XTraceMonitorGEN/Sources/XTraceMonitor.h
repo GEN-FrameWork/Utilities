@@ -359,6 +359,10 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     // Must NOT run wipe+PaintCluster every idle DrawFrame (that alone dropped ~60→48 FPS).
     int                             netstatus_repair_frames;
 
+    // Chart-only repair. Caption rebuild can stamp the toolbar band, but a netstatus
+    // text/latency poll must not wipe and repaint the sparkline when its box is unchanged.
+    int                             sat_repair_frames;
+
     // Queue saturation sparkline (canvas): 1 Hz ring; paint shows last plot_w px (1 sample/px).
     XTRACEMONITOR_SAT_SAMPLE        sat_samples[XTRACEMONITOR_SAT_HISTORY_MAX];
     XDWORD                          sat_count;

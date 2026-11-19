@@ -1620,6 +1620,7 @@ bool XTRACEMONITOR::DrawFrame()
             }
           chrome_theme_dirty = false;
           if(netstatus_repair_frames < 5) netstatus_repair_frames = 5;
+          if(sat_repair_frames < 5) sat_repair_frames = 5;
           if(brand_repair_frames < 5) brand_repair_frames = 5;
         }
     }
@@ -1627,6 +1628,10 @@ bool XTRACEMONITOR::DrawFrame()
   if(size_relaid && (netstatus_repair_frames < 5))
     {
       netstatus_repair_frames = 5;
+    }
+  if(size_relaid && (sat_repair_frames < 5))
+    {
+      sat_repair_frames = 5;
     }
   if(size_relaid && (brand_repair_frames < 5))
     {
@@ -2302,6 +2307,7 @@ bool XTRACEMONITOR::InternetStatus_RepaintAfterChrome()
 * @fn         bool XTRACEMONITOR::SatChart_ApplyGeometry(double canvas_w)
 * @brief      Places the saturation sparkline to the right of the toolbar bubbles
 *             (2× the inter-bubble gap), same vertical band as the 72px icons.
+*             An unchanged box is a no-op (no wipe, no paint).
 * @ingroup    UTILITIES
 *
 *---------------------------------------------------------------------------------------------------------------------*/
@@ -2361,18 +2367,40 @@ bool XTRACEMONITOR::SatChart_ApplyGeometry(double canvas_w)
 
   const double left = space_l + (space_w - width) * 0.5;
 
+  const double new_l = left;
+  const double new_t = top;
+  const double new_r = left + width;
+  const double new_b = bottom;
+
+  auto almost_eq = [](double a, double b) -> bool
+    {
+      double d = a - b;
+      if(d < 0.0) d = -d;
+      return d < 0.5;
+    };
+
+  // InternetStatus_Update calls this on every latency/IP poll. Same box must not
+  // wipe and paint the sparkline again (SatChart_Update already painted this tick).
+  if(sat_geom_valid &&
+     almost_eq(sat_l, new_l) && almost_eq(sat_t, new_t) &&
+     almost_eq(sat_r, new_r) && almost_eq(sat_b, new_b))
+    {
+      return true;
+    }
+
   const double prev_l = sat_l;
   const double prev_t = sat_t;
   const double prev_r = sat_r;
   const double prev_b = sat_b;
   const bool   had    = sat_geom_valid;
 
-  sat_l = left;
-  sat_t = top;
-  sat_r = left + width;
-  sat_b = bottom;
+  sat_l = new_l;
+  sat_t = new_t;
+  sat_r = new_r;
+  sat_b = new_b;
   sat_geom_valid = true;
   sat_dirty = true;
+  if(sat_repair_frames < 3) sat_repair_frames = 3;
 
   if(had)
     {
@@ -2620,7 +2648,7 @@ bool XTRACEMONITOR::SatChart_Update(bool force)
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool XTRACEMONITOR::SatChart_RepaintAfterChrome()
-* @brief      Repaints the sparkline when chrome/netstatus repair is armed.
+* @brief      Repaints the sparkline while its own repair window is armed.
 * @ingroup    UTILITIES
 *
 *---------------------------------------------------------------------------------------------------------------------*/
@@ -2628,10 +2656,18 @@ bool XTRACEMONITOR::SatChart_RepaintAfterChrome()
 {
   if(!sat_geom_valid) return false;
 
-  if((netstatus_ghost_frames <= 0) && (netstatus_repair_frames <= 0) && !sat_dirty)
-    return false;
+  // Netstatus ghost/repair must not drag the chart. Only a chart move, resize,
+  // theme, language, or a netstatus wipe that actually covers this box arms it.
+  if(sat_repair_frames > 0)
+    {
+      sat_repair_frames--;
+      sat_dirty = true;
+    }
+   else if(!sat_dirty)
+    {
+      return false;
+    }
 
-  sat_dirty = true;
   return SatChart_Paint();
 }
 
@@ -2870,6 +2906,14 @@ bool XTRACEMONITOR::InternetStatus_ApplyGeometry(double canvas_w)
 
       // Geometry moved; arm DrawFrame repairs so chrome caption rebuild cannot leave a cropped LED.
       if(netstatus_repair_frames < 3) netstatus_repair_frames = 3;
+
+      // The cluster wipe can eat the sparkline when the frame grows or shrinks into it.
+      // A latency poll that does not move this AABB never reaches here.
+      if(sat_geom_valid &&
+         !((wipe_r < sat_l) || (wipe_l > sat_r) || (wipe_b < sat_t) || (wipe_t > sat_b)))
+        {
+          if(sat_repair_frames < 5) sat_repair_frames = 5;
+        }
     }
    else
     {
@@ -3021,6 +3065,15 @@ bool XTRACEMONITOR::InternetStatus_Update(bool force)
           const double sw = (double)GetMainScreen()->GetWidth();
           InternetStatus_ApplyGeometry(sw);
           SatChart_ApplyGeometry(sw);
+          // Forced refresh follows a full page wipe (modal close, language, startup).
+          // ApplyGeometry skips an unchanged sparkline box, so the wipe would leave it
+          // blank until the next 1 Hz sample. Arm the post-chrome repair instead.
+          // Config Accept already survives because ApplyColorTheme arms the same window.
+          if(force && sat_geom_valid)
+            {
+              sat_dirty = true;
+              if(sat_repair_frames < 5) sat_repair_frames = 5;
+            }
         }
        else
         {
@@ -4173,10 +4226,12 @@ bool XTRACEMONITOR::UserInterface_AfterLanguageChange()
   InternetStatus_Update(true);
 
   if(brand_repair_frames < 5) brand_repair_frames = 5;
+  if(sat_repair_frames < 5) sat_repair_frames = 5;
   BrandMonitor_RepaintAfterChrome();
   if(!GEN_USERINTERFACE.Element_IsModalActive())
     {
       InternetStatus_RepaintAfterChrome();
+      SatChart_RepaintAfterChrome();
     }
   return true;
 }
@@ -4345,9 +4400,11 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
    else
     {
       InternetStatus_RepaintAfterChrome();
-      sat_dirty = true;
-      SatChart_Paint();
     }
+  // Box often stays put across a theme change; still redraw ink for the new palette.
+  sat_dirty = true;
+  SatChart_Paint();
+  if(sat_repair_frames < 5) sat_repair_frames = 5;
 
   OpStatus_Log(light ? (XDWORD)XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_COLOR_THEME_LIGHT
                      : (XDWORD)XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_COLOR_THEME_DARK);
@@ -5165,6 +5222,7 @@ void XTRACEMONITOR::Clean()
   sat_b                     = 0.0;
   sat_geom_valid            = false;
   sat_dirty                 = false;
+  sat_repair_frames         = 0;
   sat_last_in               = 0.0f;
   sat_last_fed              = 0.0f;
   sat_last_drop             = 0.0f;
