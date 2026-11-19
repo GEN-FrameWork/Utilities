@@ -329,6 +329,9 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     XTIMER*                         opstatus_click_timer;
 
     UI_ELEMENT_IMAGE*               brand_monitor;
+    // Short post-resize / theme / language / chrome window. Caption rebuild can crop the
+    // logo top; idle DrawFrame must not wipe+blit the brand every frame.
+    int                             brand_repair_frames;
 
     UI_ELEMENT_FORM*                netstatus_form;
     UI_ELEMENT_FORM*                netstatus_led;

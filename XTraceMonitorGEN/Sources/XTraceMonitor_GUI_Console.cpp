@@ -143,6 +143,9 @@ bool XTRACEMONITOR_GUI_CONSOLE::Resolve()
   consoleelement = (UI_ELEMENT_CONSOLE*)GEN_USERINTERFACE.Element_Get(NL("log_console"), UI_ELEMENT_TYPE_CONSOLE);
   if(!consoleelement) return false;
 
+  // New element: the previous box cache must not skip the first pack of this button.
+  layout_geom_valid = false;
+
   // Multioption root: faces keep bg alpha 0 so Draw_Option skips the white erase plate under the PNG bubble.
   track_btn = GEN_USERINTERFACE.Element_Get(NL("console_track_btn"), UI_ELEMENT_TYPE_MULTIOPTION);
 
@@ -185,6 +188,7 @@ bool XTRACEMONITOR_GUI_CONSOLE::Detach()
   track_btn          = NULL;
   selection_dragging = false;
   selection_anchor   = 0;
+  layout_geom_valid  = false;
   return true;
 }
 
@@ -193,6 +197,7 @@ bool XTRACEMONITOR_GUI_CONSOLE::Detach()
 *
 * @fn         bool XTRACEMONITOR_GUI_CONSOLE::ApplyLayoutGeometry(double panel_w, double console_h, double console_bot)
 * @brief      Applies flexible-resize geometry to the console panel.
+*             Same box as the last call is a no-op (idle must not dirty the follow button).
 * @ingroup    UTILITIES
 *
 * @param[in]  panel_w     : Console width.
@@ -205,6 +210,16 @@ bool XTRACEMONITOR_GUI_CONSOLE::Detach()
 bool XTRACEMONITOR_GUI_CONSOLE::ApplyLayoutGeometry(double panel_w, double console_h, double console_bot)
 {
   if(!consoleelement || !consoleelement->GetBoundaryLine()) return false;
+
+  // UpdateInput calls this every frame via Layout_ApplyConsoleAboveOpStatus. PackTrackButton
+  // and SyncTrackButton set MustReDraw on the follow button even when the slot did not move.
+  if(layout_geom_valid &&
+     (layout_geom_w == panel_w) &&
+     (layout_geom_h == console_h) &&
+     (layout_geom_bot == console_bot))
+    {
+      return true;
+    }
 
   consoleelement->GetBoundaryLine()->width  = panel_w;
   consoleelement->GetBoundaryLine()->height = console_h;
@@ -244,6 +259,11 @@ bool XTRACEMONITOR_GUI_CONSOLE::ApplyLayoutGeometry(double panel_w, double conso
       SyncTrackButton();
       GEN_USERINTERFACE.Element_PutToLastPositionLayout(track_btn);
     }
+
+  layout_geom_valid = true;
+  layout_geom_w     = panel_w;
+  layout_geom_h     = console_h;
+  layout_geom_bot   = console_bot;
 
   return true;
 }
@@ -328,6 +348,7 @@ bool XTRACEMONITOR_GUI_CONSOLE::RefreshTrackOverlay()
 *
 * @fn         bool XTRACEMONITOR_GUI_CONSOLE::ApplyTextTracking()
 * @brief      Applies the session follow flag onto console autoscroll (does not touch CFG).
+*             No-op when autoscroll and the follow glyph already match the session flag.
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the console exists; otherwise false.
@@ -336,6 +357,31 @@ bool XTRACEMONITOR_GUI_CONSOLE::RefreshTrackOverlay()
 bool XTRACEMONITOR_GUI_CONSOLE::ApplyTextTracking()
 {
   if(!consoleelement) return false;
+
+  const int frame = tracking_session ? 1 : 0;
+  bool glyphs_match = true;
+
+  if(track_btn && track_btn->GetComposeElements())
+    {
+      for(XDWORD c=0; c<track_btn->GetComposeElements()->GetSize(); c++)
+        {
+          UI_ELEMENT* face = track_btn->GetComposeElements()->Get(c);
+          if(!face) continue;
+          if((face->GetType() != UI_ELEMENT_TYPE_BUTTON) && (face->GetType() != UI_ELEMENT_TYPE_OPTION)) continue;
+
+          UI_ELEMENT_OPTION*    opt  = (UI_ELEMENT_OPTION*)face;
+          UI_ELEMENT_ANIMATION* anim = opt->Get_UIAnimation();
+          if(!anim || (anim->IndexImage_Get() != frame))
+            {
+              glyphs_match = false;
+              break;
+            }
+        }
+    }
+
+  // Replay and resolve call this again. Skip when the console and the glyph
+  // already show this session flag, so the follow button is not marked dirty.
+  if((consoleelement->GetAutoscroll() == tracking_session) && glyphs_match) return true;
 
   // OFF: keep displacement (user/manual scroll). ON: pin to live tail each paint.
   consoleelement->SetAutoscroll(tracking_session);
@@ -637,4 +683,8 @@ void XTRACEMONITOR_GUI_CONSOLE::Clean()
   tracking_session   = false;
   selection_dragging = false;
   selection_anchor   = 0;
+  layout_geom_valid  = false;
+  layout_geom_w      = 0.0;
+  layout_geom_h      = 0.0;
+  layout_geom_bot    = 0.0;
 }

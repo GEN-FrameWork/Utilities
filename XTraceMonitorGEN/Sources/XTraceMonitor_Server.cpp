@@ -713,10 +713,9 @@ bool XTRACEMONITOR_SERVER::FeedConsole(XTRACESERVER_MSG& msg)
 
   if(!owner->origins.PushLine(msg.publicIP, msg.localIP, color, line)) return false;
 
-  // Keep follow flag in sync every line: texttracking=no must clear XML autoscroll=true
-  // or DrawConsole pins to the tail every frame and vertical scroll appears broken.
-  owner->gui_console.ApplyTextTracking();
-
+  // Session follow is applied at resolve, toggle and replay. AddLine already
+  // honors the current autoscroll flag; resyncing here dirties the follow button
+  // once per message (up to the pump cap per frame).
   return true;
 }
 

@@ -81,6 +81,12 @@ class XTRACEMONITOR_GUI_CONSOLE
     bool                            tracking_session;
     bool                            selection_dragging;
     XDWORD                          selection_anchor;
+    // Last box handed to ApplyLayoutGeometry. Idle UpdateInput repeats it every frame;
+    // a repeat must not Pack/Sync the follow button (that dirties it with no motion).
+    bool                            layout_geom_valid;
+    double                          layout_geom_w;
+    double                          layout_geom_h;
+    double                          layout_geom_bot;
 };
 
 /*---- INLINE FUNCTIONS + PROTOTYPES ---------------------------------------------------------------------------------*/

@@ -160,7 +160,6 @@ static double        xtm_probe_sum_ms_rebuild = 0.0;
 static double        xtm_probe_sum_ms_uiupd   = 0.0;
 static double        xtm_probe_sum_ms_canvas  = 0.0;
 static bool          xtm_probe_oneshot_done    = false;
-static bool          xtm_probe_skip_brand      = false;
 static bool          xtm_probe_tip_armed       = false;
 static int           xtm_probe_warmup_left     = 90;
 static int           xtm_probe_sample_dirty_tip     = 0;
@@ -317,7 +316,6 @@ static void XTM_ProbeClearAllDirt()
 static void XTM_ProbeApplyTipActions()
 {
   UI_ELEMENT_TOOLTIP* tip = XTM_ProbeTip();
-  xtm_probe_skip_brand = false;
   if(!tip) return;
 
   if((xtm_probe_phase == XTM_PROBE_PHASE_IDLE) ||
@@ -1321,6 +1319,7 @@ bool XTRACEMONITOR::Ini_UserInterface(bool on)
       opstatus_form             = NULL;
       opstatus_text             = NULL;
       brand_monitor             = NULL;
+      brand_repair_frames       = 0;
 
       if(opstatus_click_timer)
         {
@@ -1540,6 +1539,7 @@ bool XTRACEMONITOR::Chrome_ApplyAndroidConstraints()
   if(!adjusted) return false;
 
   chrome->Elements_SetToRedraw();
+  if(brand_repair_frames < 5) brand_repair_frames = 5;
   return true;
   #endif
 }
@@ -1620,12 +1620,17 @@ bool XTRACEMONITOR::DrawFrame()
             }
           chrome_theme_dirty = false;
           if(netstatus_repair_frames < 5) netstatus_repair_frames = 5;
+          if(brand_repair_frames < 5) brand_repair_frames = 5;
         }
     }
 
   if(size_relaid && (netstatus_repair_frames < 5))
     {
       netstatus_repair_frames = 5;
+    }
+  if(size_relaid && (brand_repair_frames < 5))
+    {
+      brand_repair_frames = 5;
     }
 
 #ifdef DEBUG_ACTIVE
@@ -1683,10 +1688,7 @@ bool XTRACEMONITOR::DrawFrame()
 
 #if XTM_FPS_PROBE
   const double t_brand0 = XTM_ProbeNowMs();
-  if(!xtm_probe_skip_brand)
-    {
-      BrandMonitor_RepaintAfterChrome();
-    }
+  BrandMonitor_RepaintAfterChrome();
   xtm_probe_ms_brand = XTM_ProbeNowMs() - t_brand0;
 
   const double t_net0 = XTM_ProbeNowMs();
@@ -2005,7 +2007,7 @@ bool XTRACEMONITOR::BrandMonitor_Resolve()
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool XTRACEMONITOR::BrandMonitor_RepaintAfterChrome()
-* @brief      Re-blits brand_monitor after chrome so caption-button rebuild cannot crop its top.
+* @brief      Re-blits brand_monitor while a repair window is armed, so caption rebuild cannot crop its top.
 * @ingroup    UTILITIES
 *
 * @return     bool : true if the brand was repainted; otherwise false.
@@ -2013,6 +2015,12 @@ bool XTRACEMONITOR::BrandMonitor_Resolve()
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR::BrandMonitor_RepaintAfterChrome()
 {
+  // Idle every-frame page wipe + image blit. Same class of cost as the netstatus
+  // wipe that dropped ~60 to ~48 FPS. Caption rebuild only stamps this AABB on
+  // resize, theme, language and chrome refresh, which arm brand_repair_frames.
+  if(brand_repair_frames <= 0) return false;
+  brand_repair_frames--;
+
   if(!brand_monitor || !brand_monitor->IsVisible() || !brand_monitor->GetBoundaryLine()) return false;
 
   UI_LAYOUT* layout = brand_monitor->GetLayout();
@@ -3286,6 +3294,7 @@ bool XTRACEMONITOR::OpStatus_DisableScroll()
 *
 * @fn         bool XTRACEMONITOR::OpStatus_ApplyGeometry(XDWORD visible_lines)
 * @brief      Sizes the opstatus foot for collapsed or expanded visible line count.
+*             Unchanged geometry is a no-op so idle UpdateInput does not rewrite the foot.
 * @ingroup    UTILITIES
 *
 * @param[in]  visible_lines : Number of lines to show when expanded.
@@ -3296,8 +3305,6 @@ bool XTRACEMONITOR::OpStatus_DisableScroll()
 bool XTRACEMONITOR::OpStatus_ApplyGeometry(XDWORD visible_lines)
 {
   if(!opstatus_form || !opstatus_text) return false;
-
-  OpStatus_DisableScroll();
 
   // Collapsed always shows exactly one line; ignore stale expanded counts.
   XDWORD visible = visible_lines;
@@ -3360,6 +3367,32 @@ bool XTRACEMONITOR::OpStatus_ApplyGeometry(XDWORD visible_lines)
       new_h = (foot_y - box_top) + top_pad;
       if(new_h < collapsed_h) new_h = collapsed_h;
     }
+
+  // Idle UpdateInput calls this every frame. Once line height is locked and the
+  // foot already has this box, skip the scroll rewrite and the boundary stores.
+  if((opstatus_line_h >= 1.0f) && opstatus_form->GetBoundaryLine() && opstatus_text->GetBoundaryLine())
+    {
+      UI_BOUNDARYLINE* form_bl = opstatus_form->GetBoundaryLine();
+      UI_BOUNDARYLINE* text_bl = opstatus_text->GetBoundaryLine();
+      bool same = (form_bl->height == new_h) &&
+                  (opstatus_form->GetYPosition() == foot_y) &&
+                  (text_bl->height == text_h) &&
+                  (text_bl->y == text_local_y) &&
+                  (opstatus_text->GetYPosition() == text_y);
+
+      UI_BOUNDARYLINE* vis = opstatus_form->GetVisibleRect();
+      if(same && vis)
+        {
+          same = (vis->y == foot_y) &&
+                 (vis->height == new_h) &&
+                 (vis->width == form_bl->width) &&
+                 (vis->x == opstatus_form->GetXPosition());
+        }
+
+      if(same) return true;
+    }
+
+  OpStatus_DisableScroll();
 
   opstatus_form->GetBoundaryLine()->height = new_h;
   opstatus_form->SetIntrinsicHeight(new_h);
@@ -4139,6 +4172,7 @@ bool XTRACEMONITOR::UserInterface_AfterLanguageChange()
   // TL()-driven netstatus: force refresh + remasure last (DropStaleCaches + ghost frames).
   InternetStatus_Update(true);
 
+  if(brand_repair_frames < 5) brand_repair_frames = 5;
   BrandMonitor_RepaintAfterChrome();
   if(!GEN_USERINTERFACE.Element_IsModalActive())
     {
@@ -4300,6 +4334,7 @@ bool XTRACEMONITOR::ApplyColorTheme(int colortheme)
 
   GEN_USERINTERFACE.Layout_PutBackground();
   GEN_USERINTERFACE.Elements_SetToRedraw();
+  if(brand_repair_frames < 5) brand_repair_frames = 5;
   BrandMonitor_RepaintAfterChrome();
   if(GetMainScreen())
     {
@@ -5099,6 +5134,7 @@ void XTRACEMONITOR::Clean()
   opstatus_last_baseline = 0.0f;
   opstatus_line_h        = 0.0f;
   brand_monitor             = NULL;
+  brand_repair_frames       = 0;
   netstatus_form            = NULL;
   netstatus_led             = NULL;
   netstatus_state           = NULL;

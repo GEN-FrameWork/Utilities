@@ -544,6 +544,9 @@ bool XTRACEMONITOR_ORIGINS::SeedTree()
   owner->gui_tree.GetElement()->Expand(root->node);
   owner->gui_tree.GetElement()->SetSelected(root->node);
   selected = root;
+  // All is the first row. New origins must not move the viewport off the top.
+  owner->gui_tree.GetElement()->Scroll_SetDisplacement(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL, 0.0f);
+  owner->gui_tree.GetElement()->Scroll_SetDisplacement(UI_PROPERTY_SCROLLEABLE_TYPE_HORIZONTAL, 0.0f);
 
   GEN_USERINTERFACE.Elements_SetToRedraw(owner->gui_tree.GetElement());
   RefreshIPCounters();
