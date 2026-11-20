@@ -1,8 +1,0 @@
-#ifdef __BORLANDC__
-#pragma option push -b -a8 -pc -A- /*P_O_Push*/
-#endif
-
-
-#ifdef __BORLANDC__
-#pragma option pop /*P_O_Pop*/
-#endif
