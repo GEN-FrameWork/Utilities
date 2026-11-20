@@ -45,6 +45,7 @@
 #include "XTrace.h"
 #include "XString.h"
 #include "XTimer.h"
+#include "XFactory.h"
 
 #ifdef DIO_ACTIVE
 #include "DIOIP.h"
@@ -134,6 +135,11 @@ bool XTRACEMONITOR_SERVER::Ini()
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_SERVER::End()
 {
+  if(pump_timer)
+    {
+      GEN_XFACTORY.DeleteTimer(pump_timer);
+      pump_timer = NULL;
+    }
   return CloseAll();
 }
 
@@ -222,6 +228,9 @@ XTHREADPRIORITY XTRACEMONITOR_SERVER::GetPriority()
 *
 * @fn         bool XTRACEMONITOR_SERVER::Pump()
 * @brief      Pops queued GEN messages and feeds the console when working.
+* @note       Stops at 128 messages or at 3 ms, whichever comes first. The receiver
+*             thread priority is left alone: a short UI budget must not drop packets
+*             that the queue can still hold. Queue depth and drops stay on the sparkline.
 * @ingroup    UTILITIES
 *
 *---------------------------------------------------------------------------------------------------------------------*/
@@ -232,10 +241,21 @@ bool XTRACEMONITOR_SERVER::Pump()
   // UDP/UART open OR pending WM_COPYDATA queue (IPC does not require a stream).
   if(!server.IsOpen() && !server.GetCount()) return false;
 
+  if(!pump_timer) pump_timer = GEN_XFACTORY.CreateTimer();
+  if(pump_timer) pump_timer->Reset();
+
   XDWORD fed = 0;
 
   for(XDWORD n = 0; n < XTRACEMONITOR_SERVER_MAX_PUMP_PER_FRAME; n++)
     {
+      // Always take the first message. After that, leave the rest queued once
+      // this frame has spent its budget. The next frame continues the drain.
+      if((n > 0) && pump_timer &&
+         (pump_timer->GetMeasureMicroSeconds() >= (XQWORD)XTRACEMONITOR_SERVER_PUMP_BUDGET_US))
+        {
+          break;
+        }
+
       XTRACESERVER_MSG msg;
       if(!server.Pop(msg)) break;
 
@@ -737,4 +757,5 @@ void XTRACEMONITOR_SERVER::Clean()
   listenport_open = 0;
   uart_open       = false;
   fedcount        = 0;
+  pump_timer      = NULL;
 }

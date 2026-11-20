@@ -121,8 +121,9 @@ enum XTRACEMONITOR_BUTTONS
 #define XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_MIN_W      86.0   // XML default legend width
 #define XTRACEMONITOR_LAYOUT_TOOLBAR_LBL_PAD        8.0    // text ↔ legend form edges
 #define XTRACEMONITOR_NETSTATUS_POLL_MS             1000   // UI refresh from GEN-cached InternetStatus
-#define XTRACEMONITOR_SAT_CHART_W                   220.0  // sparkline widget width; visible samples = plot px
 #define XTRACEMONITOR_SAT_CHART_PAD                 4.0    // plot inner pad + text margin from widget TL
+#define XTRACEMONITOR_SAT_CHART_SAMPLES             180.0  // 1 Hz, 1 sample/px → 3 minutes before scroll
+#define XTRACEMONITOR_SAT_CHART_W                   (XTRACEMONITOR_SAT_CHART_SAMPLES + (XTRACEMONITOR_SAT_CHART_PAD * 2.0))
 #define XTRACEMONITOR_SAT_CHART_TEXT_SIZE           11     // same as toolbar bubble legends
 #define XTRACEMONITOR_SAT_CHART_BUBBLE_GAP          9.0    // edge gap between toolbar bubbles (xpos step 81 - 72)
 #define XTRACEMONITOR_SAT_CHART_AFTER_BUBBLES_GAP   (XTRACEMONITOR_SAT_CHART_BUBBLE_GAP * 4.0) // 4× inter-bubble gap (was 2×; doubled again)

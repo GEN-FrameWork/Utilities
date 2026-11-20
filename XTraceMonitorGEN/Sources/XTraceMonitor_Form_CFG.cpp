@@ -1879,8 +1879,11 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   if(uart_ok) cfg.SetUARTPort(&uartport_draft);
   cfg.SetAddDateTimeConsole(adddatetimeconsole_draft);
   cfg.SetAddIPConsole(addipconsole_draft);
+  // The follow button keeps its own session flag. Accept writes the checkbox into the INI,
+  // and the button adopts that value only when this option itself changed.
+  const bool texttracking_changed = (texttracking_draft != texttracking_committed);
   cfg.SetTextTracking(texttracking_draft);
-  owner->gui_console.SyncTextTrackingFromCFG();
+  if(texttracking_changed) owner->gui_console.SyncTextTrackingFromCFG();
   owner->origins.ApplyHistoryMaxFromCFG();
 
   cfg.SetDynDNSActive(dyndns_active_draft);

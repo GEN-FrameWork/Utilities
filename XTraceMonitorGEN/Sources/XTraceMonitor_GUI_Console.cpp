@@ -34,6 +34,7 @@
 
 #include "XTraceMonitor_GUI_Console.h"
 
+#include "GRPScreen.h"
 #include "GRP2DRebuildAreas.h"
 
 #include "UI_BoundaryLine.h"
@@ -46,6 +47,8 @@
 #include "UI_Property_Scrolleable.h"
 #include "UI_Skin.h"
 #include "UI_SkinCanvas.h"
+
+#include "INPManager.h"
 
 #include "XTraceMonitor.h"
 #include "XTraceMonitor_CFG.h"
@@ -151,6 +154,8 @@ bool XTRACEMONITOR_GUI_CONSOLE::Resolve()
 
   // Seed session follow from CFG (button is session-only after that).
   SyncTextTrackingFromCFG();
+  // Layout maxlines is only a fallback. The live cap is Max Console Count.
+  ApplyMaxLinesFromCFG();
   return true;
 }
 
@@ -299,7 +304,25 @@ bool XTRACEMONITOR_GUI_CONSOLE::SetToRedraw()
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_GUI_CONSOLE::RefreshTrackOverlay()
 {
-  if(!track_btn) return false;
+  if(!track_btn || !track_btn->GetBoundaryLine()) return false;
+
+  const double x = track_btn->GetXPosition();
+  const double y = track_btn->GetYPosition();
+  const double w = track_btn->GetBoundaryLine()->width;
+  const double h = track_btn->GetBoundaryLine()->height;
+
+  // Live traces dirty the console every frame. The slot does not move, and
+  // Draw_MultiOption already drops Option/Anim plates when this button sits on
+  // the console. Packing every face and walking the caches again is the repair
+  // that showed up in the frame. Re-dirtying the button is enough: the console
+  // fill wipes the glyph, and the button is already after the console in the list.
+  if(overlay_repair_valid &&
+     (overlay_repair_x == x) && (overlay_repair_y == y) &&
+     (overlay_repair_w == w) && (overlay_repair_h == h))
+    {
+      track_btn->SetMustReDraw(true);
+      return true;
+    }
 
   // Console fill + DrawScrollBars already own the pixels under this overlay. Drop any cached
   // Option/Anim/rebuild plates WITHOUT restoring — a PutBitmapNoAlpha of a prior thumb capture
@@ -340,6 +363,37 @@ bool XTRACEMONITOR_GUI_CONSOLE::RefreshTrackOverlay()
   PackTrackButton();
   GEN_USERINTERFACE.Element_PutToLastPositionLayout(track_btn);
   GEN_USERINTERFACE.Elements_SetToRedraw(track_btn, true);
+
+  overlay_repair_valid = true;
+  overlay_repair_x     = track_btn->GetXPosition();
+  overlay_repair_y     = track_btn->GetYPosition();
+  overlay_repair_w     = track_btn->GetBoundaryLine()->width;
+  overlay_repair_h     = track_btn->GetBoundaryLine()->height;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::ApplyMaxLinesFromCFG()
+* @brief      Sets the graphical console cap to Max Console Count.
+*             Follow on and follow off share that value. The widget default (8000 off)
+*             must not stay in front of a higher configured count.
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the console exists; otherwise false.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::ApplyMaxLinesFromCFG()
+{
+  if(!consoleelement) return false;
+
+  int configured = XTRACEMONITOR_CFG::GetInstance(false).GetMaxLinesConsole();
+  if(configured < 1) configured = 1;
+
+  XDWORD cap = (XDWORD)configured;
+  consoleelement->SetMaxLines(cap);
+  consoleelement->SetMaxLinesOff(cap);
   return true;
 }
 
@@ -459,8 +513,94 @@ bool XTRACEMONITOR_GUI_CONSOLE::HitTestTrackButton(int screen_x, int screen_y)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool XTRACEMONITOR_GUI_CONSOLE::PointerOverTrackButton()
+* @brief      True when the live pointer is inside the follow button.
+* @note       INTERNAL
+* @ingroup    UTILITIES
+*
+* @return     bool : true if the pointer hits the button.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+bool XTRACEMONITOR_GUI_CONSOLE::PointerOverTrackButton()
+{
+  if(!owner) return false;
+
+  GRPSCREEN* screen = owner->GetMainScreen();
+  if(!screen) return false;
+
+  INPDEVICE* mouse = GEN_INPMANAGER.GetDevice(INPDEVICE_TYPE_MOUSE);
+  if(!mouse) mouse = GEN_INPMANAGER.GetDevice(INPDEVICE_TYPE_TOUCHSCREEN);
+  if(!mouse) return false;
+
+  INPCURSOR* pointer = mouse->GetCursor(0);
+  if(!pointer) return false;
+
+  const int x = (int)pointer->GetX();
+  const int y = (int)screen->GetHeight() - (int)pointer->GetY();
+  return HitTestTrackButton(x, y);
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_GUI_CONSOLE::ClearTrackButtonHover()
+* @brief      Drops preselect on the follow button and every face.
+* @note       INTERNAL
+* @ingroup    UTILITIES
+*
+* @return     void : Does not return a value.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_GUI_CONSOLE::ClearTrackButtonHover()
+{
+  if(!track_btn) return;
+
+  track_btn->SetPreSelect(false);
+
+  // The multioption is selectable. Once it is selected, a later hover falls through to the
+  // faces. Leaving the button does not visit those faces, so a face can stay preselected and
+  // the next click anywhere in the window selects it again.
+  XVECTOR<UI_ELEMENT*> pending;
+  pending.Add(track_btn);
+  for(XDWORD i=0; i<pending.GetSize(); i++)
+    {
+      UI_ELEMENT* element = pending.Get(i);
+      if(!element || !element->GetComposeElements()) continue;
+
+      for(XDWORD c=0; c<element->GetComposeElements()->GetSize(); c++)
+        {
+          UI_ELEMENT* child = element->GetComposeElements()->Get(c);
+          if(!child) continue;
+          child->SetPreSelect(false);
+          pending.Add(child);
+        }
+    }
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         void XTRACEMONITOR_GUI_CONSOLE::ArmTrackButtonSelection(int screen_x, int screen_y)
+* @brief      Keeps a follow-button click, and clears a stale face hover for every other click.
+* @ingroup    UTILITIES
+*
+* @param[in]  screen_x : Screen X of the click.
+* @param[in]  screen_y : Screen Y of the click.
+*
+* @return     void : Does not return a value.
+*
+*---------------------------------------------------------------------------------------------------------------------*/
+void XTRACEMONITOR_GUI_CONSOLE::ArmTrackButtonSelection(int screen_x, int screen_y)
+{
+  if(HitTestTrackButton(screen_x, screen_y)) return;
+  ClearTrackButtonHover();
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool XTRACEMONITOR_GUI_CONSOLE::HandleElementSelected(UI_ELEMENT* element)
-* @brief      Handles UI selection for the session follow button (no CFG write).
+* @brief      Toggles session follow when the click is on the follow button (no CFG write).
 * @ingroup    UTILITIES
 *
 * @param[in]  element : Selected UI element.
@@ -472,6 +612,10 @@ bool XTRACEMONITOR_GUI_CONSOLE::HandleElementSelected(UI_ELEMENT* element)
 {
   if(!element || !element->GetName() || !track_btn) return false;
   if(element->GetName()->Compare(NL("console_track_btn"), true)) return false;
+
+  // A face can still be the selected element after the pointer has left the button.
+  // Only a click that lands on the button changes the session flag.
+  if(!PointerOverTrackButton()) return false;
 
   tracking_session = !tracking_session;
   ApplyTextTracking();
@@ -683,8 +827,13 @@ void XTRACEMONITOR_GUI_CONSOLE::Clean()
   tracking_session   = false;
   selection_dragging = false;
   selection_anchor   = 0;
-  layout_geom_valid  = false;
-  layout_geom_w      = 0.0;
-  layout_geom_h      = 0.0;
-  layout_geom_bot    = 0.0;
+  layout_geom_valid    = false;
+  layout_geom_w        = 0.0;
+  layout_geom_h        = 0.0;
+  layout_geom_bot      = 0.0;
+  overlay_repair_valid = false;
+  overlay_repair_x     = 0.0;
+  overlay_repair_y     = 0.0;
+  overlay_repair_w     = 0.0;
+  overlay_repair_h     = 0.0;
 }

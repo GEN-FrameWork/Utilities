@@ -41,7 +41,11 @@
 /*---- DEFINES & ENUMS  ----------------------------------------------------------------------------------------------*/
 
 // Cap lines drained into the UI console per Pump() to keep the frame budget.
+// The count cap is the hard stop. The time budget stops a flood earlier so one
+// frame cannot spend the whole refresh painting the burst. Leftover messages
+// stay queued; the sparkline already shows that depth and GEN queue drops.
 #define XTRACEMONITOR_SERVER_MAX_PUMP_PER_FRAME     128
+#define XTRACEMONITOR_SERVER_PUMP_BUDGET_US         3000
 
 // Saturation sparkline ring capacity (1 Hz). Visible samples = plot width in px
 // (1 sample/px, right-aligned scroll); keep headroom above XTRACEMONITOR_SAT_CHART_W.
@@ -50,6 +54,7 @@
 /*---- CLASS ---------------------------------------------------------------------------------------------------------*/
 
 class XTRACEMONITOR;
+class XTIMER;
 
 class XTRACEMONITOR_SERVER
 {
@@ -92,6 +97,7 @@ class XTRACEMONITOR_SERVER
     bool                            uart_open;
 
     XDWORD                          fedcount;
+    XTIMER*                         pump_timer;
 
 #if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
     XTRACESERVER                    server;

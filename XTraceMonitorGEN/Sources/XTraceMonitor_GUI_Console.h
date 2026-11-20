@@ -55,6 +55,7 @@ class XTRACEMONITOR_GUI_CONSOLE
     bool                            ApplyLayoutGeometry                     (double panel_w, double console_h, double console_bot);
     bool                            SetToRedraw                             ();
     bool                            ApplyTextTracking                       ();
+    bool                            ApplyMaxLinesFromCFG                    ();
     bool                            SyncTextTrackingFromCFG                 ();
     bool                            RefreshTrackOverlay                     ();
 
@@ -64,6 +65,7 @@ class XTRACEMONITOR_GUI_CONSOLE
     bool                            SelectAll                               ();
     bool                            HitTest                                 (int screen_x, int screen_y);
     bool                            HitTestTrackButton                      (int screen_x, int screen_y);
+    void                            ArmTrackButtonSelection                 (int screen_x, int screen_y);
     bool                            HandleElementSelected                   (UI_ELEMENT* element);
 
     UI_ELEMENT_CONSOLE*             GetElement                              ();
@@ -74,6 +76,8 @@ class XTRACEMONITOR_GUI_CONSOLE
     void                            Clean                                   ();
     bool                            PackTrackButton                         ();
     bool                            SyncTrackButton                         ();
+    bool                            PointerOverTrackButton                  ();
+    void                            ClearTrackButtonHover                   ();
 
     XTRACEMONITOR*                  owner;
     UI_ELEMENT_CONSOLE*             consoleelement;
@@ -87,6 +91,13 @@ class XTRACEMONITOR_GUI_CONSOLE
     double                          layout_geom_w;
     double                          layout_geom_h;
     double                          layout_geom_bot;
+    // Last slot that ran the full overlay repair (drop caches, pack, put last).
+    // A console repaint in the same slot only re-dirties the button.
+    bool                            overlay_repair_valid;
+    double                          overlay_repair_x;
+    double                          overlay_repair_y;
+    double                          overlay_repair_w;
+    double                          overlay_repair_h;
 };
 
 /*---- INLINE FUNCTIONS + PROTOTYPES ---------------------------------------------------------------------------------*/

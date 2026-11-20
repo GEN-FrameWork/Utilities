@@ -433,7 +433,7 @@
 
     <element name="log_console" type="console" xpos="222" ypos="665" width="972" height="353"
              roundrect="4" border-width="1" border-color="frame_line" bckgrdcolor="console_back"
-             fontface="mono" sizefont="11" linespacing="3" maxlines="500"
+             fontface="mono" sizefont="11" linespacing="3"
              autoscroll="false" wordwrap="false" overflow-y="auto" overflow-x="auto"></element>
 
     <!-- Session-only console follow (top-right overlay); not written to CFG.

@@ -295,6 +295,7 @@ XDWORD XTRACEMONITOR_ORIGINS::GetHistoryMax()
 bool XTRACEMONITOR_ORIGINS::ApplyHistoryMaxFromCFG()
 {
   SetHistoryMax((XDWORD)XTRACEMONITOR_CFG::GetInstance(false).GetMaxLinesConsole());
+  if(owner) owner->gui_console.ApplyMaxLinesFromCFG();
   return true;
 }
 
@@ -1118,7 +1119,25 @@ bool XTRACEMONITOR_ORIGINS::ReplaySelectedToConsole()
 {
   if(!owner || !owner->gui_console.GetElement() || !selected) return false;
 
-  owner->gui_console.GetElement()->Clear();
+  UI_ELEMENT_CONSOLE* console = owner->gui_console.GetElement();
+
+  // Follow off: reprinting must not throw the reader to the top. The top of a
+  // full console is exactly the lines the next trim deletes, so the view then crawls.
+  double restore_fraction = 0.0;
+  bool   restore_scroll   = false;
+  if(!console->GetAutoscroll())
+    {
+      double lim  = console->Scroll_GetLimit(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL);
+      double disp = console->Scroll_GetDisplacement(UI_PROPERTY_SCROLLEABLE_TYPE_VERTICAL);
+      if(lim < 0.0)
+        {
+          restore_fraction = disp / lim;
+          restore_scroll   = true;
+        }
+    }
+
+  console->Clear();
+  if(restore_scroll) console->ArmScrollRestore(restore_fraction);
 
   XTRACEMONITOR_CFG& cfg    = XTRACEMONITOR_CFG::GetInstance(false);
   const int          levels = cfg.Filters_GetLevels();

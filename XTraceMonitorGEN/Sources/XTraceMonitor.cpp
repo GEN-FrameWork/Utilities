@@ -481,6 +481,7 @@ bool XTRACEMONITOR::InitFSMachine()
 }
 
 
+
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool XTRACEMONITOR::AppProc_Ini()
@@ -928,6 +929,7 @@ bool XTRACEMONITOR::UpdateInput()
                     }
                    else
                     {
+                      gui_console.ArmTrackButtonSelection(cursor_x, cursor_y);
                       GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_SELECCTION, cursor_x, cursor_y);
                       cursor->GetMotion()->Reset();
                     }
@@ -947,6 +949,10 @@ bool XTRACEMONITOR::UpdateInput()
           bool shiftdown = (button[XTRACEMONITOR_BUTTON_SHIFT_LEFT]  && button[XTRACEMONITOR_BUTTON_SHIFT_LEFT]->IsPressed()) ||
                            (button[XTRACEMONITOR_BUTTON_SHIFT_RIGHT] && button[XTRACEMONITOR_BUTTON_SHIFT_RIGHT]->IsPressed());
 
+          // A follow-button face stays preselected after the pointer leaves. Drop that hover
+          // before this click is dispatched, unless the click is on the button itself.
+          gui_console.ArmTrackButtonSelection(click_x, click_y);
+
           // If the motion branch did not run (or stalled), end the EditText gesture here.
           if(!edit_owned)
             {
@@ -963,6 +969,7 @@ bool XTRACEMONITOR::UpdateInput()
                 }
                else if(!bar_owned && !edit_owned)
                 {
+                  gui_console.ArmTrackButtonSelection(click_x, click_y);
                   GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_SELECCTION, click_x, click_y);
                 }
             }
@@ -989,6 +996,7 @@ bool XTRACEMONITOR::UpdateInput()
             }
            else if(!bar_owned && !edit_owned)
             {
+              gui_console.ArmTrackButtonSelection(click_x, click_y);
               GEN_USERINTERFACE.SendEvent(UI_XEVENT_TYPE_INPUT_SELECCTION, click_x, click_y);
             }
 
@@ -1849,6 +1857,16 @@ bool XTRACEMONITOR::Layout_ApplyFlexibleResize(bool compose)
       SatChart_ApplyGeometry(W);
     }
 
+  // UpdateSize wipes the canvas and composes from this observer while the border
+  // drag blocks the frame loop. An unchanged sparkline box skips ApplyGeometry's
+  // paint, so the series would stay blank until the next 1 Hz sample. Redraw the
+  // samples already in hand; do not take a new sample.
+  if(!compose && !GEN_USERINTERFACE.Element_IsModalActive() && sat_geom_valid)
+    {
+      sat_dirty = true;
+      SatChart_Paint();
+    }
+
   if(!compose) return true;
 
   GEN_USERINTERFACE.Layout_PutBackground();
@@ -2556,14 +2574,26 @@ bool XTRACEMONITOR::SatChart_Paint()
     }
 
   const XDWORD n = (sat_count < cols) ? sat_count : cols;
-  float ymax = 1.0f;
+  float peak = 0.0f;
   for(XDWORD i = 0; i < n; i++)
     {
       const XDWORD idx = (sat_head + XTRACEMONITOR_SAT_HISTORY_MAX - n + i) % XTRACEMONITOR_SAT_HISTORY_MAX;
       const XTRACEMONITOR_SAT_SAMPLE& s = sat_samples[idx];
-      if(s.in_rate  > ymax) ymax = s.in_rate;
-      if(s.fed_rate > ymax) ymax = s.fed_rate;
+      if(s.in_rate  > peak) peak = s.in_rate;
+      if(s.fed_rate > peak) peak = s.fed_rate;
     }
+  // Scale floor so a flat zero trace still has a vertical range. The label shows the real peak.
+  float ymax = (peak > 1.0f) ? peak : 1.0f;
+
+  // Y-axis maximum of the visible segment. Literal prefix, same baseline as "in / out".
+  XSTRING maxtxt;
+  maxtxt.Format(NL("max. in %.0f"), (double)peak);
+  if(canvas->Vectorfont_GetConfig())
+    {
+      canvas->Vectorfont_GetConfig()->SetColor(&ink);
+      canvas->Vectorfont_GetConfig()->SetSize((double)text_sf);
+    }
+  canvas->VectorFont_Printf(plot_l, ty, NL("%s"), maxtxt.Get());
 
   if(n < 2)
     {
