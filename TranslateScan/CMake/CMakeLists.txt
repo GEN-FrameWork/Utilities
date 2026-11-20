@@ -5,11 +5,15 @@
 
 cmake_minimum_required(VERSION 3.16.0)
 
-project(translatescan)
-
+# --------------------------------------------------------------------
+# PreProject
 
 set(GEN_DIRECTORY "../../../") 
 
+option(USE_CLANG_COMPILER_FEATURE                               "Use Clang Compiler"                                      ON)
+include("${GEN_DIRECTORY}/Common/CMake/GEN_PreProject.cmake")
+
+project(translatescan)
 
 # --------------------------------------------------------------------
 # features/Defines
@@ -19,7 +23,6 @@ option(XMEMORY_CONTROL_FEATURE                                  "XMemory Control
 option(XTRACE_FEATURE                                           "XTrace"                                                  ON )
 option(XTRACE_NOINTERNET_FEATURE                                "No need for trace dependencies with Internet"            ON )
 
-option(USE_CLANG_COMPILER_FEATURE                               "Use Clang Compiler"                                      ON )
                     
 option(DIO_FEATURE                                              "Data Input/Output"                                       ON )
 option(XFILE_XML_FEATURE                                        "XFile XML format (.lng catalogues)"                      ON )

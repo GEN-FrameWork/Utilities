@@ -4,10 +4,16 @@
 # --------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.16.0)
-project(xtracemonitor)
+
+# --------------------------------------------------------------------
+# PreProject
 
 set(GEN_DIRECTORY "../../../")
 
+option(USE_CLANG_COMPILER_FEATURE                               "Use Clang Compiler"                                      ON)
+include("${GEN_DIRECTORY}/Common/CMake/GEN_PreProject.cmake")
+
+project(xtracemonitor)
 
 # --------------------------------------------------------------------
 # features/Defines
@@ -20,7 +26,6 @@ option(XTHREADCOLLECTED_FEATURE                                 "Thread Collecte
 
 option(GRP_OPENGL_FEATURE                                       "Graphics OpenGL ES required"                             ON  )
 
-option(USE_CLANG_COMPILER_FEATURE                               "Use Clang Compiler"                                      ON )
 
 option(LINUX_X11_FEATURE                                        "Linux X11"                                               ON )
 

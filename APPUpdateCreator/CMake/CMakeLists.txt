@@ -3,11 +3,16 @@
 # --------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.16.0)
-project(appupdatecreator)
 
+# --------------------------------------------------------------------
+# PreProject
 
 set(GEN_DIRECTORY "../../../") 
 
+option(USE_CLANG_COMPILER_FEATURE                               "Use Clang Compiler"                                      ON)
+include("${GEN_DIRECTORY}/Common/CMake/GEN_PreProject.cmake")
+
+project(appupdatecreator)
 
 # --------------------------------------------------------------------
 # Activate features/Defines
@@ -17,7 +22,6 @@ option(DEBUG_FEATURE                                            "Debug mode"    
 option(XTRACE_FEATURE                                           "XTrace"                                                  ON )
 option(XMEMORY_CONTROL_FEATURE                                  "XMemory Control"                                         ON )
                                               
-option(USE_CLANG_COMPILER_FEATURE                               "Use Clang Compiler"                                      ON )
 
 option(APPFLOW_FEATURE                                          "Application Flow modules"                                ON )
 option(APPFLOW_EXTENDED_FEATURE                                 "Application Flow Extended"                               ON )  
