@@ -70,6 +70,10 @@
 #include "XObserver.h"
 #include "XProcessManager.h"
 
+#ifdef WINDOWS
+#include <windows.h>
+#endif
+
 #include "XSleep.h"
 
 #include "HashMD5.h"
@@ -1687,40 +1691,52 @@ bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny, ACTIONS
 
   XVECTOR<XPROCESS*> applist;
   XPROCESS*          process = NULL;
+  bool               havelist = false;
 
-  if(!GEN_XPROCESSMANAGER.Application_GetRunningList(applist, true))
+  // Prefer the HWND captured at SelectApp. GetRunningList is only a refresh; if it fails we still
+  // record against the stored handle (otherwise every click dies with Application_GetRunningList failed).
+  if(GEN_XPROCESSMANAGER.Application_GetRunningList(applist, true))
     {
-      ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_SCRIPTRECORD_APPLICATION_GETRUNNINGLIST_FAILED));
-      return false;
-    }
-
-  process = ActionScriptQA_FindRunningByHandle(applist, scriptrecord_windowhandle);
-  if(!process)
-    {
-      process = ActionScriptQA_FindRunningByNameTitle(applist, scriptrecord_appname, scriptrecord_windowtitle);
-      if(process && process->GetWindowHandle())
+      havelist = true;
+      process = ActionScriptQA_FindRunningByHandle(applist, scriptrecord_windowhandle);
+      if(!process)
         {
-          scriptrecord_windowhandle = process->GetWindowHandle();
-          ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_SCRIPTRECORD_TARGET_WINDOW_HANDLE_REFRESHED));
+          process = ActionScriptQA_FindRunningByNameTitle(applist, scriptrecord_appname, scriptrecord_windowtitle);
+          if(process && process->GetWindowHandle())
+            {
+              scriptrecord_windowhandle = process->GetWindowHandle();
+              ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_SCRIPTRECORD_TARGET_WINDOW_HANDLE_REFRESHED));
+            }
         }
     }
-
-  if(!process || !process->GetWindowHandle() || !process->GetWindowRect())
+   else
     {
-      ActionScriptQA_FreeRunningList(applist);
+      ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_SCRIPTRECORD_APPLICATION_GETRUNNINGLIST_FAILED));
+    }
+
+  void* hwnd = process ? process->GetWindowHandle() : scriptrecord_windowhandle;
+  if(!hwnd)
+    {
+      if(havelist) ActionScriptQA_FreeRunningList(applist);
       ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_SCRIPTRECORD_TARGET_WINDOW_NO_LONGER_VALID));
       return false;
     }
 
-  void*      hwnd    = process->GetWindowHandle();
-  GRPRECTINT winrect = (*process->GetWindowRect());
-  int        border  = process->GetWindowBorderWidth();
-  int        titleh  = process->GetWindowTitleHeight();
+  GRPRECTINT winrect;
+  int        border = 0;
+  int        titleh = 0;
+
+  if(process && process->GetWindowRect())
+    {
+      winrect = (*process->GetWindowRect());
+      border  = process->GetWindowBorderWidth();
+      titleh  = process->GetWindowTitleHeight();
+    }
 
   GRPSCREEN* screen = GEN_GRPFACTORY.CreateScreen();
   if(!screen)
     {
-      ActionScriptQA_FreeRunningList(applist);
+      if(havelist) ActionScriptQA_FreeRunningList(applist);
       ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_SCRIPTRECORD_CREATESCREEN_FAILED));
       return false;
     }
@@ -1731,21 +1747,50 @@ bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny, ACTIONS
   int clienth = 0;
   if(!screen->GetClientSize(clientw, clienth) || (clientw <= 0) || (clienth <= 0))
     {
-      // Fallback from outer rect minus chrome metrics already on XPROCESS.
       clientw = (int)winrect.GetWidth()  - (border * 2);
       clienth = (int)winrect.GetHeight() - titleh - border;
     }
 
   // CaptureContent uses client-area coordinates (same convention as Script_Lib_Screen).
-  int ptclientx = screenx - (winrect.x1 + border);
-  int ptclienty = screeny - (winrect.y1 + titleh);
+  int ptclientx = 0;
+  int ptclienty = 0;
+
+  #ifdef WINDOWS
+  {
+    POINT pt;
+    pt.x = screenx;
+    pt.y = screeny;
+    if(ScreenToClient((HWND)hwnd, &pt))
+      {
+        ptclientx = (int)pt.x;
+        ptclienty = (int)pt.y;
+      }
+     else
+      {
+        ptclientx = screenx - (winrect.x1 + border);
+        ptclienty = screeny - (winrect.y1 + titleh);
+      }
+
+    RECT outer;
+    if(GetWindowRect((HWND)hwnd, &outer))
+      {
+        winrect.x1 = outer.left;
+        winrect.y1 = outer.top;
+        winrect.x2 = outer.right;
+        winrect.y2 = outer.bottom;
+      }
+  }
+  #else
+  ptclientx = screenx - (winrect.x1 + border);
+  ptclienty = screeny - (winrect.y1 + titleh);
+  #endif
 
   if((clientw <= 0) || (clienth <= 0) ||
      (ptclientx < 0) || (ptclienty < 0) ||
      (ptclientx >= clientw) || (ptclienty >= clienth))
     {
       GEN_GRPFACTORY.DeleteScreen(screen);
-      ActionScriptQA_FreeRunningList(applist);
+      if(havelist) ActionScriptQA_FreeRunningList(applist);
       ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_SCRIPTRECORD_CLICK_OUTSIDE_CLIENT_AREA_IGNORED));
       return false;
     }
@@ -1781,7 +1826,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny, ACTIONS
 
   GRPBITMAP* bitmap = screen->CaptureContent(&rect, hwnd);
   GEN_GRPFACTORY.DeleteScreen(screen);
-  ActionScriptQA_FreeRunningList(applist);
+  if(havelist) ActionScriptQA_FreeRunningList(applist);
 
   if(!bitmap)
     {

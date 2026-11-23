@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=eXtended Trace Monitor
+GenericName=Trace Monitor
+Comment=GEN eXtended Trace Monitor
+Exec=./xtracemonitor
+Icon=appicon.png
+Terminal=false
+Categories=Development;Monitor;Network;
+StartupNotify=true
+StartupWMClass=xtracemonitor

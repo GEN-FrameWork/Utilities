@@ -1,0 +1,62 @@
+// XTraceMonitor — Windows resources (icon + VERSIONINFO for EXE Details).
+// Location: Package/Windows/  |  APP_RESOURCE_FILE in app CMake (COMPILE_FOR_WINDOWS).
+// Version/identity come from Sources/XTraceMonitor_Version.h (shared with C++).
+
+#include "resource.h"
+#include "XTraceMonitor_Version.h"
+
+// Minimal winver constants so rc.exe does not need winres.h on the include path.
+// VS_VERSION_INFO MUST be numeric 1 — otherwise Windows ignores VERSIONINFO in Details.
+#ifndef VS_VERSION_INFO
+#define VS_VERSION_INFO       1
+#endif
+#ifndef VS_FFI_FILEFLAGSMASK
+#define VS_FFI_FILEFLAGSMASK  0x3FL
+#endif
+#ifndef VOS_NT_WINDOWS32
+#define VOS_NT_WINDOWS32      0x40004L
+#endif
+#ifndef VFT_APP
+#define VFT_APP               0x1L
+#endif
+#ifndef VFT2_UNKNOWN
+#define VFT2_UNKNOWN          0x0L
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+// Icon (lowest ID first → Windows uses it as the application icon)
+
+IDI_APPICON ICON "appicon.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+// VERSIONINFO → Properties → Details
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION    APPLICATION_VERSION,APPLICATION_SUBVERSION,APPLICATION_SUBVERSIONERR,0
+PRODUCTVERSION APPLICATION_VERSION,APPLICATION_SUBVERSION,APPLICATION_SUBVERSIONERR,0
+FILEFLAGSMASK  VS_FFI_FILEFLAGSMASK
+FILEFLAGS      0
+FILEOS         VOS_NT_WINDOWS32
+FILETYPE       VFT_APP
+FILESUBTYPE    VFT2_UNKNOWN
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    // 0x0C0A = Spanish (Spain), 1200 = Unicode
+    BLOCK "0c0a04b0"
+    BEGIN
+      VALUE "CompanyName",      APPLICATION_OWNER
+      VALUE "FileDescription",  APPLICATION_FILEDESCRIPTION_STR
+      VALUE "FileVersion",      APPLICATION_VERSION_STR
+      VALUE "InternalName",     APPLICATION_NAMEAPP
+      VALUE "LegalCopyright",   APPLICATION_COPYRIGHT_STR
+      VALUE "OriginalFilename", APPLICATION_NAMEFILE ".exe"
+      VALUE "ProductName",      APPLICATION_NAMEAPP
+      VALUE "ProductVersion",   APPLICATION_VERSION_STR
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0C0A, 1200
+  END
+END

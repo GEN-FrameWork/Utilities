@@ -115,10 +115,12 @@ bool XTRACEMONITOR_SERVER::SetOwner(XTRACEMONITOR* owner)
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_SERVER::Ini()
 {
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
   server.SetPriority(priority);
+  #if defined(XTRACE_SERVER_WINDOWSMSG_ACTIVE)
   // Accept WM_COPYDATA even before UDP/UART open; traces route to Local (no internet).
   XTRACESERVER::SetCopyDataReceiver(&server);
+  #endif
   return OpenFromCFG();
 #else
   return false;
@@ -154,7 +156,7 @@ bool XTRACEMONITOR_SERVER::End()
 bool XTRACEMONITOR_SERVER::RestartFromCFG()
 {
   CloseAll();
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_WINDOWSMSG_ACTIVE)
   XTRACESERVER::SetCopyDataReceiver(&server);
 #endif
   return OpenFromCFG();
@@ -170,7 +172,7 @@ bool XTRACEMONITOR_SERVER::RestartFromCFG()
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_SERVER::IsOpen()
 {
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
   return server.IsOpen();
 #else
   return false;
@@ -191,7 +193,7 @@ void XTRACEMONITOR_SERVER::SetPriority(XTHREADPRIORITY priority)
   this->priority = priority;
   this->highpriority = (priority >= XTHREADPRIORITY_HIGH);
 
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
   server.SetPriority(priority);
 #endif
 }
@@ -236,7 +238,7 @@ XTHREADPRIORITY XTRACEMONITOR_SERVER::GetPriority()
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_SERVER::Pump()
 {
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
   if(!owner) return false;
   // UDP/UART open OR pending WM_COPYDATA queue (IPC does not require a stream).
   if(!server.IsOpen() && !server.GetCount()) return false;
@@ -295,7 +297,7 @@ bool XTRACEMONITOR_SERVER::Pump()
 *---------------------------------------------------------------------------------------------------------------------*/
 XDWORD XTRACEMONITOR_SERVER::GetDroppedCount()
 {
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
   return server.GetDroppedCount();
 #else
   return 0;
@@ -312,7 +314,7 @@ XDWORD XTRACEMONITOR_SERVER::GetDroppedCount()
 *---------------------------------------------------------------------------------------------------------------------*/
 XDWORD XTRACEMONITOR_SERVER::GetQueuedCount()
 {
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
   return server.GetCount();
 #else
   return 0;
@@ -329,7 +331,7 @@ XDWORD XTRACEMONITOR_SERVER::GetQueuedCount()
 *---------------------------------------------------------------------------------------------------------------------*/
 XDWORD XTRACEMONITOR_SERVER::GetPushedCount()
 {
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
   return server.GetPushedCount();
 #else
   return 0;
@@ -359,7 +361,7 @@ XDWORD XTRACEMONITOR_SERVER::GetFedCount()
 *---------------------------------------------------------------------------------------------------------------------*/
 XDWORD XTRACEMONITOR_SERVER::GetMaxMessages()
 {
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
   return server.GetMaxMessages();
 #else
   return 0;
@@ -376,13 +378,13 @@ XDWORD XTRACEMONITOR_SERVER::GetMaxMessages()
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_SERVER::OpenFromCFG()
 {
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
   XTRACEMONITOR_CFG& cfg = XTRACEMONITOR_CFG::GetInstance(false);
   bool ok = false;
 
   server.SetPriority(priority);
 
-#if defined(DIO_STREAMUDP_ACTIVE)
+#if defined(XTRACE_SERVER_UDP_ACTIVE)
   {
     const int port = cfg.ResolveUDPListenPort(cfg.GetUDPListenPort());
     if(server.Ini((XWORD)port))
@@ -405,7 +407,7 @@ bool XTRACEMONITOR_SERVER::OpenFromCFG()
   }
 #endif
 
-#if defined(DIO_STREAMUART_ACTIVE)
+#if defined(XTRACE_SERVER_UART_ACTIVE)
   {
     XSTRING* uart = cfg.GetUARTPort();
     if(uart && cfg.IsUARTPortValid(uart))
@@ -440,8 +442,10 @@ bool XTRACEMONITOR_SERVER::OpenFromCFG()
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_SERVER::CloseAll()
 {
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
+  #if defined(XTRACE_SERVER_WINDOWSMSG_ACTIVE)
   XTRACESERVER::SetCopyDataReceiver(NULL);
+  #endif
   server.End();
 #endif
   listenport_open = 0;
@@ -450,7 +454,7 @@ bool XTRACEMONITOR_SERVER::CloseAll()
 }
 
 
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *

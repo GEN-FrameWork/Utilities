@@ -47,7 +47,7 @@
 #include "XTraceMonitor_GUI_VarStatus.h"
 #include "XTraceMonitor_GeoIP.h"
 
-
+#include "XTraceMonitor_Version.h"
 
 /*---- DEFINES & ENUMS  ----------------------------------------------------------------------------------------------*/
 
@@ -86,17 +86,6 @@ enum XTRACEMONITOR_BUTTONS
   XTRACEMONITOR_BUTTON_MAX
 };
 
-
-#define APPLICATION_VERSION                         8
-#define APPLICATION_SUBVERSION                      0
-#define APPLICATION_SUBVERSIONERR                   0
-
-#define APPLICATION_NAMEAPP                         NL("eXtended Trace Monitor")
-#define APPLICATION_NAMEFILE                        NL("xtracemonitor")
-
-#define APPLICATION_OWNER                           NL("EndoraSoft")
-
-#define APPLICATION_YEAROFCREATION                  2026
 
 #define XTRACEMONITOR_WINDOW_WIDTH                  1200   // minimum client width (also design size)
 #define XTRACEMONITOR_WINDOW_HEIGHT                 699    // minimum client height (also design size)
@@ -297,7 +286,7 @@ class XTRACEMONITOR : public APPFLOWGRAPHICS, public XFSMACHINE
     void                            PersistScreenGeometryIfExiting          ();
     bool                            ApplyColorTheme                         (int colortheme);
     bool                            ApplyColorTheme_Element                 (UI_ELEMENT* element, bool light);
-    bool                            ApplyColorTheme_PatchStyleBag          (UI_STYLE& style, bool light);
+    bool                            ApplyColorTheme_PatchStyleBag           (UI_STYLE& style, bool light);
     bool                            ApplyColorTheme_PatchStyleSheet         (UI_STYLESHEET* sheet, bool light);
     bool                            ApplyColorTheme_RefreshChrome           (bool light);
 

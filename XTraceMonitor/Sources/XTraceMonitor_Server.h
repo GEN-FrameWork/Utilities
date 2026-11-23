@@ -33,7 +33,7 @@
 #include "XBase.h"
 #include "XThread.h"
 
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
 #include "XTraceServer.h"
 #include "XTrace.h"
 #endif
@@ -99,7 +99,7 @@ class XTRACEMONITOR_SERVER
     XDWORD                          fedcount;
     XTIMER*                         pump_timer;
 
-#if defined(DIO_ACTIVE) && (defined(DIO_STREAMUDP_ACTIVE) || defined(DIO_STREAMUART_ACTIVE))
+#if defined(XTRACE_SERVER_ACTIVE)
     XTRACESERVER                    server;
     XTRACE_STATUS_MSGS              status_msgs;
 

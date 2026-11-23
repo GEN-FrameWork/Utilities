@@ -18,19 +18,16 @@ project(xtracemonitor)
 # --------------------------------------------------------------------
 # features/Defines
 
-option(DEBUG_FEATURE                                            "Debug mode"                                              ON )
-option(XTRACE_FEATURE                                           "XTrace"                                                  ON )
+#option(DEBUG_FEATURE                                            "Debug mode"                                              ON )
+#option(XTRACE_FEATURE                                           "XTrace"                                                  ON )
 #option(XTRACE_NOINTERNET_FEATURE                                "No need for trace dependencies with Internet"            ON )
-option(XTHREADCOLLECTED_FEATURE                                 "Thread Collected"                                        ON )
 #option(XMEMORY_CONTROL_FEATURE                                  "XMemory Control"                                         ON )
 
-option(GRP_OPENGL_FEATURE                                       "Graphics OpenGL ES required"                             ON  )
 
-
+option(GRP_OPENGL_FEATURE                                       "Graphics OpenGL ES required"                             ON )
 option(LINUX_X11_FEATURE                                        "Linux X11"                                               ON )
 
 option(USERINTERFACE_FEATURE                                    "User Interace"                                           ON )
-#option(USERINTERFACE_DEBUG_FEATURE                              "Debug User Interace"                                     ON )
 
 option(APPFLOW_FEATURE                                          "Application Flow modules"                                ON )
 option(APPFLOW_EXTENDED_FEATURE                                 "Application Flow Extended"                               ON )
@@ -68,6 +65,10 @@ option(DIO_SCRAPERWEB_STATICMAP_FEATURE                         "Scraper Web Sta
 
 option(XPROCESSMANAGER_FEATURE                                  "Process Manager"                                         ON )
 option(XCLIPBOARD_FEATURE                                       "Clipboard functions (portable text)"                     ON )
+option(XTHREADCOLLECTED_FEATURE                                 "Thread Collected"                                        ON )
+option(XTRACE_SERVER_UDP_FEATURE                                "XTrace receive server UDP"                               ON )
+option(XTRACE_SERVER_UART_FEATURE                               "XTrace receive server UART"                              ON )
+option(XTRACE_SERVER_WINDOWSMSG_FEATURE                         "XTrace receive server Windows WM_COPYDATA"               ON )
 
 
 # --------------------------------------------------------------------
@@ -115,6 +116,55 @@ list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/XTraceMonitor
 
 
 # --------------------------------------------------------------------
+# Platform packaging (Package/Windows|Android|Linux). Only this app CMake owns it.
+
+set(APP_DIRECTORY_PACKAGE "../Package")
+set(APP_DIRECTORY_PACKAGE_LINUX "${APP_DIRECTORY_PACKAGE}/Linux")
+
+if(COMPILE_FOR_WINDOWS)
+
+  set(APP_DIRECTORY_PACKAGE_WINDOWS "${APP_DIRECTORY_PACKAGE}/Windows")
+  list(APPEND GEN_INCLUDES_DIR_LIST ${APP_DIRECTORY_PACKAGE_WINDOWS})
+  set(APP_RESOURCE_FILE "${APP_DIRECTORY_PACKAGE_WINDOWS}/XTraceMonitor.rc")
+
+endif()
+
+
+# --------------------------------------------------------------------
 # End Proyect
 
 include("${GEN_DIRECTORY}/Common/CMake/GEN_End.cmake")
+
+
+# --------------------------------------------------------------------
+# Linux packaging: copy icons + generate .desktop with absolute Icon=/Exec=
+# (Icon=name alone only resolves via system hicolor; build dirs need abs paths for KDE/Dolphin).
+
+if(COMPILE_FOR_LINUX)
+
+  set(_XTM_LINUX_PKG      "${CMAKE_CURRENT_SOURCE_DIR}/${APP_DIRECTORY_PACKAGE_LINUX}")
+  set(_XTM_LINUX_DESK_IN  "${_XTM_LINUX_PKG}/xtracemonitor.desktop.in")
+  set(_XTM_LINUX_APPICON  "${_XTM_LINUX_PKG}/appicon.png")
+  set(_XTM_LINUX_ICONS    "${_XTM_LINUX_PKG}/icons")
+  set(_XTM_LINUX_GEN_DESK "${_XTM_LINUX_PKG}/xtm_gen_desktop.cmake")
+
+  add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${_XTM_LINUX_APPICON}"
+            "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/appicon.png"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${_XTM_LINUX_ICONS}"
+            "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/icons"
+    COMMAND ${CMAKE_COMMAND}
+            "-DXTM_DESKTOP_IN=${_XTM_LINUX_DESK_IN}"
+            "-DXTM_DESKTOP_OUT=$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/xtracemonitor.desktop"
+            "-DXTM_BIN_DIR=$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>"
+            "-DXTM_EXEC_PATH=$<TARGET_FILE:${CMAKE_PROJECT_NAME}>"
+            "-DXTM_ICON_PATH=$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/appicon.png"
+            "-DXTM_ICONS_SRC=${_XTM_LINUX_ICONS}"
+            -P "${_XTM_LINUX_GEN_DESK}"
+    COMMENT "[ XTM Package/Linux: desktop + icons → build dir and ~/.local/share ]"
+    VERBATIM
+  )
+
+endif()

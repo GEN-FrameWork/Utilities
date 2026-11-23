@@ -164,7 +164,18 @@ bool XTRACEMONITOR_CFG::GetIsInstanced()
 *---------------------------------------------------------------------------------------------------------------------*/
 XTRACEMONITOR_CFG& XTRACEMONITOR_CFG::GetInstance(bool ini)
 {
-  if(!instance) instance = GEN_NEW XTRACEMONITOR_CFG(ini?APPLICATION_NAMEFILE:NULL);
+  if(!instance)
+    {
+      if(ini)
+        {
+          XSTRING namefile = APPLICATION_NAMEFILE;
+          instance = GEN_NEW XTRACEMONITOR_CFG(namefile.Get());
+        }
+       else
+        {
+          instance = GEN_NEW XTRACEMONITOR_CFG(NULL);
+        }
+    }
 
   return (*instance);
 }
