@@ -56,14 +56,11 @@ option(SCRIPT_LIB_CONSOLE_FEATURE                               "Script Lib Cons
 option(SCRIPT_LIB_SCREEN_FEATURE                                "Script Lib Screen"                                       ON ) 
 option(SCRIPT_LIB_INPUTSIMULATE_FEATURE                         "Script Lib Input Simulated"                              ON )   
 option(SCRIPT_LIB_FILECSV_FEATURE                               "Script Lib File CSV (read/write)"                        ON )
-# Trusted by default. Set ON for sandbox (restricted Lua libs; no auto Dir/Process).
 option(SCRIPT_LIB_SANDBOX_FEATURE                               "Script Lib Sandbox (restrict Lua + omit Dir/Process)"    OFF )
 
-# Screen find/record bitmaps need decode+encode (SCRIPT_LIB_SCREEN alone does not enable formats).
 option(GRP_BITMAP_FILE_BMP_FEATURE                              "Graphics Bitmap File BMP"                                ON )
 option(GRP_BITMAP_FILE_PNG_FEATURE                              "Graphics Bitmap File PNG"                                ON )
 
-# FileCSV uses XFILECSV.
 option(XFILE_CSV_FEATURE                                        "XFile CSV format"                                        ON )
 option(XTRACE_SERVER_UDP_FEATURE                                "XTrace receive server UDP"                               ON )
 option(XTRACE_SERVER_UART_FEATURE                               "XTrace receive server UART"                              ON )
@@ -100,4 +97,15 @@ list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/ActionScriptQ
 # End Proyect 
 
 include("${GEN_DIRECTORY}/Common/CMake/GEN_End.cmake")
+
+# Optional Chrome/GPU capture helper (used only when in-process PrintWindow is black).
+# Keep gen_wndcapture.exe next to the ASQ binary; build once from Tools/gen_wndcapture.cpp.
+set(_ASQ_WNDCAPTURE "${CMAKE_CURRENT_LIST_DIR}/../Tools/gen_wndcapture.exe")
+if(EXISTS "${_ASQ_WNDCAPTURE}")
+  add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${_ASQ_WNDCAPTURE}"
+            "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/gen_wndcapture.exe"
+    COMMENT "Copy gen_wndcapture.exe next to ActionScriptQA")
+endif()
 

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <lng>
   <languages>
     <language>Spanish</language>
@@ -9,1126 +9,466 @@
   </languages>
   <translations>
     <sentence id="00100" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[hola radiola]]>
-      </text>
-      <text lang="English">
-        <![CDATA[hi radiola]]>
-      </text>
-      <text lang="French">
-        <![CDATA[jau radiola]]>
-      </text>
-      <text lang="German">
-        <![CDATA[]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[]]>
-      </text>
+      <text lang="Spanish"><![CDATA[(reservado)]]></text>
+      <text lang="English"><![CDATA[(reserved)]]></text>
+      <text lang="French"><![CDATA[(réservé)]]></text>
+      <text lang="German"><![CDATA[(reserviert)]]></text>
+      <text lang="Chinese"><![CDATA[（保留）]]></text>
     </sentence>
-    <sentence id="00101" fixed="70">
-      <text lang="Spanish">
-        <![CDATA[mas mensage]]>
-      </text>
-      <text lang="English">
-        <![CDATA[more message]]>
-      </text>
-      <text lang="French">
-        <![CDATA[jau radiola]]>
-      </text>
-      <text lang="German">
-        <![CDATA[]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[]]>
-      </text>
+    <sentence id="00101" fixed="0">
+      <text lang="Spanish"><![CDATA[(reservado)]]></text>
+      <text lang="English"><![CDATA[(reserved)]]></text>
+      <text lang="French"><![CDATA[(réservé)]]></text>
+      <text lang="German"><![CDATA[(reserviert)]]></text>
+      <text lang="Chinese"><![CDATA[（保留）]]></text>
     </sentence>
     <sentence id="00102" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[Tecla presionada: 0x%02X [%c]]]>
-      </text>
-      <text lang="English">
-        <![CDATA[Key pressed: 0x%02X [%c]]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Touche enfoncée : 0x%02X [%c]]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Taste gedrückt: 0x%02X [%c]]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[按下按键：0x%02X [%c]]]>
-      </text>
+      <text lang="Spanish"><![CDATA[Tecla pulsada: 0x%02X [%c]]]></text>
+      <text lang="English"><![CDATA[Key pressed: 0x%02X [%c]]]></text>
+      <text lang="French"><![CDATA[Touche enfoncée : 0x%02X [%c]]]></text>
+      <text lang="German"><![CDATA[Taste gedrückt: 0x%02X [%c]]]></text>
+      <text lang="Chinese"><![CDATA[按下按键：0x%02X [%c]]]></text>
     </sentence>
     <sentence id="00103" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[A todo el tiempo de trabajo %s]]>
-      </text>
-      <text lang="English">
-        <![CDATA[Total working time %s]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Pendant toute la durée de travail %s]]>
-      </text>
-      <text lang="German">
-        <![CDATA[An alle, die im %s arbeiten]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[致所有工作时间 %s]]>
-      </text>
+      <text lang="Spanish"><![CDATA[Tiempo total de trabajo: %s]]></text>
+      <text lang="English"><![CDATA[Total working time: %s]]></text>
+      <text lang="French"><![CDATA[Temps de travail total : %s]]></text>
+      <text lang="German"><![CDATA[Gesamte Arbeitszeit: %s]]></text>
+      <text lang="Chinese"><![CDATA[总工作时间：%s]]></text>
     </sentence>
     <sentence id="00104" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Tes s] No puedo crear un motor de script para %s]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[Tests] Cannot create script engine for %s]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Tes s] Impossible de créer un moteur de script pour %s]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Tests] Es ist nicht möglich, eine Scrip-Engine für %s zu erstellen.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[Tes s] 无法为 %s 创建电子脚本引擎]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Tests Exec] No se puede crear el motor de script para %s]]></text>
+      <text lang="English"><![CDATA[[Tests Exec] Cannot create script engine for %s]]></text>
+      <text lang="French"><![CDATA[[Tests Exec] Impossible de créer le moteur de script pour %s]]></text>
+      <text lang="German"><![CDATA[[Tests Exec] Skript-Engine für %s kann nicht erstellt werden]]></text>
+      <text lang="Chinese"><![CDATA[[Tests Exec] 无法为 %s 创建脚本引擎]]></text>
     </sentence>
     <sentence id="00105" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Tes s] No se puede cargar %s]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[Tests] Cannot load %s]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Tes s] Impossible de charger %s]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Tests] %s kann nicht geladen werden]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[Tes s] 无法加载 %s]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Tests Exec] No se puede cargar %s]]></text>
+      <text lang="English"><![CDATA[[Tests Exec] Cannot load %s]]></text>
+      <text lang="French"><![CDATA[[Tests Exec] Impossible de charger %s]]></text>
+      <text lang="German"><![CDATA[[Tests Exec] %s kann nicht geladen werden]]></text>
+      <text lang="Chinese"><![CDATA[[Tests Exec] 无法加载 %s]]></text>
     </sentence>
     <sentence id="00106" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Tes s] Ejecutando %s]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[Tests] Running %s]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Tes s] Exécution de %s]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Tests] Ausführen von %s]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[Tes] 运行 %s]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Tests Exec] Ejecutando %s]]></text>
+      <text lang="English"><![CDATA[[Tests Exec] Running %s]]></text>
+      <text lang="French"><![CDATA[[Tests Exec] Exécution de %s]]></text>
+      <text lang="German"><![CDATA[[Tests Exec] Ausführen von %s]]></text>
+      <text lang="Chinese"><![CDATA[[Tests Exec] 正在运行 %s]]></text>
     </sentence>
     <sentence id="00107" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[Scrip S a nosotros]]>
-      </text>
-      <text lang="English">
-        <![CDATA[Script Status]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Scrip S à nous]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Scrip S a us]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[票据 S a us]]>
-      </text>
+      <text lang="Spanish"><![CDATA[Estado del script]]></text>
+      <text lang="English"><![CDATA[Script status]]></text>
+      <text lang="French"><![CDATA[État du script]]></text>
+      <text lang="German"><![CDATA[Skriptstatus]]></text>
+      <text lang="Chinese"><![CDATA[脚本状态]]></text>
     </sentence>
     <sentence id="00108" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[ERROR de script [%d]: %s línea %d -\u003e \"%s\"]]>
-      </text>
-      <text lang="English">
-        <![CDATA[Script ERROR [%d]: %s line %d -> "%s"]]>
-      </text>
-      <text lang="French">
-        <![CDATA[ERREUR de script [%d] : %s ligne %d -\u003e \"%s\"]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Skriptfehler [%d]: %s Zeile %d -\u003e „%s“]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[脚本错误 [%d]：%s 行 %d -\u003e“%s”]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Tests Exec] ERROR de script [%d]: %s (línea %d) -> "%s"]]></text>
+      <text lang="English"><![CDATA[[Tests Exec] Script ERROR [%d]: %s (line %d) -> "%s"]]></text>
+      <text lang="French"><![CDATA[[Tests Exec] ERREUR de script [%d] : %s (ligne %d) -> "%s"]]></text>
+      <text lang="German"><![CDATA[[Tests Exec] Skriptfehler [%d]: %s (Zeile %d) -> "%s"]]></text>
+      <text lang="Chinese"><![CDATA[[Tests Exec] 脚本错误 [%d]：%s（第 %d 行）-> "%s"]]></text>
     </sentence>
     <sentence id="00109" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[Script BREAK: línea %d -\u003e \"%s\"]]>
-      </text>
-      <text lang="English">
-        <![CDATA[Script BREAK: line %d -> "%s"]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Script BREAK : ligne %d -\u003e \"%s\"]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Scrip BREAK: Zeile %d -\u003e „%s“]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[脚本 BREAK：第 %d 行 -\u003e“%s”]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Tests Exec] BREAK de script: línea %d -> "%s"]]></text>
+      <text lang="English"><![CDATA[[Tests Exec] Script BREAK: line %d -> "%s"]]></text>
+      <text lang="French"><![CDATA[[Tests Exec] BREAK de script : ligne %d -> "%s"]]></text>
+      <text lang="German"><![CDATA[[Tests Exec] Skript-BREAK: Zeile %d -> "%s"]]></text>
+      <text lang="Chinese"><![CDATA[[Tests Exec] 脚本中断：第 %d 行 -> "%s"]]></text>
     </sentence>
     <sentence id="00110" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Sesión final: lavado ex...]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Finishing session: flushing text...]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip Record] Session de finition : rinçage des ex...]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Abschlusssitzung: Spülung ...]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[【草稿记录】整理环节：冲水前...]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Finalizando sesión: volcando texto pendiente...]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Finishing session: flushing pending text...]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Fin de session : vidage du texte en attente...]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Sitzung beenden: ausstehenden Text schreiben...]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 结束会话：刷新待写入文本...]]></text>
     </sentence>
     <sentence id="00111" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Finalización de la sesión: redacción del guión...]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Finishing session: writing script...]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement du script] Session de finition : rédaction du script ...]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Skriptaufzeichnung] Abschlusssitzung: Skript schreiben ...]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[【抄本记录】整理环节：写抄本……]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Finalizando sesión: escribiendo el script...]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Finishing session: writing script...]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Fin de session : écriture du script...]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Sitzung beenden: Skript wird geschrieben...]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 结束会话：正在写入脚本...]]></text>
     </sentence>
     <sentence id="00112" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] ERROR al escribir el guión; ]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] ERROR writing script; left record mode anyway.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement du script] ERREUR d'écriture du script ; ]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] FEHLER beim Schreiben des Scrip; ]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 编写脚本时出错；]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] ERROR al escribir el script; se sale del modo registro de todos modos.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] ERROR writing script; left record mode anyway.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] ERREUR d'écriture du script ; sortie du mode enregistrement malgré tout.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] FEHLER beim Schreiben des Skripts; Aufnahmemodus trotzdem beendet.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 写入脚本出错；仍已退出录制模式。]]></text>
     </sentence>
     <sentence id="00113" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Grabación de guión] Modo de grabación izquierda (no se selecciona ninguna aplicación).]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Left record mode (no app selected).]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip Record] Mode d'enregistrement Lef (aucune application sélectionnée).]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Linker Aufnahmemodus (keine App ausgewählt).]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 左记录模式（未选择应用程序）。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Salida del modo registro (ninguna aplicación seleccionada).]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Left record mode (no app selected).]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Sortie du mode enregistrement (aucune application sélectionnée).]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Aufnahmemodus beendet (keine App ausgewählt).]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 已退出录制模式（未选择应用程序）。]]></text>
     </sentence>
     <sentence id="00114" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Grabación de script] ON (F1/ESC finalizar, F5 descartar+eliminar e Tes s_Recorded).]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] ON (F1/ESC finish, F5 discard+delete Tests_Recorded).]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement Scrip] ON (Fin F1/ESC, F5 rejet+suppression et Test s_Recorded).]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] EIN (F1/ESC beenden, F5 verwerfen+löschen und Tes s_Recorded löschen).]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] ON（F1/ESC 完成，F5 丢弃+删除 Tes s_Recorded）。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] ON (F1/ESC finalizar, F5 descartar y eliminar Tests_Recorded).]]></text>
+      <text lang="English"><![CDATA[[Script Rec] ON (F1/ESC finish, F5 discard+delete Tests_Recorded).]]></text>
+      <text lang="French"><![CDATA[[Script Rec] ON (F1/ESC terminer, F5 abandonner et supprimer Tests_Recorded).]]></text>
+      <text lang="German"><![CDATA[[Script Rec] EIN (F1/ESC beenden, F5 verwerfen und Tests_Recorded löschen).]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] ON（F1/ESC 结束，F5 丢弃并删除 Tests_Recorded）。]]></text>
     </sentence>
     <sentence id="00115" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Scrip Record] 1) Haga clic izquierdo en una ventana de la aplicación en es.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] 1) Left-click a window of the app under test.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip\tRecord] 1) Lef\t-cliquez sur une fen\u00eatre de \tl'application sous \tes.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] 1) Klicken Sie mit der linken Maustaste auf ein Fenster der App unter es.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 1) 左键单击 es 下的应用程序窗口。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] 1) Clic izquierdo en una ventana de la aplicación a probar.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] 1) Left-click a window of the app under test.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] 1) Clic gauche sur une fenêtre de l'application à tester.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] 1) Linksklick auf ein Fenster der zu testenden App.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 1) 左键单击要测试的应用程序窗口。]]></text>
     </sentence>
     <sentence id="00116" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] 2) Haga clic izquierdo en UI arge s (clic del mouse en segundos).]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] 2) Left-click UI targets (mouse click steps).]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip Record] 2) Cliquez avec le bouton gauche sur les boutons de l'interface utilisateur (cliquez sur les boutons de la souris).]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] 2) Linksklick auf UI arge s (Mausklick s eps).]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 2) 左键单击 UI arge s（鼠标单击 s eps）。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] 2) Clic izquierdo en controles de UI (pasos de clic).]]></text>
+      <text lang="English"><![CDATA[[Script Rec] 2) Left-click UI targets (mouse click steps).]]></text>
+      <text lang="French"><![CDATA[[Script Rec] 2) Clic gauche sur les cibles d'interface (étapes de clic).]]></text>
+      <text lang="German"><![CDATA[[Script Rec] 2) Linksklick auf UI-Ziele (Mausklick-Schritte).]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 2) 左键单击界面控件（点击步骤）。]]></text>
     </sentence>
     <sentence id="00117" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Grabación de script] 3) Haga clic derecho en una zona o wai /asser i aparece en la pantalla.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] 3) Right-click a zone to wait/assert it appears on screen.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip Record] 3) Cliquez avec le bouton droit sur une zone où wai /asser i apparaît à l'écran.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] 3) Klicken Sie mit der rechten Maustaste auf eine Zone, um auf dem Bildschirm zu erscheinen.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 3) 右键单击\u200b\u200b屏幕上出现的区域 o wai /asser i。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] 3) Clic derecho en una zona para esperar/afirmar que aparece en pantalla.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] 3) Right-click a zone to wait/assert it appears on screen.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] 3) Clic droit sur une zone pour attendre/affirmer qu'elle apparaît à l'écran.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] 3) Rechtsklick auf eine Zone, um zu warten/zu prüfen, dass sie erscheint.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 3) 右键单击区域以等待/断言其出现在屏幕上。]]></text>
     </sentence>
     <sentence id="00118" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] 4) Escriba ex (inicio de sesión/contraseña); ]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] 4) Type text (login/password); ENTER/TAB/BACKSPACE recorded as keys.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement du script] 4) Tapez ex (identifiant/mot de passe) ; ]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] 4) Geben Sie ex (Login/Passwort) ein; ]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[票据记录] 4) 输入ex（登录名/密码）； ]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] 4) Escriba texto (usuario/contraseña); ENTER/TAB/BACKSPACE se graban como teclas.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] 4) Type text (login/password); ENTER/TAB/BACKSPACE recorded as keys.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] 4) Saisissez du texte (identifiant/mot de passe) ; ENTER/TAB/BACKSPACE enregistrés comme touches.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] 4) Text eingeben (Login/Passwort); ENTER/TAB/BACKSPACE als Tasten aufgezeichnet.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 4) 输入文本（登录/密码）；ENTER/TAB/BACKSPACE 记为按键。]]></text>
     </sentence>
     <sentence id="00119" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Ou pu : Tes s/%s/%s]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Output: Tests/%s/%s]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement du certificat] Ou pu : Tes s/%s/%s]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Ou pu: Tes s/%s/%s]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[【笔录】欧普：Tes s/%s/%s]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Salida: Tests/%s/%s]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Output: Tests/%s/%s]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Sortie : Tests/%s/%s]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Ausgabe: Tests/%s/%s]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 输出：Tests/%s/%s]]></text>
     </sentence>
     <sentence id="00120" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[Tes s_Recorded.js]]>
-      </text>
-      <text lang="English">
-        <![CDATA[Tests_Recorded.js]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Tes s_Recorded.js]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Tes s_Recorded.js]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[Tes s_Recorded.js]]>
-      </text>
+      <text lang="Spanish"><![CDATA[Tests_Recorded.js]]></text>
+      <text lang="English"><![CDATA[Tests_Recorded.js]]></text>
+      <text lang="French"><![CDATA[Tests_Recorded.js]]></text>
+      <text lang="German"><![CDATA[Tests_Recorded.js]]></text>
+      <text lang="Chinese"><![CDATA[Tests_Recorded.js]]></text>
     </sentence>
     <sentence id="00121" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] Función de sesión: Grabado_%03d (nexo bimapa %03d)]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Session function: Recorded_%03d  (next bitmap %03d)]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] Fonction de session : Enregistré_%03d (bi-carte suivante %03d)]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Sitzungsfunktion: Recorded_%03d (nex bi map %03d)]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 会话功能：已记录_%03d（接下来的 bi 映射 %03d）]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Función de sesión: Recorded_%03d (siguiente bitmap %03d)]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Session function: Recorded_%03d (next bitmap %03d)]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Fonction de session : Recorded_%03d (bitmap suivant %03d)]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Sitzungsfunktion: Recorded_%03d (nächstes Bitmap %03d)]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 会话函数：Recorded_%03d（下一位图 %03d）]]></text>
     </sentence>
     <sentence id="00122" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Grabación de guión] Modo de grabación cancelado (F5).]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Record mode cancelled (F5).]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement Scrip] Mode d'enregistrement annulé (F5).]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip\tRecord] Aufnahmemodus abgebrochen (F5).]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 取消记录模式 (F5)。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Modo registro cancelado (F5).]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Record mode cancelled (F5).]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Mode enregistrement annulé (F5).]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Aufnahmemodus abgebrochen (F5).]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 录制模式已取消（F5）。]]></text>
     </sentence>
     <sentence id="00123" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Scrip Record] ERROR al resolver el nombre del correo electrónico grabado.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] ERROR resolving recorded test name.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] ERREUR lors de la résolution du nom enregistré.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] FEHLER beim Auflösen des aufgezeichneten ES-Namens.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 解析记录的 es 名称时出错。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] ERROR al resolver el nombre del test grabado.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] ERROR resolving recorded test name.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] ERREUR lors de la résolution du nom du test enregistré.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] FEHLER beim Auflösen des aufgezeichneten Testnamens.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 解析已录制测试名称时出错。]]></text>
     </sentence>
     <sentence id="00124" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro Scrip] ERROR al resolver Tes s/%s pa h.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] ERROR resolving Tests/%s path.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] ERREUR lors de la résolution de Tes s/%s pa h.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] FEHLER beim Auflösen von Tes s/%s pa h.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 解决 Tes s/%s pa h 时出现错误。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] ERROR al resolver la ruta Tests/%s.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] ERROR resolving Tests/%s path.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] ERREUR lors de la résolution du chemin Tests/%s.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] FEHLER beim Auflösen des Pfads Tests/%s.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 解析路径 Tests/%s 时出错。]]></text>
     </sentence>
     <sentence id="00125" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] ERROR al crear XDIR.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] ERROR creating XDIR.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] ERREUR lors de la création de XDIR.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] FEHLER beim Erstellen des XDIR.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 创建 XDIR 时出错。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] ERROR al crear XDIR.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] ERROR creating XDIR.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] ERREUR lors de la création de XDIR.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] FEHLER beim Erstellen von XDIR.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 创建 XDIR 时出错。]]></text>
     </sentence>
     <sentence id="00126" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] Tes s eliminado/%s (directorio y archivos).]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Deleted Tests/%s (directory and files).]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement Scrip] Supprimé Tes s/%s (répertoire et fichiers).]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Gelöschte Tes s/%s (Verzeichnis und Dateien).]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录]删除Tes s/%s（目录和文件）。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Eliminado Tests/%s (directorio y archivos).]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Deleted Tests/%s (directory and files).]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Tests/%s supprimé (répertoire et fichiers).]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Tests/%s gelöscht (Verzeichnis und Dateien).]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 已删除 Tests/%s（目录和文件）。]]></text>
     </sentence>
     <sentence id="00127" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] ERROR al eliminar Tes s/%s.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] ERROR deleting Tests/%s.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] ERREUR lors de la suppression de Tes s/%s.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] FEHLER beim Löschen von Tes s/%s.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 删除 Tes s/%s 时出错。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] ERROR al eliminar Tests/%s.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] ERROR deleting Tests/%s.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] ERREUR lors de la suppression de Tests/%s.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] FEHLER beim Löschen von Tests/%s.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 删除 Tests/%s 时出错。]]></text>
     </sentence>
     <sentence id="00128" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] No hay nada que borrar: Tes s/%s (faltante).]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Nothing to delete: Tests/%s (missing).]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement du certificat] Aucune suppression de lien : Tes s/%s (manquant).]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Kein Problem mit der Löschung: Tes s/%s (fehlt).]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[草稿记录] 无删除信息：Tes s/%s（缺失）。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Nada que eliminar: Tests/%s (no existe).]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Nothing to delete: Tests/%s (missing).]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Rien à supprimer : Tests/%s (absent).]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Nichts zu löschen: Tests/%s (fehlt).]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 无需删除：Tests/%s（不存在）。]]></text>
     </sentence>
     <sentence id="00129" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] S ep %d: clave %s]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Step %d: key %s]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de certificat] S ép %d : clé %s]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] S ep %d: Schlüssel %s]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[票据记录] 第 %d: 键 %s]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Paso %d: tecla %s]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Step %d: key %s]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Étape %d : touche %s]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Schritt %d: Taste %s]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 步骤 %d：按键 %s]]></text>
     </sentence>
     <sentence id="00130" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Escribiendo... (caracteres %d)]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Typing... (%d chars)]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] Saisie... (%d caractères)]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Skripteintrag] Eingabe... (%d Zeichen)]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 正在键入...（%d 字符）]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Escribiendo... (%d caracteres)]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Typing... (%d chars)]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Saisie... (%d caractères)]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Eingabe... (%d Zeichen)]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 正在输入...（%d 个字符）]]></text>
     </sentence>
     <sentence id="00131" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] No hay ventana debajo del cursor.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] No window under cursor.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip Record] Aucune fenêtre sous le curseur.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Kein Fenster unter dem Cursor.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 光标下无窗口。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] No hay ventana debajo del cursor.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] No window under cursor.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Aucune fenêtre sous le curseur.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Kein Fenster unter dem Cursor.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 光标下没有窗口。]]></text>
     </sentence>
     <sentence id="00132" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Scrip Record] No se puede resolver el nombre ejecutable de la ventana.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Cannot resolve executable name for window.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] Impossible de résoudre le nom de l'exécutable pour la fenêtre.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Der Name der ausführbaren Datei für das Fenster kann nicht aufgelöst werden.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 无法解析窗口的可执行名称。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] No se puede resolver el nombre del ejecutable de la ventana.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Cannot resolve executable name for window.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Impossible de résoudre le nom de l'exécutable de la fenêtre.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Ausführbarer Name für das Fenster kann nicht ermittelt werden.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 无法解析窗口的可执行文件名。]]></text>
     </sentence>
     <sentence id="00133" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] Se ignoró el clic en Ac ionScrip QA i self.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Ignored click on ActionScriptQA itself.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement Scrip] Ignoré, cliquez sur Ac ionScrip QA i self.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Ignorierter Klick auf Ac ionScrip QA i self.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 忽略了对 Ac ionScrip QA i self 的点击。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Clic ignorado: es la propia ActionScriptQA.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Ignored click on ActionScriptQA itself.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Clic ignoré sur ActionScriptQA elle-même.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Klick auf ActionScriptQA selbst ignoriert.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 已忽略对 ActionScriptQA 自身的点击。]]></text>
     </sentence>
     <sentence id="00134" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Aplicación seleccionada: %s]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] App selected: %s]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip Record] Application sélectionnée : %s]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Ausgewählte App: %s]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[草稿记录] 选择的应用程序：%s]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Aplicación seleccionada: %s]]></text>
+      <text lang="English"><![CDATA[[Script Rec] App selected: %s]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Application sélectionnée : %s]]></text>
+      <text lang="German"><![CDATA[[Script Rec] App ausgewählt: %s]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 已选择应用程序：%s]]></text>
     </sentence>
     <sentence id="00135" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Pa h: %s]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Path: %s]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de certificat] Pa h : %s]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Pa h: %s]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[票据记录] Pa h: %s]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Ruta: %s]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Path: %s]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Chemin : %s]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Pfad: %s]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 路径：%s]]></text>
     </sentence>
     <sentence id="00136" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[Ventana [Registro de guión]: %s]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Window: %s]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Fenêtre [Enregistrement de script] : %s]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Fenster [Aktendatensatz]: %s]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[票据记录]窗口：%s]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Ventana: %s]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Window: %s]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Fenêtre : %s]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Fenster: %s]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 窗口：%s]]></text>
     </sentence>
     <sentence id="00137" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro Script] Navegador diseñado con ec ed: asegúrese de que utilice OpenURL (edi url en scrip).]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Browser detected: Ensure will use OpenURL (edit url in script).]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement du script] Navigateur défini : assurez-vous qu'il utilisera OpenURL (URL edi dans le script).]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip-Datensatz] Browser erkannt: Stellen Sie sicher, dass OpenURL (Edi-URL in Scrip) verwendet wird.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[Scrip Record] 浏览器 de ec ed：确保将使用 OpenURL（scrip 中的 edi url）。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Navegador detectado: Ensure usará OpenURL (edite la URL en el script).]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Browser detected: Ensure will use OpenURL (edit url in script).]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Navigateur détecté : Ensure utilisera OpenURL (modifiez l'URL dans le script).]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Browser erkannt: Ensure verwendet OpenURL (URL im Skript bearbeiten).]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 检测到浏览器：Ensure 将使用 OpenURL（请在脚本中编辑 URL）。]]></text>
     </sentence>
     <sentence id="00138" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] Haga clic en Controles de interfaz de usuario para capturar mapas bi...]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Click UI controls to capture bitmaps...]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] Cliquez sur les commandes de l'interface utilisateur pour capturer les bi-cartes...]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Klicken Sie auf UI-Steuerelemente, um Bi-Maps zu erfassen ...]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 单击 UI 控制 o 捕获双图...]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Haga clic en controles de UI para capturar bitmaps...]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Click UI controls to capture bitmaps...]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Cliquez sur les contrôles d'interface pour capturer les bitmaps...]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Auf UI-Steuerelemente klicken, um Bitmaps zu erfassen...]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 点击界面控件以捕获位图...]]></text>
     </sentence>
     <sentence id="00139" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] Error en la aplicación ion_Ge RunningLis.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Application_GetRunningList failed.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] L'application ion_Ge RunningLis a échoué.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Application_Ge RunningLis ist fehlgeschlagen.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] Applica ion_Ge RunningLi 失败。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Falló Application_GetRunningList.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Application_GetRunningList failed.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Échec de Application_GetRunningList.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Application_GetRunningList fehlgeschlagen.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] Application_GetRunningList 失败。]]></text>
     </sentence>
     <sentence id="00140" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] Se actualizó el identificador de la ventana de destino.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Target window handle refreshed.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] La poignée de la fenêtre Targe a été actualisée.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Zielfenster-Handle aktualisiert.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 刷新目标窗口句柄。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Handle de la ventana objetivo actualizado.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Target window handle refreshed.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Handle de la fenêtre cible actualisé.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Handle des Zielfensters aktualisiert.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 目标窗口句柄已刷新。]]></text>
     </sentence>
     <sentence id="00141" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] La ventana de destino ya no es válida.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Target window no longer valid.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] La fenêtre Targe n'est plus valide.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Zielfenster nicht mehr gültig.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 目标窗口不再有效。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] La ventana objetivo ya no es válida.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Target window no longer valid.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] La fenêtre cible n'est plus valide.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Zielfenster ist nicht mehr gültig.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 目标窗口已无效。]]></text>
     </sentence>
     <sentence id="00142" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Error en Crea eScreen.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] CreateScreen failed.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] Crea eScreen a échoué.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Die Erstellung von eScreen ist fehlgeschlagen.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 创建 eScreen 失败。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Falló CreateScreen.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] CreateScreen failed.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Échec de CreateScreen.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] CreateScreen fehlgeschlagen.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] CreateScreen 失败。]]></text>
     </sentence>
     <sentence id="00143" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Haga clic en el área del cliente lateral (ignorado).]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Click outside client area (ignored).]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip Record] Cliquez sur notre zone client latérale (ignorée).]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Klicken Sie auf den seitlichen Clientbereich (ignoriert).]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 单击客户端区域（忽略）。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Clic fuera del área cliente (ignorado).]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Click outside client area (ignored).]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Clic hors de la zone cliente (ignoré).]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Klick außerhalb des Clientbereichs (ignoriert).]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 点击在客户区外（已忽略）。]]></text>
     </sentence>
     <sentence id="00144" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] No se pudo guardar %s (se admite PNG no compilado).]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Failed to save %s (PNG support not compiled).]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement du script] Échec de la sauvegarde de %s (support PNG non compilé).]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Speichern von %s fehlgeschlagen (PNG-Unterstützung nicht kompiliert).]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 保存%s失败（PNG支持未编译）。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] No se pudo guardar %s (soporte PNG no compilado).]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Failed to save %s (PNG support not compiled).]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Échec de l'enregistrement de %s (support PNG non compilé).]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Speichern von %s fehlgeschlagen (PNG-Unterstützung nicht kompiliert).]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 无法保存 %s（未编译 PNG 支持）。]]></text>
     </sentence>
     <sentence id="00145" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Error al guardar %s]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Failed to save %s]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] Échec de la sauvegarde de %s]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Fehler beim Speichern von %s]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 保存%s失败]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Error al guardar %s]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Failed to save %s]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Échec de l'enregistrement de %s]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Speichern von %s fehlgeschlagen]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 保存 %s 失败]]></text>
     </sentence>
     <sentence id="00146" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] Main() existente migrado a Recorded_001.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Existing main() migrated to Recorded_001.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip Record] Existant main() migré vers Recorded_001.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Vorhandenes main() wurde auf Recorded_001 migriert.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 现有的 main() 已迁移至 Recorded_001。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] main() existente migrado a Recorded_001.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Existing main() migrated to Recorded_001.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] main() existant migré vers Recorded_001.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Vorhandenes main() nach Recorded_001 migriert.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 现有 main() 已迁移到 Recorded_001。]]></text>
     </sentence>
     <sentence id="00147" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] Agregar script existente (%d líneas de mantenimiento, %d sesiones).]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Appending to existing script (%d kept lines, %d sessions).]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement du certificat] Ajout d'un certificat existant (lignes de conservation %d, sessions %d).]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Skriptdatensatz] Anhängen eines vorhandenen Skripts (%d Kep-Zeilen, %d Sitzungen).]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 追加现有脚本（%d 保留行，%d 会话）。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Añadiendo al script existente (%d líneas conservadas, %d sesiones).]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Appending to existing script (%d kept lines, %d sessions).]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Ajout au script existant (%d lignes conservées, %d sessions).]]></text>
+      <text lang="German"><![CDATA[[Script Rec] An bestehendes Skript anhängen (%d behaltene Zeilen, %d Sitzungen).]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 追加到现有脚本（保留 %d 行，%d 个会话）。]]></text>
     </sentence>
     <sentence id="00148" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Canno crea e %s]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Cannot create %s]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] Impossible de créer %s]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Kann %s nicht erstellen]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[草稿记录] 无法创建 %s]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] No se puede crear %s]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Cannot create %s]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Impossible de créer %s]]></text>
+      <text lang="German"><![CDATA[[Script Rec] %s kann nicht erstellt werden]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 无法创建 %s]]></text>
     </sentence>
     <sentence id="00149" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de Scrip] Wri eScrip: garantizar ayudantes de aplicación...]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] WriteScript: ensuring application helpers...]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip Record] Wri eScrip : assurer les aides à l'application...]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Wri eScrip: Sicherstellen, dass Anwendungshelfer ...]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] Wri eScrip：确保应用程序助手...]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] WriteScript: asegurando helpers de aplicación...]]></text>
+      <text lang="English"><![CDATA[[Script Rec] WriteScript: ensuring application helpers...]]></text>
+      <text lang="French"><![CDATA[[Script Rec] WriteScript : préparation des helpers d'application...]]></text>
+      <text lang="German"><![CDATA[[Script Rec] WriteScript: Anwendungs-Helper werden sichergestellt...]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] WriteScript：正在确保应用程序辅助函数...]]></text>
     </sentence>
     <sentence id="00150" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Escritura eScrip: escritura grabada_%03d (%d s eps)...]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] WriteScript: writing Recorded_%03d (%d steps)...]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] ÉcrireScrip : écriture enregistrée_%03d (%d s eps)...]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Wri eScrip: schriftlich aufgezeichnet_%03d (%d s eps)...]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 写入脚本：写入记录__%03d (%d s eps)...]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] WriteScript: escribiendo Recorded_%03d (%d pasos)...]]></text>
+      <text lang="English"><![CDATA[[Script Rec] WriteScript: writing Recorded_%03d (%d steps)...]]></text>
+      <text lang="French"><![CDATA[[Script Rec] WriteScript : écriture de Recorded_%03d (%d étapes)...]]></text>
+      <text lang="German"><![CDATA[[Script Rec] WriteScript: Recorded_%03d wird geschrieben (%d Schritte)...]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] WriteScript：正在写入 Recorded_%03d（%d 个步骤）...]]></text>
     </sentence>
     <sentence id="00151" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro Scrip] Wri eScrip: vaciar el archivo del disco...]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] WriteScript: flushing file to disk...]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip Record] Wri eScrip : vidage du fichier ou du disque...]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Wri eScrip: Datei auf Festplatte leeren ...]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] Wri eScrip : 刷新磁盘文件...]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] WriteScript: volcando el archivo a disco...]]></text>
+      <text lang="English"><![CDATA[[Script Rec] WriteScript: flushing file to disk...]]></text>
+      <text lang="French"><![CDATA[[Script Rec] WriteScript : écriture du fichier sur le disque...]]></text>
+      <text lang="German"><![CDATA[[Script Rec] WriteScript: Datei wird auf Datenträger geschrieben...]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] WriteScript：正在将文件刷新到磁盘...]]></text>
     </sentence>
     <sentence id="00152" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de script] Error en la escritura de AllFile para %s]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] WriteAllFile failed for %s]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] Échec de l'écriture eAllFile pour %s]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Wri eAllFile ist für %s fehlgeschlagen]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] %s 的 Wri eAllFile 失败]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Falló WriteAllFile para %s]]></text>
+      <text lang="English"><![CDATA[[Script Rec] WriteAllFile failed for %s]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Échec de WriteAllFile pour %s]]></text>
+      <text lang="German"><![CDATA[[Script Rec] WriteAllFile für %s fehlgeschlagen]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] WriteAllFile 对 %s 失败]]></text>
     </sentence>
     <sentence id="00153" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro Scrip] Wri eScrip: listo.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] WriteScript: done.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip Record] Wri eScrip : terminé.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Wri eScrip: fertig.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 写 eScrip ：完成。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] WriteScript: listo.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] WriteScript: done.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] WriteScript : terminé.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] WriteScript: fertig.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] WriteScript：完成。]]></text>
     </sentence>
     <sentence id="00154" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[Grabadora de guiones (F1)]]>
-      </text>
-      <text lang="English">
-        <![CDATA[ Script recorder (F1)]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Enregistreur de scripts (F1)]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Belegschreiber (F1)]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[脚本记录器 (F1)]]>
-      </text>
+      <text lang="Spanish"><![CDATA[Grabadora de scripts (F1)]]></text>
+      <text lang="English"><![CDATA[Script recorder (F1)]]></text>
+      <text lang="French"><![CDATA[Enregistreur de scripts (F1)]]></text>
+      <text lang="German"><![CDATA[Skriptrekorder (F1)]]></text>
+      <text lang="Chinese"><![CDATA[脚本录制器 (F1)]]></text>
     </sentence>
     <sentence id="00155" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[O pu .js en Tes s/\u003cbase\u003e/]]>
-      </text>
-      <text lang="English">
-        <![CDATA[Or pu .js under Tes s/\u003cbase\u003e/]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Output .js under Tests/<base>/]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Oder pu .js unter Tes s/\u003cbase\u003e/]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[或者 Tes s/\u003cbase\u003e/ 下的 pu .js]]>
-      </text>
+      <text lang="Spanish"><![CDATA[Salida .js bajo Tests/<base>/]]></text>
+      <text lang="English"><![CDATA[Output .js under Tests/<base>/]]></text>
+      <text lang="French"><![CDATA[Sortie .js sous Tests/<base>/]]></text>
+      <text lang="German"><![CDATA[Ausgabe .js unter Tests/<base>/]]></text>
+      <text lang="Chinese"><![CDATA[Tests/<base>/ 下的输出 .js]]></text>
     </sentence>
     <sentence id="00156" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[Prefijo de nombre de archivo de mapa bi]]>
-      </text>
-      <text lang="English">
-        <![CDATA[Bitmap file name prefix]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Préfixe du nom de fichier bi-carte]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Präfix für den Bi-Map-Dateinamen]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[Bi图文件名前缀]]>
-      </text>
+      <text lang="Spanish"><![CDATA[Prefijo del nombre de archivo bitmap]]></text>
+      <text lang="English"><![CDATA[Bitmap file name prefix]]></text>
+      <text lang="French"><![CDATA[Préfixe du nom de fichier bitmap]]></text>
+      <text lang="German"><![CDATA[Präfix für Bitmap-Dateinamen]]></text>
+      <text lang="Chinese"><![CDATA[位图文件名前缀]]></text>
     </sentence>
     <sentence id="00157" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[Ancho de captura (píxeles)]]>
-      </text>
-      <text lang="English">
-        <![CDATA[Capture width (pixels)]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Largeur de capture (pixels)]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Aufnahmebreite (Pixel)]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[捕获宽度（像素）]]>
-      </text>
+      <text lang="Spanish"><![CDATA[Ancho de captura (píxeles)]]></text>
+      <text lang="English"><![CDATA[Capture width (pixels)]]></text>
+      <text lang="French"><![CDATA[Largeur de capture (pixels)]]></text>
+      <text lang="German"><![CDATA[Aufnahmebreite (Pixel)]]></text>
+      <text lang="Chinese"><![CDATA[捕获宽度（像素）]]></text>
     </sentence>
     <sentence id="00158" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[Altura de captura (píxeles)]]>
-      </text>
-      <text lang="English">
-        <![CDATA[Capture height (pixels)]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Hauteur de capture (pixels)]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Aufnahmehöhe (Pixel)]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[捕获高度（像素）]]>
-      </text>
+      <text lang="Spanish"><![CDATA[Alto de captura (píxeles)]]></text>
+      <text lang="English"><![CDATA[Capture height (pixels)]]></text>
+      <text lang="French"><![CDATA[Hauteur de capture (pixels)]]></text>
+      <text lang="German"><![CDATA[Aufnahmehöhe (Pixel)]]></text>
+      <text lang="Chinese"><![CDATA[捕获高度（像素）]]></text>
     </sentence>
     <sentence id="00159" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[Mapa Wai Bi imeou (ms)]]>
-      </text>
-      <text lang="English">
-        <![CDATA[WaitBitmap timeout (ms)]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Carte Wai Bi imeou (ms)]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Wai Bi-Karte imeou (ms)]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[外币地图 imeou (ms)]]>
-      </text>
+      <text lang="Spanish"><![CDATA[Timeout de WaitBitmap (ms)]]></text>
+      <text lang="English"><![CDATA[WaitBitmap timeout (ms)]]></text>
+      <text lang="French"><![CDATA[Délai d'attente WaitBitmap (ms)]]></text>
+      <text lang="German"><![CDATA[WaitBitmap-Timeout (ms)]]></text>
+      <text lang="Chinese"><![CDATA[WaitBitmap 超时（毫秒）]]></text>
     </sentence>
     <sentence id="00160" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[Mapa de Wai Bi en erval (ms)]]>
-      </text>
-      <text lang="English">
-        <![CDATA[WaitBitmap interval (ms)]]>
-      </text>
-      <text lang="French">
-        <![CDATA[Carte Wai Bi à erval (ms)]]>
-      </text>
-      <text lang="German">
-        <![CDATA[Wai Bi-Karte in Erval (ms)]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[erval 中的 Wai Bi 地图（毫秒）]]>
-      </text>
+      <text lang="Spanish"><![CDATA[Intervalo de WaitBitmap (ms)]]></text>
+      <text lang="English"><![CDATA[WaitBitmap interval (ms)]]></text>
+      <text lang="French"><![CDATA[Intervalle WaitBitmap (ms)]]></text>
+      <text lang="German"><![CDATA[WaitBitmap-Intervall (ms)]]></text>
+      <text lang="Chinese"><![CDATA[WaitBitmap 间隔（毫秒）]]></text>
     </sentence>
     <sentence id="00161" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Grabación de guion] Guión guardado y modo de grabación izquierda.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Saved script and left record mode.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de script] Mode d'enregistrement de script et de gauche enregistré.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Gespeicherter Scrip- und Lef-Record-Modus.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] 保存脚本和左记录模式。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Script guardado; saliendo del modo registro.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Saved script and left record mode.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Script enregistré ; sortie du mode enregistrement.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Skript gespeichert; Aufnahmemodus beendet.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 脚本已保存并退出录制模式。]]></text>
     </sentence>
     <sentence id="00162" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Septiembre%d: \tex\t \"%s" (%dcaracteres)]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Step %d: text "%s" (%d chars)]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de certificat] septembre%d: \tex\t \"%s" (%dcaractères)]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] S ep%d: \tex\t \"%s" (%dZeichen)]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] S ep%d： \t前任\t ”%s" (%d字符）]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Paso %d: texto "%s" (%d caracteres)]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Step %d: text "%s" (%d chars)]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Étape %d : texte "%s" (%d caractères)]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Schritt %d: Text "%s" (%d Zeichen)]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 步骤 %d：文本 "%s"（%d 个字符）]]></text>
     </sentence>
     <sentence id="00163" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de Scrip] Falló la captura de ureCon.]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] CaptureContent failed.]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Scrip Record] La capture ureCon a échoué.]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] Capture ureCon en fehlgeschlagen.]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] Cap ureCon 失败。]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Falló CaptureContent.]]></text>
+      <text lang="English"><![CDATA[[Script Rec] CaptureContent failed.]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Échec de CaptureContent.]]></text>
+      <text lang="German"><![CDATA[[Script Rec] CaptureContent fehlgeschlagen.]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] CaptureContent 失败。]]></text>
     </sentence>
     <sentence id="00164" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Septiembre%d: ESPERAR%stapa%dincógnita%d(aparece aser)]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Step %d: WAIT %s capt %dx%d (assert appears)]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de certificat] septembre%d: ATTENDEZ%scapuchon%dx%d(asser apparaît)]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] S ep%d: WARTEN%sKappe%dX%d(Asser erscheint)]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] S ep%d： 等待%s帽%dx%d（断言者出现）]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Paso %d: WAIT %s captura %dx%d (afirmar aparición)]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Step %d: WAIT %s capt %dx%d (assert appears)]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Étape %d : WAIT %s capt %dx%d (affirmer l'apparition)]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Schritt %d: WAIT %s capt %dx%d (Erscheinen prüfen)]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 步骤 %d：WAIT %s 捕获 %dx%d（断言出现）]]></text>
     </sentence>
     <sentence id="00165" fixed="0">
-      <text lang="Spanish">
-        <![CDATA[[Registro de guión] Septiembre%d: HAGA CLIC%stapa%dincógnita%dun cliente%d,%dlayou%d,%d]]>
-      </text>
-      <text lang="English">
-        <![CDATA[[ScriptRecord] Step %d: CLICK %s capt %dx%d at client %d,%d layout %d,%d]]>
-      </text>
-      <text lang="French">
-        <![CDATA[[Enregistrement de certificat] septembre%d: CLIQUEZ%scapuchon%dx%dun client%d,%dallonge-toi%d,%d]]>
-      </text>
-      <text lang="German">
-        <![CDATA[[Scrip Record] S ep%d: KLICK%sKappe%dX%dein Kunde%d,%dLayyou%d,%d]]>
-      </text>
-      <text lang="Chinese">
-        <![CDATA[[脚本记录] S ep%d： 点击%s帽%dx%d一个客户%d,%d拉友%d,%d]]>
-      </text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Paso %d: CLICK %s captura %dx%d en cliente %d,%d layout %d,%d]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Step %d: CLICK %s capt %dx%d at client %d,%d layout %d,%d]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Étape %d : CLICK %s capt %dx%d client %d,%d layout %d,%d]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Schritt %d: CLICK %s capt %dx%d Client %d,%d Layout %d,%d]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 步骤 %d：CLICK %s 捕获 %dx%d，客户区 %d,%d，布局 %d,%d]]></text>
     </sentence>
   </translations>
 </lng>
