@@ -199,11 +199,8 @@ bool APPUPDATECREATOR::AppProc_Ini()
 
   InitFSMachine();  
 
-  //--------------------------------------------------------------------------------------------------
- 
-  APPFLOW_CFG_SETAUTOMATICTRACETARGETS
-
   //--------------------------------------------------------------------------------------
+  // Load .lng before first APPFLOW_CFG access (constructor Ini/DoVariableMapping may use TL).
 
   { XPATH xpathsection;
     XPATH xpath;
@@ -217,8 +214,10 @@ bool APPUPDATECREATOR::AppProc_Ini()
         return false;
       }
   }
-  
 
+  //--------------------------------------------------------------------------------------------------
+
+  APPFLOW_CFG_SETAUTOMATICTRACETARGETS
 
   //--------------------------------------------------------------------------------------
 

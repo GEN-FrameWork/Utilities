@@ -386,55 +386,6 @@
       <text lang="German"><![CDATA[[Script Rec] WriteScript: fertig.]]></text>
       <text lang="Chinese"><![CDATA[[Script Rec] WriteScript：完成。]]></text>
     </sentence>
-    <sentence id="00154" fixed="0">
-      <text lang="Spanish"><![CDATA[Grabadora de scripts (F1)]]></text>
-      <text lang="English"><![CDATA[Script recorder (F1)]]></text>
-      <text lang="French"><![CDATA[Enregistreur de scripts (F1)]]></text>
-      <text lang="German"><![CDATA[Skriptrekorder (F1)]]></text>
-      <text lang="Chinese"><![CDATA[脚本录制器 (F1)]]></text>
-    </sentence>
-    <sentence id="00155" fixed="0">
-      <text lang="Spanish"><![CDATA[Salida .js bajo Tests/<base>/]]></text>
-      <text lang="English"><![CDATA[Output .js under Tests/<base>/]]></text>
-      <text lang="French"><![CDATA[Sortie .js sous Tests/<base>/]]></text>
-      <text lang="German"><![CDATA[Ausgabe .js unter Tests/<base>/]]></text>
-      <text lang="Chinese"><![CDATA[Tests/<base>/ 下的输出 .js]]></text>
-    </sentence>
-    <sentence id="00156" fixed="0">
-      <text lang="Spanish"><![CDATA[Prefijo del nombre de archivo bitmap]]></text>
-      <text lang="English"><![CDATA[Bitmap file name prefix]]></text>
-      <text lang="French"><![CDATA[Préfixe du nom de fichier bitmap]]></text>
-      <text lang="German"><![CDATA[Präfix für Bitmap-Dateinamen]]></text>
-      <text lang="Chinese"><![CDATA[位图文件名前缀]]></text>
-    </sentence>
-    <sentence id="00157" fixed="0">
-      <text lang="Spanish"><![CDATA[Ancho de captura (píxeles)]]></text>
-      <text lang="English"><![CDATA[Capture width (pixels)]]></text>
-      <text lang="French"><![CDATA[Largeur de capture (pixels)]]></text>
-      <text lang="German"><![CDATA[Aufnahmebreite (Pixel)]]></text>
-      <text lang="Chinese"><![CDATA[捕获宽度（像素）]]></text>
-    </sentence>
-    <sentence id="00158" fixed="0">
-      <text lang="Spanish"><![CDATA[Alto de captura (píxeles)]]></text>
-      <text lang="English"><![CDATA[Capture height (pixels)]]></text>
-      <text lang="French"><![CDATA[Hauteur de capture (pixels)]]></text>
-      <text lang="German"><![CDATA[Aufnahmehöhe (Pixel)]]></text>
-      <text lang="Chinese"><![CDATA[捕获高度（像素）]]></text>
-    </sentence>
-    <sentence id="00159" fixed="0">
-      <text lang="Spanish"><![CDATA[Timeout de WaitBitmap (ms)]]></text>
-      <text lang="English"><![CDATA[WaitBitmap timeout (ms)]]></text>
-      <text lang="French"><![CDATA[Délai d'attente WaitBitmap (ms)]]></text>
-      <text lang="German"><![CDATA[WaitBitmap-Timeout (ms)]]></text>
-      <text lang="Chinese"><![CDATA[WaitBitmap 超时（毫秒）]]></text>
-    </sentence>
-    <sentence id="00160" fixed="0">
-      <text lang="Spanish"><![CDATA[Intervalo de WaitBitmap (ms)]]></text>
-      <text lang="English"><![CDATA[WaitBitmap interval (ms)]]></text>
-      <text lang="French"><![CDATA[Intervalle WaitBitmap (ms)]]></text>
-      <text lang="German"><![CDATA[WaitBitmap-Intervall (ms)]]></text>
-      <text lang="Chinese"><![CDATA[WaitBitmap 间隔（毫秒）]]></text>
-    </sentence>
     <sentence id="00161" fixed="0">
       <text lang="Spanish"><![CDATA[[Script Rec] Script guardado; saliendo del modo registro.]]></text>
       <text lang="English"><![CDATA[[Script Rec] Saved script and left record mode.]]></text>

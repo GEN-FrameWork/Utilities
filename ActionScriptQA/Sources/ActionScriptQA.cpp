@@ -373,12 +373,8 @@ bool ACTIONSCRIPTQA::AppProc_Ini()
   xmutexshowallstatus = GEN_XFACTORY.Create_Mutex();
   if(!xmutexshowallstatus) return false;
 
-  //--------------------------------------------------------------------------------------
-
-  APPFLOW_CFG_SETAUTOMATICTRACETARGETS
-
-  
   //--------------------------------------------------------------------------------------------------
+  // Load .lng before first APPFLOW_CFG access (constructor Ini/DoVariableMapping may use TL).
 
   { XPATH xpathsection;
     GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_ROOT, xpathsection);
@@ -387,8 +383,12 @@ bool ACTIONSCRIPTQA::AppProc_Ini()
       {
         //return false;
       }
-  } 
- 
+  }
+
+  //--------------------------------------------------------------------------------------
+
+  APPFLOW_CFG_SETAUTOMATICTRACETARGETS
+
   //--------------------------------------------------------------------------------------------------
 
   APPFLOW_EXTENDED.APPStart(&APPFLOW_CFG, this);
