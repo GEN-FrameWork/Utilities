@@ -135,7 +135,7 @@ bool ACTIONSCRIPTQA_CFG::DoVariableMapping()
     }
 
   AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, NL("--------------------------------------------------------------------------------------------------------------------------------------------"), 0, 1);
-  AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, NL(" Script recorder (F1)"), 0, 2);
+  AddRemark(ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, NL(" Script recorder section of configuration"), 0, 2);
 
   AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_OUTPUT   , &scriptrecord_outputscript   , NL("Output .js under Tests/<base>/")  , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
   AddValue(XFILECFG_VALUETYPE_STRING , ACTIONSCRIPTQACFG_SECTION_SCRIPTRECORD, ACTIONSCRIPTQACFG_SCRIPTRECORD_BMPPREFIX, &scriptrecord_bitmapprefix   , NL("Bitmap file name prefix")         , APPFLOW_CFG_DEFAULT_REMARK_COLUMN);
