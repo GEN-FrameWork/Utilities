@@ -161,6 +161,7 @@ bool XTRACEMONITOR_FORM_CFG::Resolve()
   lbl_dyndns_password      = GEN_USERINTERFACE.Element_Get(NL("lbl_dyndns_password"), UI_ELEMENT_TYPE_TEXT);
   edit_dyndns_password     = (UI_ELEMENT_EDITTEXT*)GEN_USERINTERFACE.Element_Get(NL("edit_dyndns_password"), UI_ELEMENT_TYPE_EDITTEXT);
   dyndns_btn               = (UI_ELEMENT_MULTIOPTION*)GEN_USERINTERFACE.Element_Get(NL("dyndns-btn"), UI_ELEMENT_TYPE_MULTIOPTION);
+  dyndns_lbl               = GEN_USERINTERFACE.Element_Get(NL("dyndns-lbl"), UI_ELEMENT_TYPE_FORM);
 
   if(!config_modal_title || !config_modal_btn_accept || !config_modal_btn_cancel || !config_modal_btn_default)
     {
@@ -830,6 +831,9 @@ bool XTRACEMONITOR_FORM_CFG::Show(bool show)
       config_modal->SetVisible(false);
 
       GEN_USERINTERFACE.Layout_PutBackground();
+      // Modal backdrop may have frozen the toolbar bubble at the pre-modal face; re-apply
+      // after the page wipe so Active/Disabled matches the committed DynDNS flag.
+      ApplyDynDNSToolbarButton(dyndns_active_committed);
       GEN_USERINTERFACE.Elements_SetToRedraw();
 
       // Page was wiped: rebuild net-status from committed CFG (UDP/target) + live internet values.
@@ -883,44 +887,64 @@ bool XTRACEMONITOR_FORM_CFG::HandleElementSelected(UI_ELEMENT* element)
     }
 
   // Manager already toggled checkbox status before this callback.
+  // Resolve the checkbox even when the hit target is a caption/animation child.
+  UI_ELEMENT_CHECKBOX* hit_check = NULL;
   if(element->GetType() == UI_ELEMENT_TYPE_CHECKBOX)
     {
-      if(chk_savescreenposition && (element == (UI_ELEMENT*)chk_savescreenposition))
+      hit_check = (UI_ELEMENT_CHECKBOX*)element;
+    }
+   else
+    {
+      UI_ELEMENT* walk = element->GetFather();
+      while(walk)
+        {
+          if(walk->GetType() == UI_ELEMENT_TYPE_CHECKBOX)
+            {
+              hit_check = (UI_ELEMENT_CHECKBOX*)walk;
+              break;
+            }
+          walk = walk->GetFather();
+        }
+    }
+
+  if(hit_check)
+    {
+      if(chk_savescreenposition && (hit_check == chk_savescreenposition))
         {
           savescreenposition_draft = chk_savescreenposition->GetStatus();
           return true;
         }
-      if(chk_savescreensize && (element == (UI_ELEMENT*)chk_savescreensize))
+      if(chk_savescreensize && (hit_check == chk_savescreensize))
         {
           savescreensize_draft = chk_savescreensize->GetStatus();
           return true;
         }
-      if(chk_geolocalizationpublicip && (element == (UI_ELEMENT*)chk_geolocalizationpublicip))
+      if(chk_geolocalizationpublicip && (hit_check == chk_geolocalizationpublicip))
         {
           geolocalizationpublicip_draft = chk_geolocalizationpublicip->GetStatus();
           return true;
         }
-      if(chk_showaboutboot && (element == (UI_ELEMENT*)chk_showaboutboot))
+      if(chk_showaboutboot && (hit_check == chk_showaboutboot))
         {
           showaboutboot_draft = chk_showaboutboot->GetStatus();
           return true;
         }
-      if(chk_adddatetimeconsole && (element == (UI_ELEMENT*)chk_adddatetimeconsole))
+      if(chk_adddatetimeconsole && (hit_check == chk_adddatetimeconsole))
         {
           adddatetimeconsole_draft = chk_adddatetimeconsole->GetStatus();
           return true;
         }
-      if(chk_addipconsole && (element == (UI_ELEMENT*)chk_addipconsole))
+      if(chk_addipconsole && (hit_check == chk_addipconsole))
         {
           addipconsole_draft = chk_addipconsole->GetStatus();
           return true;
         }
-      if(chk_texttracking && (element == (UI_ELEMENT*)chk_texttracking))
+      if(chk_texttracking && (hit_check == chk_texttracking))
         {
           texttracking_draft = chk_texttracking->GetStatus();
           return true;
         }
-      if(chk_dyndns_active && (element == (UI_ELEMENT*)chk_dyndns_active))
+      if(chk_dyndns_active && (hit_check == chk_dyndns_active))
         {
           dyndns_active_draft = chk_dyndns_active->GetStatus();
           ApplyDynDNSFieldsEnabled();
@@ -1670,10 +1694,49 @@ bool XTRACEMONITOR_FORM_CFG::ApplyDynDNSFieldsEnabled()
 *---------------------------------------------------------------------------------------------------------------------*/
 bool XTRACEMONITOR_FORM_CFG::ApplyDynDNSToolbarButton(bool active)
 {
+  if(!dyndns_btn)
+    {
+      dyndns_btn = (UI_ELEMENT_MULTIOPTION*)GEN_USERINTERFACE.Element_Get(NL("dyndns-btn"), UI_ELEMENT_TYPE_MULTIOPTION);
+    }
   if(!dyndns_btn) return false;
 
+  if(!dyndns_lbl)
+    {
+      dyndns_lbl = GEN_USERINTERFACE.Element_Get(NL("dyndns-lbl"), UI_ELEMENT_TYPE_FORM);
+    }
+
+  // Clear hover/press so SkinCanvas picks Active vs Deactive (not Selected/Preselect).
+  dyndns_btn->SetSelected(false);
+  dyndns_btn->SetPreSelect(false);
   dyndns_btn->SetActive(active);
-  GEN_USERINTERFACE.Elements_SetToRedraw(dyndns_btn);
+  dyndns_btn->SetMustReDraw(true);
+
+  // PreSelect recurses into compose children when the pointer is inside the multioption AABB
+  // even if the father is inactive. Face buttons stay IsActive=true by default and would still
+  // accept clicks — cascade the enable flag so Disabled really means not clickable.
+  XVECTOR<UI_ELEMENT*>* faces = dyndns_btn->GetComposeElements();
+  if(faces)
+    {
+      for(XDWORD c=0; c<faces->GetSize(); c++)
+        {
+          UI_ELEMENT* face = faces->Get(c);
+          if(!face) continue;
+          face->SetSelected(false);
+          face->SetPreSelect(false);
+          face->SetActive(active);
+          face->SetMustReDraw(true);
+        }
+    }
+
+  if(dyndns_lbl)
+    {
+      dyndns_lbl->SetActive(active);
+      dyndns_lbl->SetMustReDraw(true);
+      GEN_USERINTERFACE.Elements_SetToRedraw(dyndns_lbl, true);
+    }
+
+  GEN_USERINTERFACE.Elements_SetToRedraw(dyndns_btn, true);
+  if(GEN_USERINTERFACE.Element_IsModalActive()) GEN_USERINTERFACE.ModalLayer_Invalidate();
   return true;
 }
 
@@ -1942,7 +2005,6 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
       dyndns_login_draft.Empty();
       dyndns_password_draft.Empty();
     }
-  ApplyDynDNSToolbarButton(dyndns_active_committed);
 
   if(uart_ok)
     {
@@ -1981,8 +2043,12 @@ bool XTRACEMONITOR_FORM_CFG::OnAccept()
   if(!owner->ApplyColorTheme(colortheme_committed))
     {
       owner->OpStatus_Log(XTRACEMONITOR_TRANSLATEID_XTRACEMONITOR_OPSTATUS_CONFIG_ACCEPT_SAVED_THEME_ERR);
+      ApplyDynDNSToolbarButton(dyndns_active_committed);
       return Show(false);
     }
+
+  // After theme (may rebuild caches): sync toolbar bubble to the DynDNS flag just committed.
+  ApplyDynDNSToolbarButton(dyndns_active_committed);
 
   // Net-status refresh runs on Show(false) after the modal layer is gone (safe TextBackdrop path).
   return ArmCloseAfterPress(config_modal_btn_accept);
@@ -2119,6 +2185,7 @@ void XTRACEMONITOR_FORM_CFG::Clean()
   lbl_dyndns_password       = NULL;
   edit_dyndns_password      = NULL;
   dyndns_btn                = NULL;
+  dyndns_lbl                = NULL;
   colortheme_committed      = XTRACEMONITOR_FORM_CFG_COLORTHEME_DARK;
   colortheme_draft          = XTRACEMONITOR_FORM_CFG_COLORTHEME_DARK;
   savescreenposition_committed = XTRACEMONITOR_CFG_SAVESCREENPOSITION_DEFAULT;

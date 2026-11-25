@@ -498,6 +498,10 @@ bool XTRACEMONITOR_FORM_DYNDNS::HandleElementSelected(UI_ELEMENT* element)
 
   if(!name->Compare(NL("dyndns-btn"), true))
     {
+      // Toolbar bubble must stay inert while DynDNS is off in CFG (face can still receive a
+      // stale hit if a child button was not cascaded inactive).
+      if(owner && !owner->form_cfg.GetDynDNSActiveCommitted()) return true;
+      if(!XTRACEMONITOR_CFG::GetInstance(false).GetDynDNSActive()) return true;
       return Show(true);
     }
 

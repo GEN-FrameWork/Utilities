@@ -73,11 +73,18 @@ function EnsureApplication_chrome_exe()
   var windowtitle     = "Google Chrome";
   // Browser detected: URL cannot be captured - edit this value before running.
   var url         = "https://globalnet.imtlazarus.com/lazarus/access.php";
+  var winx        = 63;
+  var winy        = 52;
+  var winw        = 934;
+  var winh        = 818;
   var key         = appname;
 
-  // Already prepared in this script run: only restore focus.
+  // Already prepared in this script run: restore geometry + focus.
   if(__qa_application_ready[key])
     {
+      Screen_SetPosition(appname, windowtitle, winx, winy);
+      Screen_Resize(appname, windowtitle, winw, winh);
+      Sleep(200);
       Screen_SetFocus(appname, windowtitle);
       Sleep(200);
       return true;
@@ -105,6 +112,11 @@ function EnsureApplication_chrome_exe()
       Console_Printf("[Tests] Opened URL %s\n", url);
     }
 
+  // Restore layout from SelectApp: outer position + client size.
+  Screen_SetPosition(appname, windowtitle, winx, winy);
+  Screen_Resize(appname, windowtitle, winw, winh);
+  Sleep(200);
+  Console_Printf("[Tests] Geometry pos %d,%d client %dx%d\n", winx, winy, winw, winh);
   Screen_SetFocus(appname, windowtitle);
   Sleep(300);
   __qa_application_ready[key] = true;
@@ -119,6 +131,10 @@ function Recorded_001()
   var appname     = "chrome.exe";
   var apppath     = "C:/Program Files/Google/Chrome/Application/chrome.exe";
   var windowtitle     = "Google Chrome";
+  var winx        = 63;
+  var winy        = 52;
+  var winw        = 934;
+  var winh        = 818;
   var outx = { value: 0 };
   var outy = { value: 0 };
   var i = 0;
@@ -159,16 +175,20 @@ function Recorded_001()
     }
 
   // Application is started/focused from main() via EnsureApplication_<app>() before this test.
+  // Re-apply geometry captured at SelectApp (safe if Ensure already did it).
+  Screen_SetPosition(appname, windowtitle, winx, winy);
+  Screen_Resize(appname, windowtitle, winw, winh);
+  Sleep(200);
   Screen_SetBmpFindCFG(12, 40);
   Sleep(300);
 
   var actions = [
-    { type: "click", bmp: "rec_001.png", x: 160, y: 359 },
+    { type: "click", bmp: "rec_001.png", x: 191, y: 359 },
     { type: "text", value: "abraham@imtlazarus.com" },
-    { type: "key", value: "TAB" },
+    { type: "click", bmp: "rec_002.png", x: 183, y: 416 },
     { type: "text", value: "IMTLazarus3010?" },
-    { type: "click", bmp: "rec_002.png", x: 334, y: 458 },
-    { type: "click", bmp: "rec_003.png", x: 529, y: 121 }
+    { type: "click", bmp: "rec_003.png", x: 314, y: 469 },
+    { type: "click", bmp: "rec_004.png", x: 760, y: 139 }
   ];
 
   for(i = 0; i < actions.length; i++)
@@ -186,12 +206,150 @@ function Recorded_001()
           status = Screen_GetPosXY(appname, windowtitle, actions[i].bmp, outx, outy);
           if(status != 0)
             {
-              var winx = { value: 0 };
-              var winy = { value: 0 };
-              if(Screen_GetPosXY(appname, windowtitle, winx, winy) == 0)
+              var layoutwinx = { value: 0 };
+              var layoutwiny = { value: 0 };
+              if(Screen_GetPosXY(appname, windowtitle, layoutwinx, layoutwiny) == 0)
                 {
-                  outx.value = winx.value + actions[i].x;
-                  outy.value = winy.value + actions[i].y;
+                  outx.value = layoutwinx.value + actions[i].x;
+                  outy.value = layoutwiny.value + actions[i].y;
+                  status = 0;
+                }
+            }
+          if(status == 0)
+            {
+              InpSim_Mouse_Click(outx.value, outy.value);
+              Console_Printf("[Tests] Click %s at %d,%d\n", actions[i].bmp, outx.value, outy.value);
+              Sleep(400);
+            }
+           else
+            {
+              stepresult = "FAIL";
+              Console_Printf("[Tests] FAIL find %s\n", actions[i].bmp);
+            }
+        }
+      else if(actions[i].type == "wait")
+        {
+          stepdesc = "wait " + actions[i].bmp;
+          if(Screen_WaitBitmap(appname, windowtitle, actions[i].bmp, actions[i].timeoutms, actions[i].intervalms))
+            {
+              Console_Printf("[Tests] PASS wait %s\n", actions[i].bmp);
+            }
+           else
+            {
+              stepresult = "FAIL";
+              Console_Printf("[Tests] FAIL wait %s (timeout)\n", actions[i].bmp);
+            }
+        }
+      else if(actions[i].type == "text")
+        {
+          stepdesc = "text";
+          InpSim_Key_ClickByText(actions[i].value, 40);
+          Console_Printf("[Tests] Type text (%d chars)\n", actions[i].value.length);
+          Sleep(200);
+        }
+      else if(actions[i].type == "key")
+        {
+          stepdesc = "key " + actions[i].value;
+          InpSim_Key_ClickByLiteral(actions[i].value, 40);
+          Console_Printf("[Tests] Key %s\n", actions[i].value);
+          Sleep(200);
+        }
+
+      EvidenceAdd(i + 1, stepdesc, stepresult);
+    }
+
+  if(listloaded) TraceTests_DeleteAll();
+  EvidenceEnd();
+  Console_Printf("[Tests] End %s / %s\n", scriptname, session);
+}
+
+function Recorded_002()
+{
+  var scriptname  = GetNameScript();
+  var session     = "Recorded_002";
+  var appname     = "chrome.exe";
+  var apppath     = "C:/Program Files/Google/Chrome/Application/chrome.exe";
+  var windowtitle     = "Google Chrome";
+  var winx        = 63;
+  var winy        = 52;
+  var winw        = 934;
+  var winh        = 849;
+  var outx = { value: 0 };
+  var outy = { value: 0 };
+  var i = 0;
+  var status = 1;
+  var stepresult = "PASS";
+  var stepdesc = "";
+  var catalogpath = "";
+  var listloaded = false;
+
+  Console_Printf("[Tests] Start %s / %s\n", scriptname, session);
+
+  if(!EvidenceStart(scriptname))
+    {
+      Console_Printf("[Tests] FAIL EvidenceStart/FileCSV\n");
+      return;
+    }
+  Console_Printf("[Tests] Evidence CSV %s\n", FileCSV_GetPath());
+
+  catalogpath = GetPathScript() + ListTestFileName(scriptname);
+  if(IsItExists(catalogpath))
+    {
+      if(TraceTests_Load(catalogpath))
+        {
+          listloaded = true;
+          EvidenceAdd("", "TraceTests_Load", "PASS");
+          Console_Printf("[Tests] ListTest loaded %s\n", catalogpath);
+        }
+       else
+        {
+          EvidenceAdd("", "TraceTests_Load", "FAIL");
+          Console_Printf("[Tests] FAIL TraceTests_Load %s\n", catalogpath);
+        }
+    }
+   else
+    {
+      EvidenceAdd("", "TraceTests_Load", "SKIP");
+      Console_Printf("[Tests] ListTest not found (optional) %s\n", catalogpath);
+    }
+
+  // Application is started/focused from main() via EnsureApplication_<app>() before this test.
+  // Re-apply geometry captured at SelectApp (safe if Ensure already did it).
+  Screen_SetPosition(appname, windowtitle, winx, winy);
+  Screen_Resize(appname, windowtitle, winw, winh);
+  Sleep(200);
+  Screen_SetBmpFindCFG(12, 40);
+  Sleep(300);
+
+  var actions = [
+    { type: "click", bmp: "rec_005.png", x: 384, y: 424 },
+    { type: "click", bmp: "rec_006.png", x: 236, y: 327 },
+    { type: "click", bmp: "rec_007.png", x: 145, y: 699 },
+    { type: "click", bmp: "rec_008.png", x: 387, y: 421 },
+    { type: "click", bmp: "rec_009.png", x: 805, y: 704 }
+  ];
+
+  for(i = 0; i < actions.length; i++)
+    {
+      Screen_SetFocus(appname, windowtitle);
+      Sleep(80);
+      stepresult = "PASS";
+      stepdesc = actions[i].type;
+
+      if(actions[i].type == "click")
+        {
+          outx = { value: 0 };
+          outy = { value: 0 };
+          stepdesc = "click " + actions[i].bmp;
+          status = Screen_GetPosXY(appname, windowtitle, actions[i].bmp, outx, outy);
+          if(status != 0)
+            {
+              var layoutwinx = { value: 0 };
+              var layoutwiny = { value: 0 };
+              if(Screen_GetPosXY(appname, windowtitle, layoutwinx, layoutwiny) == 0)
+                {
+                  outx.value = layoutwinx.value + actions[i].x;
+                  outy.value = layoutwiny.value + actions[i].y;
                   status = 0;
                 }
             }
@@ -247,4 +405,5 @@ function main()
 {
   if(!EnsureApplication_chrome_exe()) return;
   Recorded_001();
+  Recorded_002();
 }

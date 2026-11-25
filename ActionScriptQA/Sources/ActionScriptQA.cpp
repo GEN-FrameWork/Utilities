@@ -266,7 +266,11 @@ ACTIONSCRIPTQA_SCRIPTRECORD_STEP::~ACTIONSCRIPTQA_SCRIPTRECORD_STEP()
 * --------------------------------------------------------------------------------------------------------------------*/
 ACTIONSCRIPTQA_SCRIPTRECORD_SESSION::ACTIONSCRIPTQA_SCRIPTRECORD_SESSION()
 {
-  id = 0;
+  id   = 0;
+  winx = 0;
+  winy = 0;
+  winw = 0;
+  winh = 0;
 }
 
 
@@ -632,8 +636,15 @@ bool ACTIONSCRIPTQA::KeyValidSecuences(int key)
 
   switch(key)
     {
-      case 0x20 : if(!ScriptRecord_IsActive()) ExecScripts();
-                  break;                 
+      case 0x20 : if(ScriptRecord_IsActive())
+                    {
+                      ScriptRecord_Print(NL("[Tests Exec] Recording is ON — press ESC/F1 to finish before running scripts."));
+                    }
+                   else
+                    {
+                      ExecScripts();
+                    }
+                  break;
 
       case 0x1B : // ESC: leave record mode first, then exit app
                   if(ScriptRecord_IsActive())
@@ -821,17 +832,15 @@ bool ACTIONSCRIPTQA::Test_RestoreDefaultGraphics()
 * --------------------------------------------------------------------------------------------------------------------*/
 bool ACTIONSCRIPTQA::Test_LoadAndRun(XSTRING& scriptentry)
 {
-  XSTRING basename;
-  if(!Test_GetBaseName(scriptentry, basename)) return false;
-  if(!Test_EnsureLayout(basename)) return false;
-  if(!Test_BindGraphics(basename)) return false;
+  XSTRING entry = scriptentry.Get();
+  SCRIPT::EliminateExtraChars(&entry);
+  if(entry.IsEmpty()) return false;
 
-  XPATH xpath;
-  if(!Test_GetRootPath(basename, xpath)) return false;
-  xpath.Slash_Add();
+  XSTRING basename;
+  if(!Test_GetBaseName(entry, basename)) return false;
 
   // Keep original extension from CFG entry when present; default to .js
-  XPATH entrypath(scriptentry);
+  XPATH   entrypath(entry);
   XSTRING nameext;
   entrypath.GetNamefileExt(nameext);
   if(nameext.IsEmpty())
@@ -839,7 +848,49 @@ bool ACTIONSCRIPTQA::Test_LoadAndRun(XSTRING& scriptentry)
       nameext = basename.Get();
       nameext += NL(".js");
     }
-  xpath += nameext.Get();
+
+  // Prefer assets/Tests/<base>/<file> (recorder layout). Fall back to assets/scripts/<file>
+  // so CFG entries still run if the Tests copy was deleted (F5) or not yet migrated.
+  XPATH xpath;
+  XPATH xpathscripts;
+  bool  found = false;
+
+  XDIR* xdir = GEN_XFACTORY.Create_Dir();
+  if(!xdir) return false;
+
+  if(Test_GetRootPath(basename, xpath))
+    {
+      xpath.Slash_Add();
+      xpath += nameext.Get();
+      found = xdir->Exist(xpath);
+    }
+
+  if(!found)
+    {
+      if(GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_SCRIPTS, xpathscripts))
+        {
+          xpathscripts.Slash_Add();
+          xpathscripts += nameext.Get();
+          if(xdir->Exist(xpathscripts))
+            {
+              xpath = xpathscripts;
+              found = true;
+              ScriptRecord_Print(NL("[Tests Exec] Using legacy scripts path: %s"), xpath.Get());
+            }
+        }
+    }
+
+  GEN_XFACTORY.Delete_Dir(xdir);
+
+  if(!found)
+    {
+      ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_TESTS_CANNOT_LOAD), nameext.Get());
+      ScriptRecord_Print(NL("[Tests Exec] Expected: assets/Tests/%s/%s (or assets/scripts/%s)"), basename.Get(), nameext.Get(), nameext.Get());
+      return false;
+    }
+
+  if(!Test_EnsureLayout(basename)) return false;
+  if(!Test_BindGraphics(basename)) return false;
 
   SCRIPT* script = SCRIPT::Create(nameext.Get());
   if(!script)
@@ -849,11 +900,17 @@ bool ACTIONSCRIPTQA::Test_LoadAndRun(XSTRING& scriptentry)
       return false;
     }
 
+  // Surface SyntaxError / runtime errors on the ASQ console.
+  SubscribeEvent(SCRIPT_XEVENT_TYPE_ERROR, script);
+  SubscribeEvent(SCRIPT_XEVENT_TYPE_BREAK, script);
+
   AdjustLibraries(script);
 
   if(!script->Load(xpath))
     {
       ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_TESTS_CANNOT_LOAD), xpath.Get());
+      UnSubscribeEvent(SCRIPT_XEVENT_TYPE_ERROR, script);
+      UnSubscribeEvent(SCRIPT_XEVENT_TYPE_BREAK, script);
       GEN_DELETE script;
       Test_RestoreDefaultGraphics();
       return false;
@@ -861,6 +918,8 @@ bool ACTIONSCRIPTQA::Test_LoadAndRun(XSTRING& scriptentry)
 
   ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_TESTS_RUNNING), xpath.Get());
   script->Run();
+  UnSubscribeEvent(SCRIPT_XEVENT_TYPE_ERROR, script);
+  UnSubscribeEvent(SCRIPT_XEVENT_TYPE_BREAK, script);
   GEN_DELETE script;
 
   return true;
@@ -1044,6 +1103,10 @@ void ACTIONSCRIPTQA::Clean()
   scriptrecord_sessionindex     = 1;
   scriptrecord_nextbitmapindex  = 1;
   scriptrecord_readymapwritten  = false;
+  scriptrecord_winx             = 0;
+  scriptrecord_winy             = 0;
+  scriptrecord_winw             = 0;
+  scriptrecord_winh             = 0;
   scriptrecord_appname.Empty();
   scriptrecord_apppath.Empty();
   scriptrecord_windowtitle.Empty();
@@ -1192,6 +1255,10 @@ bool ACTIONSCRIPTQA::ScriptRecord_Reset()
   scriptrecord_sessionindex     = 1;
   scriptrecord_nextbitmapindex  = 1;
   scriptrecord_readymapwritten  = false;
+  scriptrecord_winx             = 0;
+  scriptrecord_winy             = 0;
+  scriptrecord_winw             = 0;
+  scriptrecord_winh             = 0;
   scriptrecord_appname.Empty();
   scriptrecord_apppath.Empty();
   scriptrecord_windowtitle.Empty();
@@ -1656,26 +1723,117 @@ bool ACTIONSCRIPTQA::ScriptRecord_SelectApp(int screenx, int screeny)
     }
   ScriptRecord_PathForScript(scriptrecord_apppath);
 
+  // Capture geometry for playback: outer desktop position + CLIENT size.
+  // Screen_SetPosition uses outer top-left; Screen_Resize expects client WxH
+  // (it expands to outer via ClientSizeToWindowSize). Storing GetWindowRect
+  // width/height here would make playback recreate a larger window.
+  scriptrecord_winx = 0;
+  scriptrecord_winy = 0;
+  scriptrecord_winw = 0;
+  scriptrecord_winh = 0;
+  {
+    GRPSCREEN* geoscreen = GEN_GRPFACTORY.CreateScreen();
+    if(geoscreen)
+      {
+        geoscreen->SetHandle(scriptrecord_windowhandle);
+        int posx = 0;
+        int posy = 0;
+        if(geoscreen->Get_Position(posx, posy))
+          {
+            scriptrecord_winx = posx;
+            scriptrecord_winy = posy;
+          }
+         else if(process.GetWindowRect() && !process.GetWindowRect()->IsEmpty())
+          {
+            scriptrecord_winx = process.GetWindowRect()->x1;
+            scriptrecord_winy = process.GetWindowRect()->y1;
+          }
+
+        int clientw = 0;
+        int clienth = 0;
+        if(geoscreen->GetClientSize(clientw, clienth) && (clientw > 0) && (clienth > 0))
+          {
+            scriptrecord_winw = clientw;
+            scriptrecord_winh = clienth;
+          }
+         else if(process.GetWindowRect() && !process.GetWindowRect()->IsEmpty())
+          {
+            // Fallback: derive client from outer using border/title metadata.
+            int border = process.GetWindowBorderWidth();
+            int titleh = process.GetWindowTitleHeight();
+            scriptrecord_winw = (int)process.GetWindowRect()->GetWidth()  - (border * 2);
+            scriptrecord_winh = (int)process.GetWindowRect()->GetHeight() - titleh - border;
+            if(scriptrecord_winw < 0) scriptrecord_winw = 0;
+            if(scriptrecord_winh < 0) scriptrecord_winh = 0;
+          }
+
+        GEN_GRPFACTORY.DeleteScreen(geoscreen);
+      }
+     else if(process.GetWindowRect() && !process.GetWindowRect()->IsEmpty())
+      {
+        scriptrecord_winx = process.GetWindowRect()->x1;
+        scriptrecord_winy = process.GetWindowRect()->y1;
+        int border = process.GetWindowBorderWidth();
+        int titleh = process.GetWindowTitleHeight();
+        scriptrecord_winw = (int)process.GetWindowRect()->GetWidth()  - (border * 2);
+        scriptrecord_winh = (int)process.GetWindowRect()->GetHeight() - titleh - border;
+        if(scriptrecord_winw < 0) scriptrecord_winw = 0;
+        if(scriptrecord_winh < 0) scriptrecord_winh = 0;
+      }
+  }
+
   // Browsers: use a stable short title for Screen_* Find() (dynamic tab titles break matching).
   if(ScriptRecord_IsBrowserApp(scriptrecord_appname, scriptrecord_apppath))
     {
       ScriptRecord_BrowserWindowTitle(scriptrecord_appname, scriptrecord_apppath, scriptrecord_windowtitle);
     }
-   else if(process.GetWindowTitle())
+  else if(process.GetWindowTitle())
     {
       scriptrecord_windowtitle = process.GetWindowTitle()->Get();
       scriptrecord_windowtitle.Character_Change(_C('%'), _C('_'));
     }
-   else
+  else
     {
       scriptrecord_windowtitle.Empty();
     }
 
   scriptrecord_appselected = true;
 
+  // Same app / append session: refresh EnsureApplication_<app> geometry in kept
+  // lines (do NOT delete the function — later WriteScript passes would otherwise
+  // drop it when ensurekeyswritten still said it was already emitted).
+  {
+    XSTRING appkey;
+    ScriptRecord_MakeAppKey(scriptrecord_appname, appkey);
+    if(!ScriptRecord_UpdateEnsureGeometryInExisting(appkey, scriptrecord_winx, scriptrecord_winy, scriptrecord_winw, scriptrecord_winh))
+      {
+        // Not in kept lines yet (first capture for this app, or a prior broken write).
+        // Clear write-pass bookkeeping so WriteScript emits EnsureApplication again.
+        for(XDWORD c=0; c<scriptrecord_ensurekeyswritten.GetSize(); )
+          {
+            XSTRING* key = scriptrecord_ensurekeyswritten.Get(c);
+            if(key && key->Compare(appkey) == 0)
+              {
+                scriptrecord_ensurekeyswritten.Delete(key);
+                delete key;
+                continue;
+              }
+            c++;
+          }
+      }
+  }
+
   ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_SCRIPTRECORD_APP_SELECTED), scriptrecord_appname.Get());
   ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_SCRIPTRECORD_PATH), scriptrecord_apppath.Get());
   ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_SCRIPTRECORD_WINDOW), scriptrecord_windowtitle.Get());
+  if((scriptrecord_winw > 0) && (scriptrecord_winh > 0))
+    {
+      ScriptRecord_Print(NL("[Script Rec] Window geometry (pos + client size): %d,%d %dx%d"), scriptrecord_winx, scriptrecord_winy, scriptrecord_winw, scriptrecord_winh);
+    }
+   else
+    {
+      ScriptRecord_Print(NL("[Script Rec] WARNING: could not capture window geometry for playback."));
+    }
   if(ScriptRecord_IsBrowserApp(scriptrecord_appname, scriptrecord_apppath))
     {
       ScriptRecord_Print(TL(ACTIONSCRIPTQA_TRANSLATEID_ACTIONSCRIPTQA_SCRIPTRECORD_BROWSER_DETECTED_ENSURE_WILL_USE_OP));
@@ -2019,8 +2177,17 @@ bool ACTIONSCRIPTQA::ScriptRecord_PrepareExisting()
                                 {
                                   session->windowtitle = value.Get();
                                 }
+                              else
+                                {
+                                  int ivalue = 0;
+                                  if(ScriptRecord_ParseIntAssign(look, NL("winx"), ivalue)) session->winx = ivalue;
+                                  else if(ScriptRecord_ParseIntAssign(look, NL("winy"), ivalue)) session->winy = ivalue;
+                                  else if(ScriptRecord_ParseIntAssign(look, NL("winw"), ivalue)) session->winw = ivalue;
+                                  else if(ScriptRecord_ParseIntAssign(look, NL("winh"), ivalue)) session->winh = ivalue;
+                                }
 
-                              if(!session->appname.IsEmpty() && !session->apppath.IsEmpty() && !session->windowtitle.IsEmpty())
+                              if(!session->appname.IsEmpty() && !session->apppath.IsEmpty() && !session->windowtitle.IsEmpty() &&
+                                 (session->winw > 0) && (session->winh > 0))
                                 break;
                             }
 
@@ -2236,6 +2403,78 @@ bool ACTIONSCRIPTQA::ScriptRecord_ExistingHasEnsureAppKey(XSTRING& appkey)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_UpdateEnsureGeometryInExisting(XSTRING& appkey, int winx, int winy, int winw, int winh)
+* @brief      Update winx/winy/winw/winh inside an existing EnsureApplication_<appkey>() kept for append.
+* @ingroup
+*
+* @return     true if the Ensure function was found and updated (or geometry already matched).
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_UpdateEnsureGeometryInExisting(XSTRING& appkey, int winx, int winy, int winw, int winh)
+{
+  if(appkey.IsEmpty()) return false;
+  if((winw <= 0) || (winh <= 0)) return false;
+
+  XSTRING needle;
+  needle.Format(NL("function EnsureApplication_%s"), appkey.Get());
+
+  bool found    = false;
+  int  depth    = 0;
+  bool seenopen = false;
+
+  for(XDWORD c=0; c<scriptrecord_existinglines.GetSize(); c++)
+    {
+      XSTRING* line = scriptrecord_existinglines.Get(c);
+      if(!line) continue;
+
+      if(!found)
+        {
+          if(line->Find(needle.Get(), false) == XSTRING_NOTFOUND) continue;
+          found    = true;
+          depth    = 0;
+          seenopen = false;
+        }
+
+      {
+        XSTRING pattern;
+        pattern.Format(NL("var %s"), NL("winx"));
+        if(line->Find(pattern.Get(), false) != XSTRING_NOTFOUND) line->Format(NL("  var winx        = %d;"), winx);
+        pattern.Format(NL("var %s"), NL("winy"));
+        if(line->Find(pattern.Get(), false) != XSTRING_NOTFOUND) line->Format(NL("  var winy        = %d;"), winy);
+        pattern.Format(NL("var %s"), NL("winw"));
+        if(line->Find(pattern.Get(), false) != XSTRING_NOTFOUND) line->Format(NL("  var winw        = %d;"), winw);
+        pattern.Format(NL("var %s"), NL("winh"));
+        if(line->Find(pattern.Get(), false) != XSTRING_NOTFOUND) line->Format(NL("  var winh        = %d;"), winh);
+      }
+
+      for(XDWORD i=0; i<line->GetSize(); i++)
+        {
+          XCHAR ch = line->Get()[i];
+          if(ch == _C('{'))
+            {
+              depth++;
+              seenopen = true;
+            }
+           else if(ch == _C('}'))
+            {
+              depth--;
+            }
+        }
+
+      if(found && seenopen && (depth <= 0)) break;
+    }
+
+  if(found)
+    {
+      ScriptRecord_Print(NL("[Script Rec] Updated EnsureApplication_%s geometry: %d,%d %dx%d"), appkey.Get(), winx, winy, winw, winh);
+    }
+
+  return found;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool ACTIONSCRIPTQA::ScriptRecord_ParseQuotedAssign(XSTRING* line, XCHAR* varname, XSTRING& outvalue)
 * @brief      Parse  var varname = "value";  from a script line
 * @ingroup
@@ -2257,6 +2496,31 @@ bool ACTIONSCRIPTQA::ScriptRecord_ParseQuotedAssign(XSTRING* line, XCHAR* varnam
   if(q2 < 0 || q2 <= q1 + 1) return false;
 
   outvalue.Set(line->Get() + q1 + 1, (XDWORD)(q2 - q1 - 1));
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_ParseIntAssign(XSTRING* line, XCHAR* varname, int& outvalue)
+* @brief      Parse  var varname = 123;  from a script line
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_ParseIntAssign(XSTRING* line, XCHAR* varname, int& outvalue)
+{
+  outvalue = 0;
+  if(!line || !varname) return false;
+
+  XSTRING pattern;
+  pattern.Format(NL("var %s"), varname);
+  int pos = line->Find(pattern.Get(), false);
+  if(pos == XSTRING_NOTFOUND) return false;
+
+  int eq = line->FindCharacter(_C('='), (XDWORD)pos);
+  if(eq < 0) return false;
+
+  outvalue = line->ConvertToInt(eq + 1, NULL, false);
   return true;
 }
 
@@ -2400,13 +2664,14 @@ void ACTIONSCRIPTQA::ScriptRecord_AddJSVarString(XFILETXT& file, XCHAR* varname,
 * @ingroup
 *
 * --------------------------------------------------------------------------------------------------------------------*/
-bool ACTIONSCRIPTQA::ScriptRecord_WriteEnsureApplicationForApp(XFILETXT& file, XSTRING& appname, XPATH& apppath, XSTRING& windowtitle, XSTRING& appkey)
+bool ACTIONSCRIPTQA::ScriptRecord_WriteEnsureApplicationForApp(XFILETXT& file, XSTRING& appname, XPATH& apppath, XSTRING& windowtitle, XSTRING& appkey, int winx, int winy, int winw, int winh)
 {
   XSTRING line;
   XPATH   pathscript = apppath;
   ScriptRecord_PathForScript(pathscript);
 
   bool isbrowser = ScriptRecord_IsBrowserApp(appname, apppath);
+  bool hasgeometry = ((winw > 0) && (winh > 0));
 
   line.Format(NL("function EnsureApplication_%s()"), appkey.Get());
   file.AddLine(line);
@@ -2422,11 +2687,25 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteEnsureApplicationForApp(XFILETXT& file, X
       file.AddLine(NL("  // Browser detected: URL cannot be captured - edit this value before running."));
       file.AddLine(NL("  var url         = \"https://EDIT_ME/\";"));
     }
+  line.Format(NL("  var winx        = %d;"), winx);
+  file.AddLine(line);
+  line.Format(NL("  var winy        = %d;"), winy);
+  file.AddLine(line);
+  line.Format(NL("  var winw        = %d;"), winw);
+  file.AddLine(line);
+  line.Format(NL("  var winh        = %d;"), winh);
+  file.AddLine(line);
   file.AddLine(NL("  var key         = appname;"));
   file.AddLine(NL(""));
-  file.AddLine(NL("  // Already prepared in this script run: only restore focus."));
+  file.AddLine(NL("  // Already prepared in this script run: restore geometry + focus."));
   file.AddLine(NL("  if(__qa_application_ready[key])"));
   file.AddLine(NL("    {"));
+  if(hasgeometry)
+    {
+      file.AddLine(NL("      Screen_SetPosition(appname, windowtitle, winx, winy);"));
+      file.AddLine(NL("      Screen_Resize(appname, windowtitle, winw, winh);"));
+      file.AddLine(NL("      Sleep(200);"));
+    }
   file.AddLine(NL("      Screen_SetFocus(appname, windowtitle);"));
   file.AddLine(NL("      Sleep(200);"));
   file.AddLine(NL("      return true;"));
@@ -2474,6 +2753,14 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteEnsureApplicationForApp(XFILETXT& file, X
     }
   file.AddLine(NL("    }"));
   file.AddLine(NL(""));
+  if(hasgeometry)
+    {
+      file.AddLine(NL("  // Restore layout from SelectApp: outer position + client size."));
+      file.AddLine(NL("  Screen_SetPosition(appname, windowtitle, winx, winy);"));
+      file.AddLine(NL("  Screen_Resize(appname, windowtitle, winw, winh);"));
+      file.AddLine(NL("  Sleep(200);"));
+      file.AddLine(NL("  Console_Printf(\"[Tests] Geometry pos %d,%d client %dx%d\\n\", winx, winy, winw, winh);"));
+    }
   file.AddLine(NL("  Screen_SetFocus(appname, windowtitle);"));
   file.AddLine(NL("  Sleep(300);"));
   file.AddLine(NL("  __qa_application_ready[key] = true;"));
@@ -2637,6 +2924,10 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   currentsession.apppath     = apppathscript.Get();
   currentsession.windowtitle = scriptrecord_windowtitle.Get();
   currentsession.appkey      = appkey.Get();
+  currentsession.winx        = scriptrecord_winx;
+  currentsession.winy        = scriptrecord_winy;
+  currentsession.winw        = scriptrecord_winw;
+  currentsession.winh        = scriptrecord_winh;
 
   XFILETXT file;
   if(!file.Create(xpath))
@@ -2648,11 +2939,14 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   XSTRING line;
   bool    needhelpers = true;
 
-  // Full rewrite (no prior kept lines): allow Ensure helpers to be emitted again.
+  // ensurekeyswritten only dedupes EnsureApplication within THIS WriteScript pass.
+  // Clearing each pass is required when appending Recorded_NNN: otherwise a prior
+  // pass marks the app as "written" while kept lines no longer contain the function
+  // (missing EnsureApplication_* at runtime).
+  scriptrecord_ensurekeyswritten.DeleteContents();
+  scriptrecord_ensurekeyswritten.DeleteAll();
   if(!scriptrecord_existinglines.GetSize())
     {
-      scriptrecord_ensurekeyswritten.DeleteContents();
-      scriptrecord_ensurekeyswritten.DeleteAll();
       scriptrecord_readymapwritten = false;
     }
 
@@ -2712,7 +3006,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
           ScriptRecord_BrowserWindowTitle(session->appname, session->apppath, session->windowtitle);
         }
 
-      ScriptRecord_WriteEnsureApplicationForApp(file, session->appname, session->apppath, session->windowtitle, session->appkey);
+      ScriptRecord_WriteEnsureApplicationForApp(file, session->appname, session->apppath, session->windowtitle, session->appkey, session->winx, session->winy, session->winw, session->winh);
 
       XSTRING* keycopy = GEN_NEW XSTRING();
       if(keycopy)
@@ -2724,7 +3018,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
 
   if(!appkey.IsEmpty() && !ScriptRecord_ExistingHasEnsureAppKey(appkey))
     {
-      ScriptRecord_WriteEnsureApplicationForApp(file, scriptrecord_appname, apppathscript, scriptrecord_windowtitle, appkey);
+      ScriptRecord_WriteEnsureApplicationForApp(file, scriptrecord_appname, apppathscript, scriptrecord_windowtitle, appkey, scriptrecord_winx, scriptrecord_winy, scriptrecord_winw, scriptrecord_winh);
 
       XSTRING* keycopy = GEN_NEW XSTRING();
       if(keycopy)
@@ -2748,6 +3042,14 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
     ScriptRecord_AddJSVarString(file, NL("apppath"), pathstr);
   }
   ScriptRecord_AddJSVarString(file, NL("windowtitle"), scriptrecord_windowtitle);
+  line.Format(NL("  var winx        = %d;"), scriptrecord_winx);
+  file.AddLine(line);
+  line.Format(NL("  var winy        = %d;"), scriptrecord_winy);
+  file.AddLine(line);
+  line.Format(NL("  var winw        = %d;"), scriptrecord_winw);
+  file.AddLine(line);
+  line.Format(NL("  var winh        = %d;"), scriptrecord_winh);
+  file.AddLine(line);
 
   file.AddLine(NL("  var outx = { value: 0 };"));
   file.AddLine(NL("  var outy = { value: 0 };"));
@@ -2789,6 +3091,13 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   file.AddLine(NL("    }"));
   file.AddLine(NL(""));
   file.AddLine(NL("  // Application is started/focused from main() via EnsureApplication_<app>() before this test."));
+  if((scriptrecord_winw > 0) && (scriptrecord_winh > 0))
+    {
+      file.AddLine(NL("  // Re-apply geometry captured at SelectApp (safe if Ensure already did it)."));
+      file.AddLine(NL("  Screen_SetPosition(appname, windowtitle, winx, winy);"));
+      file.AddLine(NL("  Screen_Resize(appname, windowtitle, winw, winh);"));
+      file.AddLine(NL("  Sleep(200);"));
+    }
   file.AddLine(NL("  Screen_SetBmpFindCFG(12, 40);"));
   file.AddLine(NL("  Sleep(300);"));
   file.AddLine(NL(""));
@@ -2848,12 +3157,12 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   file.AddLine(NL("          status = Screen_GetPosXY(appname, windowtitle, actions[i].bmp, outx, outy);"));
   file.AddLine(NL("          if(status != 0)"));
   file.AddLine(NL("            {"));
-  file.AddLine(NL("              var winx = { value: 0 };"));
-  file.AddLine(NL("              var winy = { value: 0 };"));
-  file.AddLine(NL("              if(Screen_GetPosXY(appname, windowtitle, winx, winy) == 0)"));
+  file.AddLine(NL("              var layoutwinx = { value: 0 };"));
+  file.AddLine(NL("              var layoutwiny = { value: 0 };"));
+  file.AddLine(NL("              if(Screen_GetPosXY(appname, windowtitle, layoutwinx, layoutwiny) == 0)"));
   file.AddLine(NL("                {"));
-  file.AddLine(NL("                  outx.value = winx.value + actions[i].x;"));
-  file.AddLine(NL("                  outy.value = winy.value + actions[i].y;"));
+  file.AddLine(NL("                  outx.value = layoutwinx.value + actions[i].x;"));
+  file.AddLine(NL("                  outy.value = layoutwiny.value + actions[i].y;"));
   file.AddLine(NL("                  status = 0;"));
   file.AddLine(NL("                }"));
   file.AddLine(NL("            }"));

@@ -150,6 +150,7 @@ class XTRACEMONITOR_FORM_CFG
     UI_ELEMENT*                     lbl_dyndns_password;
     UI_ELEMENT_EDITTEXT*            edit_dyndns_password;
     UI_ELEMENT_MULTIOPTION*         dyndns_btn;
+    UI_ELEMENT*                     dyndns_lbl;
 
     int                             colortheme_committed;
     int                             colortheme_draft;

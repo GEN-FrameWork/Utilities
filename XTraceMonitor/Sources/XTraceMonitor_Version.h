@@ -19,7 +19,7 @@
 
 #define APPLICATION_VERSION                         8
 #define APPLICATION_SUBVERSION                      0
-#define APPLICATION_SUBVERSIONERR                   0
+#define APPLICATION_SUBVERSIONERR                   1
 
 #define XTRACEMONITOR_VERSION_STRINGIZE_(x)         #x
 #define XTRACEMONITOR_VERSION_STRINGIZE(x)          XTRACEMONITOR_VERSION_STRINGIZE_(x)

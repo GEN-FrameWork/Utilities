@@ -33,6 +33,7 @@
 
 #include "XDateTime.h"
 #include "XFSMachine.h"
+#include "XObserver.h"
 #include "XString.h"
 #include "XPath.h"
 #include "XScheduler.h"
@@ -152,9 +153,13 @@ class ACTIONSCRIPTQA_SCRIPTRECORD_SESSION
     XPATH                           apppath;
     XSTRING                         windowtitle;
     XSTRING                         appkey;        // EnsureApplication_<appkey>
+    int                             winx;          // outer window geometry at SelectApp
+    int                             winy;
+    int                             winw;
+    int                             winh;
 };
 
-class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
+class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XOBSERVER, public XFSMACHINE
 {
   public:
                                     ACTIONSCRIPTQA                      ();
@@ -179,7 +184,7 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
     static void                     AdjustLibraries                     (SCRIPT* script);
 
     void                            HandleEvent_Script                  (SCRIPT_XEVENT* event);
-    void                            HandleEvent                         (XEVENT* xevent);  
+    virtual void                    HandleEvent                         (XEVENT* xevent);
 
     bool                            Test_GetBaseName                    (XSTRING& scriptentry, XSTRING& basename);
     bool                            Test_GetRootPath                    (XSTRING& basename, XPATH& testroot);
@@ -200,12 +205,14 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
     bool                            ScriptRecord_AddKeyLiteral          (XCHAR* literal);
     bool                            ScriptRecord_WriteScript            ();
     bool                            ScriptRecord_WriteCommonHelpers     (XFILETXT& file);
-    bool                            ScriptRecord_WriteEnsureApplicationForApp(XFILETXT& file, XSTRING& appname, XPATH& apppath, XSTRING& windowtitle, XSTRING& appkey);
+    bool                            ScriptRecord_WriteEnsureApplicationForApp(XFILETXT& file, XSTRING& appname, XPATH& apppath, XSTRING& windowtitle, XSTRING& appkey, int winx, int winy, int winw, int winh);
     bool                            ScriptRecord_WriteMain              (XFILETXT& file, ACTIONSCRIPTQA_SCRIPTRECORD_SESSION* currentsession);
     bool                            ScriptRecord_ExistingHasHelpers     ();
     bool                            ScriptRecord_ExistingHasEnsureAppKey(XSTRING& appkey);
+    bool                            ScriptRecord_UpdateEnsureGeometryInExisting(XSTRING& appkey, int winx, int winy, int winw, int winh);
     bool                            ScriptRecord_ExistingHasReadyMap    ();
     bool                            ScriptRecord_ParseQuotedAssign      (XSTRING* line, XCHAR* varname, XSTRING& outvalue);
+    bool                            ScriptRecord_ParseIntAssign         (XSTRING* line, XCHAR* varname, int& outvalue);
     void                            ScriptRecord_MakeAppKey             (XSTRING& appname, XSTRING& appkey);
     bool                            ScriptRecord_IsBrowserApp           (XSTRING& appname, XPATH& apppath);
     void                            ScriptRecord_BrowserWindowTitle     (XSTRING& appname, XPATH& apppath, XSTRING& windowtitle);
@@ -238,6 +245,10 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XFSMACHINE
     XSTRING                         scriptrecord_appname;
     XPATH                           scriptrecord_apppath;
     XSTRING                         scriptrecord_windowtitle;
+    int                             scriptrecord_winx;
+    int                             scriptrecord_winy;
+    int                             scriptrecord_winw;
+    int                             scriptrecord_winh;
     void*                           scriptrecord_windowhandle;
     XVECTOR<ACTIONSCRIPTQA_SCRIPTRECORD_STEP*> scriptrecord_steps;
     XVECTOR<XSTRING*>               scriptrecord_existinglines;
