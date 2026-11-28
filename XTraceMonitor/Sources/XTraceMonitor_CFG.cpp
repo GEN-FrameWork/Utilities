@@ -324,7 +324,8 @@ bool XTRACEMONITOR_CFG::SeedDefaultTargetsIfEmpty()
 
   static const XCHAR* seed[] =
     {
-      NL("1,GEN FrameWork,xtracegen.dyndns.org,10001"),
+      NL("1,GEN FrameWork,xtracegen.dyndns.org,10001")
+      /*,
       NL("1,EndoraSoft,xtraceendorasoft.dyndns.org,10101"),
       NL("1,IMT,xtraceimt.dyndns.org,10201"),
       NL("1,Bizintek,xtracebizintek.dyndns.org,10301"),
@@ -334,6 +335,7 @@ bool XTRACEMONITOR_CFG::SeedDefaultTargetsIfEmpty()
       NL("2,UART STM32 F0,(2,115200,8,N,1,NONE)"),
       NL("1,CAF,xtracecaf.dyndns.org,10601"),
       NL("1,IMT 2,xtraceimt.dyndns.org,10701"),
+      */
     };
 
   const int seed_n = (int)(sizeof(seed) / sizeof(seed[0]));

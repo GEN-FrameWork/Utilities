@@ -1,8 +1,0 @@
-ID;Description;Result
-;TraceTests_Load;SKIP
-1;click rec_001.png;PASS
-2;text;PASS
-3;click rec_002.png;FAIL
-4;text;PASS
-5;click rec_003.png;FAIL
-6;click rec_004.png;FAIL

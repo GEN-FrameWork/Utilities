@@ -121,18 +121,18 @@
       <text lang="Chinese"><![CDATA[[Script Rec] 1) 左键单击要测试的应用程序窗口。]]></text>
     </sentence>
     <sentence id="00116" fixed="0">
-      <text lang="Spanish"><![CDATA[[Script Rec] 2) Clic izquierdo en controles de UI (pasos de clic).]]></text>
-      <text lang="English"><![CDATA[[Script Rec] 2) Left-click UI targets (mouse click steps).]]></text>
-      <text lang="French"><![CDATA[[Script Rec] 2) Clic gauche sur les cibles d'interface (étapes de clic).]]></text>
-      <text lang="German"><![CDATA[[Script Rec] 2) Linksklick auf UI-Ziele (Mausklick-Schritte).]]></text>
-      <text lang="Chinese"><![CDATA[[Script Rec] 2) 左键单击界面控件（点击步骤）。]]></text>
+      <text lang="Spanish"><![CDATA[[Script Rec] 2) Apunte el ratón y pulse F2 (captura + clic; el cursor se aparca para evitar hover).]]></text>
+      <text lang="English"><![CDATA[[Script Rec] 2) Aim the mouse and press F2 (capture + click; cursor parks to avoid hover).]]></text>
+      <text lang="French"><![CDATA[[Script Rec] 2) Pointez la souris et appuyez sur F2 (capture + clic ; curseur écarté pour éviter le survol).]]></text>
+      <text lang="German"><![CDATA[[Script Rec] 2) Maus zeigen und F2 (Aufnahme + Klick; Cursor wird geparkt gegen Hover).]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 2) 将鼠标对准目标并按 F2（捕获并点击；光标移开以避免悬停）。]]></text>
     </sentence>
     <sentence id="00117" fixed="0">
-      <text lang="Spanish"><![CDATA[[Script Rec] 3) Clic derecho en una zona para esperar/afirmar que aparece en pantalla.]]></text>
-      <text lang="English"><![CDATA[[Script Rec] 3) Right-click a zone to wait/assert it appears on screen.]]></text>
-      <text lang="French"><![CDATA[[Script Rec] 3) Clic droit sur une zone pour attendre/affirmer qu'elle apparaît à l'écran.]]></text>
-      <text lang="German"><![CDATA[[Script Rec] 3) Rechtsklick auf eine Zone, um zu warten/zu prüfen, dass sie erscheint.]]></text>
-      <text lang="Chinese"><![CDATA[[Script Rec] 3) 右键单击区域以等待/断言其出现在屏幕上。]]></text>
+      <text lang="Spanish"><![CDATA[[Script Rec] 3) Apunte y pulse F3 (captura wait/assert sin clic).]]></text>
+      <text lang="English"><![CDATA[[Script Rec] 3) Aim and press F3 (wait/assert capture, no click).]]></text>
+      <text lang="French"><![CDATA[[Script Rec] 3) Pointez et appuyez sur F3 (capture wait/assert, sans clic).]]></text>
+      <text lang="German"><![CDATA[[Script Rec] 3) Zielen und F3 (Wait/Assert-Aufnahme, kein Klick).]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 3) 对准并按 F3（等待/断言捕获，不点击）。]]></text>
     </sentence>
     <sentence id="00118" fixed="0">
       <text lang="Spanish"><![CDATA[[Script Rec] 4) Escriba texto (usuario/contraseña); ENTER/TAB/BACKSPACE se graban como teclas.]]></text>
@@ -275,11 +275,11 @@
       <text lang="Chinese"><![CDATA[[Script Rec] 检测到浏览器：Ensure 将使用 OpenURL（请在脚本中编辑 URL）。]]></text>
     </sentence>
     <sentence id="00138" fixed="0">
-      <text lang="Spanish"><![CDATA[[Script Rec] Haga clic en controles de UI para capturar bitmaps...]]></text>
-      <text lang="English"><![CDATA[[Script Rec] Click UI controls to capture bitmaps...]]></text>
-      <text lang="French"><![CDATA[[Script Rec] Cliquez sur les contrôles d'interface pour capturer les bitmaps...]]></text>
-      <text lang="German"><![CDATA[[Script Rec] Auf UI-Steuerelemente klicken, um Bitmaps zu erfassen...]]></text>
-      <text lang="Chinese"><![CDATA[[Script Rec] 点击界面控件以捕获位图...]]></text>
+      <text lang="Spanish"><![CDATA[[Script Rec] Apunte controles y use F2 (clic) / F3 (wait) para capturar bitmaps...]]></text>
+      <text lang="English"><![CDATA[[Script Rec] Aim at controls and use F2 (click) / F3 (wait) to capture bitmaps...]]></text>
+      <text lang="French"><![CDATA[[Script Rec] Pointez les contrôles et utilisez F2 (clic) / F3 (wait) pour capturer...]]></text>
+      <text lang="German"><![CDATA[[Script Rec] Auf Steuerelemente zielen und F2 (Klick) / F3 (Wait) zum Erfassen...]]></text>
+      <text lang="Chinese"><![CDATA[[Script Rec] 对准控件并用 F2（点击）/ F3（等待）捕获位图...]]></text>
     </sentence>
     <sentence id="00139" fixed="0">
       <text lang="Spanish"><![CDATA[[Script Rec] Falló Application_GetRunningList.]]></text>

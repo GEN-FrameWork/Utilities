@@ -1,0 +1,5 @@
+ID;Description;Result
+;TraceTests_Load;SKIP
+1;wait rec_001.png;PASS
+2;click rec_002.png;PASS
+3;text;PASS

@@ -200,6 +200,9 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XOBSERVER, public XFSMACHIN
     bool                            ScriptRecord_Update                 ();
     bool                            ScriptRecord_UpdateKeys             ();
     bool                            ScriptRecord_SelectApp              (int screenx, int screeny);
+    bool                            ScriptRecord_ParkCursorBottomRight  (int& outx, int& outy);
+    bool                            ScriptRecord_HotkeyCapture          (ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype);
+    bool                            ScriptRecord_VerifyAndAct           (ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype, XSTRING& bmpname, int layoutx, int layouty, int anchordesktopx, int anchordesktopy);
     bool                            ScriptRecord_CaptureClick           (int screenx, int screeny, ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype);
     bool                            ScriptRecord_FlushText              (bool writescript = true);
     bool                            ScriptRecord_AddKeyLiteral          (XCHAR* literal);
@@ -240,6 +243,7 @@ class ACTIONSCRIPTQA : public APPFLOWCONSOLE, public XOBSERVER, public XFSMACHIN
     bool                            scriptrecord_appselected;
     bool                            scriptrecord_mousewasdown;
     bool                            scriptrecord_rbuttonwasdown;
+    bool                            scriptrecord_hotkeybusy;
     bool                            scriptrecord_btnwasdown[INPBUTTON_ID_LAST];
     XSTRING                         scriptrecord_textpending;
     XSTRING                         scriptrecord_appname;

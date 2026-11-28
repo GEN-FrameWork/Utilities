@@ -18,11 +18,8 @@ project(xtracemonitor)
 # --------------------------------------------------------------------
 # features/Defines
 
-option(DEBUG_FEATURE                                            "Debug mode"                                              ON )
-#option(XTRACE_FEATURE                                           "XTrace"                                                  ON )
-#option(XTRACE_NOINTERNET_FEATURE                                "No need for trace dependencies with Internet"            ON )
+#option(DEBUG_FEATURE                                            "Debug mode"                                              ON )
 #option(XMEMORY_CONTROL_FEATURE                                  "XMemory Control"                                         ON )
-
 
 option(GRP_OPENGL_FEATURE                                       "Graphics OpenGL ES required"                             ON )
 option(LINUX_X11_FEATURE                                        "Linux X11"                                               ON )
@@ -81,8 +78,8 @@ add_definitions(${APP_CFG_XTRACEMONITOR})
 # --------------------------------------------------------------------
 # Android package settings
 
-set(GEN_ANDROID_APP_LABEL                                  "XTraceMonitor")
-set(GEN_ANDROID_APP_ID                                     "com.gen.xtracemonitor")
+set(GEN_ANDROID_APP_LABEL  "XTraceMonitor")
+set(GEN_ANDROID_APP_ID     "com.gen.xtracemonitor")
 
 
 # --------------------------------------------------------------------

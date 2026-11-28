@@ -98,21 +98,3 @@ list(APPEND GEN_SOURCES_MODULES_LIST "${APP_DIRECTORY_APPLICATION}/ActionScriptQ
 
 include("${GEN_DIRECTORY}/Common/CMake/GEN_End.cmake")
 
-# Chrome capture helper: PrintWindow in-process often returns black under console hosts;
-# a short-lived child process succeeds. Built and copied next to ActionScriptQA.
-if(WIN32)
-  set(_ASQ_WNDCAPTURE_SRC "${CMAKE_CURRENT_LIST_DIR}/../Tools/gen_wndcapture.cpp")
-  if(EXISTS "${_ASQ_WNDCAPTURE_SRC}")
-    add_executable(gen_wndcapture "${_ASQ_WNDCAPTURE_SRC}")
-    set_target_properties(gen_wndcapture PROPERTIES
-      RUNTIME_OUTPUT_DIRECTORY "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>"
-      RUNTIME_OUTPUT_DIRECTORY_DEBUG "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>"
-      RUNTIME_OUTPUT_DIRECTORY_RELEASE "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>"
-      RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>"
-      RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>"
-    )
-    target_link_libraries(gen_wndcapture PRIVATE user32 gdi32)
-    add_dependencies(${CMAKE_PROJECT_NAME} gen_wndcapture)
-  endif()
-endif()
-

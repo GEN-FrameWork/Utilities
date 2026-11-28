@@ -8,19 +8,15 @@
 // ----------------------------------------------------------------------------
 
 var __qa_application_ready = {};
+// Global timeout (ms) for Screen_GetPosXY / WaitWindow / bitmap waits.
+var __qa_timeout_ms = 8000;
 
 function WaitWindow(appname, windowtitle, timeoutms)
 {
   var outx = { value: 0 };
   var outy = { value: 0 };
-  var waited = 0;
-  while(waited < timeoutms)
-    {
-      Sleep(500);
-      waited = waited + 500;
-      if(Screen_GetPosXY(appname, windowtitle, outx, outy) == 0) return true;
-    }
-  return false;
+  if(timeoutms === "" || timeoutms === null || timeoutms === undefined) timeoutms = __qa_timeout_ms;
+  return (Screen_GetPosXY(appname, windowtitle, outx, outy, timeoutms) == 0);
 }
 
 function ScriptBaseName(scriptname)
@@ -73,10 +69,10 @@ function EnsureApplication_chrome_exe()
   var windowtitle     = "Google Chrome";
   // Browser detected: URL cannot be captured - edit this value before running.
   var url         = "https://globalnet.imtlazarus.com/lazarus/access.php";
-  var winx        = 63;
-  var winy        = 52;
-  var winw        = 934;
-  var winh        = 818;
+  var winx        = 35;
+  var winy        = 9;
+  var winw        = 912;
+  var winh        = 1283;
   var key         = appname;
 
   // Already prepared in this script run: restore geometry + focus.
@@ -90,27 +86,32 @@ function EnsureApplication_chrome_exe()
       return true;
     }
 
-  if(WaitWindow(appname, windowtitle, 1500))
+  var already = WaitWindow(appname, windowtitle, 2000);
+  if(already)
     {
       Console_Printf("[Tests] Already running: %s / %s\n", appname, windowtitle);
     }
-   else
+
+  // Always navigate: a reused Chrome on the wrong page makes the sequence look random.
+  if(!OpenURL(url))
     {
-      if(!OpenURL(url))
-        {
-          Console_Printf("[Tests] FAIL OpenURL %s\n", url);
-          return false;
-        }
-
-      if(!WaitWindow(appname, windowtitle, 30000))
-        {
-          Console_Printf("[Tests] FAIL window not found: %s\n", windowtitle);
-          TerminateAplication(appname);
-          return false;
-        }
-
-      Console_Printf("[Tests] Opened URL %s\n", url);
+      Console_Printf("[Tests] FAIL OpenURL %s\n", url);
+      return false;
     }
+
+  if(!WaitWindow(appname, windowtitle, __qa_timeout_ms))
+    {
+      Console_Printf("[Tests] FAIL window not found: %s\n", windowtitle);
+      TerminateAplication(appname);
+      return false;
+    }
+
+  Console_Printf("[Tests] Opened URL %s\n", url);
+  Sleep(800);
+
+  // Focus as soon as the window exists — before geometry / bitmap search / keys.
+  Screen_SetFocus(appname, windowtitle);
+  Sleep(200);
 
   // Restore layout from SelectApp: outer position + client size.
   Screen_SetPosition(appname, windowtitle, winx, winy);
@@ -131,10 +132,10 @@ function Recorded_001()
   var appname     = "chrome.exe";
   var apppath     = "C:/Program Files/Google/Chrome/Application/chrome.exe";
   var windowtitle     = "Google Chrome";
-  var winx        = 63;
-  var winy        = 52;
-  var winw        = 934;
-  var winh        = 818;
+  var winx        = 35;
+  var winy        = 9;
+  var winw        = 912;
+  var winh        = 1283;
   var outx = { value: 0 };
   var outy = { value: 0 };
   var i = 0;
@@ -179,58 +180,94 @@ function Recorded_001()
   Screen_SetPosition(appname, windowtitle, winx, winy);
   Screen_Resize(appname, windowtitle, winw, winh);
   Sleep(200);
-  Screen_SetBmpFindCFG(12, 40);
+  // Take focus before any GetPosXY / WaitBitmap / key or text input.
+  Screen_SetFocus(appname, windowtitle);
+  Sleep(200);
+  // Tighter match reduces false positives on small placeholder text (Email/Password).
+  Screen_SetBmpFindCFG(8, 25);
   Sleep(300);
 
   var actions = [
-    { type: "click", bmp: "rec_001.png", x: 191, y: 359 },
+    { type: "wait", bmp: "rec_001.png", timeoutms: 10000, intervalms: 500 },
+    { type: "click", bmp: "rec_002.png", x: 176, y: 573 },
     { type: "text", value: "abraham@imtlazarus.com" },
-    { type: "click", bmp: "rec_002.png", x: 183, y: 416 },
+    { type: "click", bmp: "rec_003.png", x: 177, y: 635 },
     { type: "text", value: "IMTLazarus3010?" },
-    { type: "click", bmp: "rec_003.png", x: 314, y: 469 },
-    { type: "click", bmp: "rec_004.png", x: 760, y: 139 }
+    { type: "click", bmp: "rec_004.png", x: 296, y: 693 },
+    { type: "wait", bmp: "rec_005.png", timeoutms: 15000, intervalms: 500 },
+    { type: "click", bmp: "rec_005.png", x: 892, y: 114 },
+    { type: "click", bmp: "rec_006.png", x: 890, y: 21 }
   ];
 
   for(i = 0; i < actions.length; i++)
     {
       Screen_SetFocus(appname, windowtitle);
-      Sleep(80);
+      Sleep(120);
       stepresult = "PASS";
       stepdesc = actions[i].type;
 
       if(actions[i].type == "click")
         {
+          var foundby = "bmp";
           outx = { value: 0 };
           outy = { value: 0 };
           stepdesc = "click " + actions[i].bmp;
-          status = Screen_GetPosXY(appname, windowtitle, actions[i].bmp, outx, outy);
+          status = Screen_GetPosXY(appname, windowtitle, actions[i].bmp, outx, outy, __qa_timeout_ms);
+          var layoutwinx = { value: 0 };
+          var layoutwiny = { value: 0 };
+          var havewin = (Screen_GetPosXY(appname, windowtitle, layoutwinx, layoutwiny, __qa_timeout_ms) == 0);
+          // Reject false-positive bitmap hits far from the recorded layout anchor.
+          if((status == 0) && havewin)
+            {
+              var expx = layoutwinx.value + actions[i].x;
+              var expy = layoutwiny.value + actions[i].y;
+              var dx = outx.value - expx;
+              var dy = outy.value - expy;
+              if(dx < 0) dx = -dx;
+              if(dy < 0) dy = -dy;
+              if((dx > 120) || (dy > 120))
+                {
+                  Console_Printf("[Tests] WARN %s bmp hit far from layout (dx=%d dy=%d at %d,%d) — using layout %d,%d\n",
+                                actions[i].bmp, dx, dy, outx.value, outy.value, expx, expy);
+                  outx.value = expx;
+                  outy.value = expy;
+                  foundby = "layout-sanity";
+                }
+            }
           if(status != 0)
             {
-              var layoutwinx = { value: 0 };
-              var layoutwiny = { value: 0 };
-              if(Screen_GetPosXY(appname, windowtitle, layoutwinx, layoutwiny) == 0)
+              if(havewin)
                 {
                   outx.value = layoutwinx.value + actions[i].x;
                   outy.value = layoutwiny.value + actions[i].y;
                   status = 0;
+                  foundby = "layout";
+                  Console_Printf("[Tests] WARN %s not found — layout fallback %d,%d\n", actions[i].bmp, outx.value, outy.value);
                 }
             }
           if(status == 0)
             {
+              Screen_SetFocus(appname, windowtitle);
+              Sleep(80);
               InpSim_Mouse_Click(outx.value, outy.value);
-              Console_Printf("[Tests] Click %s at %d,%d\n", actions[i].bmp, outx.value, outy.value);
-              Sleep(400);
+              Console_Printf("[Tests] Click %s at %d,%d (%s)\n", actions[i].bmp, outx.value, outy.value, foundby);
+              Sleep(600);
             }
            else
             {
               stepresult = "FAIL";
               Console_Printf("[Tests] FAIL find %s\n", actions[i].bmp);
+              EvidenceAdd(i + 1, stepdesc, stepresult);
+              if(listloaded) TraceTests_DeleteAll();
+              EvidenceEnd();
+              Console_Printf("[Tests] FAIL %s / %s (Screen_GetPosXY)\n", scriptname, session);
+              return;
             }
         }
       else if(actions[i].type == "wait")
         {
           stepdesc = "wait " + actions[i].bmp;
-          if(Screen_WaitBitmap(appname, windowtitle, actions[i].bmp, actions[i].timeoutms, actions[i].intervalms))
+          if(Screen_WaitBitmap(appname, windowtitle, actions[i].bmp, __qa_timeout_ms, actions[i].intervalms))
             {
               Console_Printf("[Tests] PASS wait %s\n", actions[i].bmp);
             }
@@ -238,18 +275,27 @@ function Recorded_001()
             {
               stepresult = "FAIL";
               Console_Printf("[Tests] FAIL wait %s (timeout)\n", actions[i].bmp);
+              EvidenceAdd(i + 1, stepdesc, stepresult);
+              if(listloaded) TraceTests_DeleteAll();
+              EvidenceEnd();
+              Console_Printf("[Tests] FAIL %s / %s (Screen_WaitBitmap)\n", scriptname, session);
+              return;
             }
         }
       else if(actions[i].type == "text")
         {
           stepdesc = "text";
+          Screen_SetFocus(appname, windowtitle);
+          Sleep(150);
           InpSim_Key_ClickByText(actions[i].value, 40);
           Console_Printf("[Tests] Type text (%d chars)\n", actions[i].value.length);
-          Sleep(200);
+          Sleep(250);
         }
       else if(actions[i].type == "key")
         {
           stepdesc = "key " + actions[i].value;
+          Screen_SetFocus(appname, windowtitle);
+          Sleep(100);
           InpSim_Key_ClickByLiteral(actions[i].value, 40);
           Console_Printf("[Tests] Key %s\n", actions[i].value);
           Sleep(200);
@@ -263,147 +309,9 @@ function Recorded_001()
   Console_Printf("[Tests] End %s / %s\n", scriptname, session);
 }
 
-function Recorded_002()
-{
-  var scriptname  = GetNameScript();
-  var session     = "Recorded_002";
-  var appname     = "chrome.exe";
-  var apppath     = "C:/Program Files/Google/Chrome/Application/chrome.exe";
-  var windowtitle     = "Google Chrome";
-  var winx        = 63;
-  var winy        = 52;
-  var winw        = 934;
-  var winh        = 849;
-  var outx = { value: 0 };
-  var outy = { value: 0 };
-  var i = 0;
-  var status = 1;
-  var stepresult = "PASS";
-  var stepdesc = "";
-  var catalogpath = "";
-  var listloaded = false;
-
-  Console_Printf("[Tests] Start %s / %s\n", scriptname, session);
-
-  if(!EvidenceStart(scriptname))
-    {
-      Console_Printf("[Tests] FAIL EvidenceStart/FileCSV\n");
-      return;
-    }
-  Console_Printf("[Tests] Evidence CSV %s\n", FileCSV_GetPath());
-
-  catalogpath = GetPathScript() + ListTestFileName(scriptname);
-  if(IsItExists(catalogpath))
-    {
-      if(TraceTests_Load(catalogpath))
-        {
-          listloaded = true;
-          EvidenceAdd("", "TraceTests_Load", "PASS");
-          Console_Printf("[Tests] ListTest loaded %s\n", catalogpath);
-        }
-       else
-        {
-          EvidenceAdd("", "TraceTests_Load", "FAIL");
-          Console_Printf("[Tests] FAIL TraceTests_Load %s\n", catalogpath);
-        }
-    }
-   else
-    {
-      EvidenceAdd("", "TraceTests_Load", "SKIP");
-      Console_Printf("[Tests] ListTest not found (optional) %s\n", catalogpath);
-    }
-
-  // Application is started/focused from main() via EnsureApplication_<app>() before this test.
-  // Re-apply geometry captured at SelectApp (safe if Ensure already did it).
-  Screen_SetPosition(appname, windowtitle, winx, winy);
-  Screen_Resize(appname, windowtitle, winw, winh);
-  Sleep(200);
-  Screen_SetBmpFindCFG(12, 40);
-  Sleep(300);
-
-  var actions = [
-    { type: "click", bmp: "rec_005.png", x: 384, y: 424 },
-    { type: "click", bmp: "rec_006.png", x: 236, y: 327 },
-    { type: "click", bmp: "rec_007.png", x: 145, y: 699 },
-    { type: "click", bmp: "rec_008.png", x: 387, y: 421 },
-    { type: "click", bmp: "rec_009.png", x: 805, y: 704 }
-  ];
-
-  for(i = 0; i < actions.length; i++)
-    {
-      Screen_SetFocus(appname, windowtitle);
-      Sleep(80);
-      stepresult = "PASS";
-      stepdesc = actions[i].type;
-
-      if(actions[i].type == "click")
-        {
-          outx = { value: 0 };
-          outy = { value: 0 };
-          stepdesc = "click " + actions[i].bmp;
-          status = Screen_GetPosXY(appname, windowtitle, actions[i].bmp, outx, outy);
-          if(status != 0)
-            {
-              var layoutwinx = { value: 0 };
-              var layoutwiny = { value: 0 };
-              if(Screen_GetPosXY(appname, windowtitle, layoutwinx, layoutwiny) == 0)
-                {
-                  outx.value = layoutwinx.value + actions[i].x;
-                  outy.value = layoutwiny.value + actions[i].y;
-                  status = 0;
-                }
-            }
-          if(status == 0)
-            {
-              InpSim_Mouse_Click(outx.value, outy.value);
-              Console_Printf("[Tests] Click %s at %d,%d\n", actions[i].bmp, outx.value, outy.value);
-              Sleep(400);
-            }
-           else
-            {
-              stepresult = "FAIL";
-              Console_Printf("[Tests] FAIL find %s\n", actions[i].bmp);
-            }
-        }
-      else if(actions[i].type == "wait")
-        {
-          stepdesc = "wait " + actions[i].bmp;
-          if(Screen_WaitBitmap(appname, windowtitle, actions[i].bmp, actions[i].timeoutms, actions[i].intervalms))
-            {
-              Console_Printf("[Tests] PASS wait %s\n", actions[i].bmp);
-            }
-           else
-            {
-              stepresult = "FAIL";
-              Console_Printf("[Tests] FAIL wait %s (timeout)\n", actions[i].bmp);
-            }
-        }
-      else if(actions[i].type == "text")
-        {
-          stepdesc = "text";
-          InpSim_Key_ClickByText(actions[i].value, 40);
-          Console_Printf("[Tests] Type text (%d chars)\n", actions[i].value.length);
-          Sleep(200);
-        }
-      else if(actions[i].type == "key")
-        {
-          stepdesc = "key " + actions[i].value;
-          InpSim_Key_ClickByLiteral(actions[i].value, 40);
-          Console_Printf("[Tests] Key %s\n", actions[i].value);
-          Sleep(200);
-        }
-
-      EvidenceAdd(i + 1, stepdesc, stepresult);
-    }
-
-  if(listloaded) TraceTests_DeleteAll();
-  EvidenceEnd();
-  Console_Printf("[Tests] End %s / %s\n", scriptname, session);
-}
 
 function main()
 {
   if(!EnsureApplication_chrome_exe()) return;
   Recorded_001();
-  Recorded_002();
 }

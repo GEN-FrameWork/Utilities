@@ -120,6 +120,7 @@
 #include "INPFactory.h"
 #include "INPDevice.h"
 #include "INPButton.h"
+#include "INPSimulate.h"
 
 #include "XMemory_Control.h"
 
@@ -621,6 +622,10 @@ bool ACTIONSCRIPTQA::KeyValidSecuences(int key)
               ScriptRecord_Toggle();
               return true;
             }
+          if((scancode == 0x3C) || (scancode == 0x3D)) // F2 / F3 — ScriptRecord_Update via INPDEVICE
+            {
+              return true;
+            }
           if(scancode == 0x3F) // F5
             {
               ScriptRecord_ClearRecorded();
@@ -1099,6 +1104,7 @@ void ACTIONSCRIPTQA::Clean()
   scriptrecord_appselected      = false;
   scriptrecord_mousewasdown     = false;
   scriptrecord_rbuttonwasdown   = false;
+  scriptrecord_hotkeybusy       = false;
   scriptrecord_windowhandle     = NULL;
   scriptrecord_sessionindex     = 1;
   scriptrecord_nextbitmapindex  = 1;
@@ -1251,6 +1257,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_Reset()
   scriptrecord_appselected      = false;
   scriptrecord_mousewasdown     = false;
   scriptrecord_rbuttonwasdown   = false;
+  scriptrecord_hotkeybusy       = false;
   scriptrecord_windowhandle     = NULL;
   scriptrecord_sessionindex     = 1;
   scriptrecord_nextbitmapindex  = 1;
@@ -1414,7 +1421,7 @@ bool ACTIONSCRIPTQA::ScriptRecord_EnsureInputDevices()
 /**-------------------------------------------------------------------------------------------------------------------
 *
 * @fn         bool ACTIONSCRIPTQA::ScriptRecord_Update()
-* @brief      ScriptRecord_Update _ poll mouse via INPDEVICE; cursor via GRPSCREEN (GEN).
+* @brief      ScriptRecord_Update — LMB selects app; F2 click-capture; F3 wait-capture.
 * @ingroup
 *
 * --------------------------------------------------------------------------------------------------------------------*/
@@ -1426,11 +1433,8 @@ bool ACTIONSCRIPTQA::ScriptRecord_Update()
   if(!mouse) return false;
 
   bool ldown = false;
-  bool rdown = false;
   INPBUTTON* lbtn = mouse->GetButton(INPBUTTON_ID_MOUSE_LEFT);
-  INPBUTTON* rbtn = mouse->GetButton(INPBUTTON_ID_MOUSE_RIGHT);
   if(lbtn) ldown = lbtn->IsPressed();
-  if(rbtn) rdown = rbtn->IsPressed();
 
   int  cursorx = 0;
   int  cursory = 0;
@@ -1445,29 +1449,45 @@ bool ACTIONSCRIPTQA::ScriptRecord_Update()
       }
   }
 
-  if(ldown && !scriptrecord_mousewasdown && havecursor)
+  // Left click only selects the target app (not capture — that is F2/F3).
+  if(!scriptrecord_hotkeybusy && ldown && !scriptrecord_mousewasdown && havecursor && !scriptrecord_appselected)
     {
-      if(!scriptrecord_appselected)
-        {
-          ScriptRecord_SelectApp(cursorx, cursory);
-        }
-       else
-        {
-          ScriptRecord_CaptureClick(cursorx, cursory, ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK);
-        }
+      ScriptRecord_SelectApp(cursorx, cursory);
     }
 
-  if(rdown && !scriptrecord_rbuttonwasdown && scriptrecord_appselected && havecursor)
-    {
-      ScriptRecord_CaptureClick(cursorx, cursory, ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT);
-    }
-
-  scriptrecord_mousewasdown   = ldown;
-  scriptrecord_rbuttonwasdown = rdown;
+  scriptrecord_mousewasdown = ldown;
 
   if(scriptrecord_appselected)
     {
-      ScriptRecord_UpdateKeys();
+      INPDEVICE* keyboard = GEN_INPMANAGER.GetDevice(INPDEVICE_TYPE_KEYBOARD);
+      if(keyboard)
+        {
+          INPBUTTON* f2btn = keyboard->GetButton(INPBUTTON_ID_F2);
+          INPBUTTON* f3btn = keyboard->GetButton(INPBUTTON_ID_F3);
+          bool f2down = (f2btn && f2btn->IsPressed());
+          bool f3down = (f3btn && f3btn->IsPressed());
+
+          if(!scriptrecord_hotkeybusy)
+            {
+              if(f2down && !scriptrecord_btnwasdown[INPBUTTON_ID_F2])
+                {
+                  ScriptRecord_HotkeyCapture(ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK);
+                }
+               else if(f3down && !scriptrecord_btnwasdown[INPBUTTON_ID_F3])
+                {
+                  ScriptRecord_HotkeyCapture(ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT);
+                }
+            }
+
+          // Keep F2/F3 edge state even if a capture just held the key down for hundreds of ms.
+          scriptrecord_btnwasdown[INPBUTTON_ID_F2] = f2down;
+          scriptrecord_btnwasdown[INPBUTTON_ID_F3] = f3down;
+        }
+
+      if(!scriptrecord_hotkeybusy)
+        {
+          ScriptRecord_UpdateKeys();
+        }
     }
 
   return true;
@@ -1848,8 +1868,297 @@ bool ACTIONSCRIPTQA::ScriptRecord_SelectApp(int screenx, int screeny)
 
 /**-------------------------------------------------------------------------------------------------------------------
 *
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_ParkCursorBottomRight(int& outx, int& outy)
+* @brief      Desktop coords of the target window outer bottom-right (inside by 2px).
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_ParkCursorBottomRight(int& outx, int& outy)
+{
+  outx = 0;
+  outy = 0;
+  if(!scriptrecord_windowhandle) return false;
+
+  GRPRECTINT winrect;
+  bool       got = false;
+
+  #ifdef WINDOWS
+  if(IsWindow((HWND)scriptrecord_windowhandle))
+    {
+      RECT outer;
+      if(GetWindowRect((HWND)scriptrecord_windowhandle, &outer))
+        {
+          winrect.x1 = outer.left;
+          winrect.y1 = outer.top;
+          winrect.x2 = outer.right;
+          winrect.y2 = outer.bottom;
+          got = true;
+        }
+    }
+  #endif
+
+  if(!got)
+    {
+      XVECTOR<XPROCESS*> applist;
+      if(GEN_XPROCESSMANAGER.Application_GetRunningList(applist, true))
+        {
+          XPROCESS* process = ActionScriptQA_FindRunningByHandle(applist, scriptrecord_windowhandle);
+          if(process && process->GetWindowRect() && !process->GetWindowRect()->IsEmpty())
+            {
+              winrect = (*process->GetWindowRect());
+              got = true;
+            }
+          ActionScriptQA_FreeRunningList(applist);
+        }
+    }
+
+  if(!got)
+    {
+      // Last resort: recorded outer pos + client size (approximate).
+      if((scriptrecord_winw > 0) && (scriptrecord_winh > 0))
+        {
+          winrect.x1 = scriptrecord_winx;
+          winrect.y1 = scriptrecord_winy;
+          winrect.x2 = scriptrecord_winx + scriptrecord_winw;
+          winrect.y2 = scriptrecord_winy + scriptrecord_winh;
+          got = true;
+        }
+    }
+
+  if(!got) return false;
+
+  outx = winrect.x2 - 2;
+  outy = winrect.y2 - 2;
+  if(outx < winrect.x1) outx = winrect.x1;
+  if(outy < winrect.y1) outy = winrect.y1;
+
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_HotkeyCapture(ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype)
+* @brief      F2/F3 capture: anchor cursor → park bottom-right → capture → verify (+ click on F2).
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_HotkeyCapture(ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype)
+{
+  if(!scriptrecord_appselected) return false;
+  if((steptype != ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK) && (steptype != ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT)) return false;
+  if(scriptrecord_hotkeybusy) return false;
+
+  scriptrecord_hotkeybusy = true;
+
+  int screenx = 0;
+  int screeny = 0;
+  bool havecursor = false;
+  {
+    GRPSCREEN* cursorscreen = GEN_GRPFACTORY.CreateScreen();
+    if(cursorscreen)
+      {
+        havecursor = cursorscreen->GetCursorDesktopPosition(screenx, screeny);
+        GEN_GRPFACTORY.DeleteScreen(cursorscreen);
+      }
+  }
+
+  if(!havecursor)
+    {
+      ScriptRecord_Print(NL("[Script Rec] ERROR: cannot read cursor position for F2/F3 capture."));
+      scriptrecord_hotkeybusy = false;
+      return false;
+    }
+
+  ScriptRecord_Print(NL("[Script Rec] Hotkey %s at desktop %d,%d — parking cursor, capturing..."),
+                     (steptype == ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK) ? NL("F2/click") : NL("F3/wait"),
+                     screenx, screeny);
+
+  int parkx = 0;
+  int parky = 0;
+  INPSIMULATE* sim = GEN_INPFACTORY.CreateSimulator();
+  if(sim && ScriptRecord_ParkCursorBottomRight(parkx, parky))
+    {
+      sim->Mouse_SetPos(parkx, parky);
+      GEN_XSLEEP.MilliSeconds(220);
+    }
+   else
+    {
+      ScriptRecord_Print(NL("[Script Rec] WARNING: could not park cursor at window corner; capturing with cursor in place."));
+    }
+
+  bool captured = ScriptRecord_CaptureClick(screenx, screeny, steptype);
+  if(!captured)
+    {
+      if(sim) sim->Mouse_SetPos(screenx, screeny);
+      if(sim) GEN_INPFACTORY.DeleteSimulator(sim);
+      scriptrecord_hotkeybusy = false;
+      return false;
+    }
+
+  ACTIONSCRIPTQA_SCRIPTRECORD_STEP* step = scriptrecord_steps.Get(scriptrecord_steps.GetSize() - 1);
+  if(step)
+    {
+      ScriptRecord_VerifyAndAct(steptype, step->bitmapname, step->layoutx, step->layouty, screenx, screeny);
+    }
+   else if(sim && (steptype == ACTIONSCRIPTQA_SCRIPTRECORD_STEP_WAIT))
+    {
+      sim->Mouse_SetPos(screenx, screeny);
+    }
+
+  if(sim) GEN_INPFACTORY.DeleteSimulator(sim);
+  scriptrecord_hotkeybusy = false;
+  return true;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
+* @fn         bool ACTIONSCRIPTQA::ScriptRecord_VerifyAndAct(ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype, ...)
+* @brief      Second pass while recording: find saved bitmap; F2 clicks, F3 only asserts.
+* @ingroup
+*
+* --------------------------------------------------------------------------------------------------------------------*/
+bool ACTIONSCRIPTQA::ScriptRecord_VerifyAndAct(ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype, XSTRING& bmpname, int layoutx, int layouty, int anchordesktopx, int anchordesktopy)
+{
+  if(bmpname.IsEmpty() || !scriptrecord_windowhandle) return false;
+
+  XVECTOR<XPROCESS*> applist;
+  XPROCESS*          process = NULL;
+  bool               havelist = false;
+  int                border   = 0;
+  int                titleh   = 0;
+  GRPRECTINT         winrect;
+
+  #ifdef WINDOWS
+  const bool hwndstillvalid = (scriptrecord_windowhandle && IsWindow((HWND)scriptrecord_windowhandle));
+  #else
+  const bool hwndstillvalid = (scriptrecord_windowhandle != NULL);
+  #endif
+
+  if(GEN_XPROCESSMANAGER.Application_GetRunningList(applist, true))
+    {
+      havelist = true;
+      process = ActionScriptQA_FindRunningByHandle(applist, scriptrecord_windowhandle);
+    }
+
+  void* hwnd = hwndstillvalid ? scriptrecord_windowhandle
+                              : (process ? process->GetWindowHandle() : scriptrecord_windowhandle);
+  if(!hwnd)
+    {
+      if(havelist) ActionScriptQA_FreeRunningList(applist);
+      ScriptRecord_Print(NL("[Script Rec] VERIFY FAIL: target window invalid for %s"), bmpname.Get());
+      return false;
+    }
+
+  if(process && process->GetWindowRect())
+    {
+      winrect = (*process->GetWindowRect());
+      border  = process->GetWindowBorderWidth();
+      titleh  = process->GetWindowTitleHeight();
+    }
+
+  #ifdef WINDOWS
+  {
+    RECT outer;
+    if(GetWindowRect((HWND)hwnd, &outer))
+      {
+        winrect.x1 = outer.left;
+        winrect.y1 = outer.top;
+        winrect.x2 = outer.right;
+        winrect.y2 = outer.bottom;
+      }
+  }
+  #endif
+
+  GRPSCREEN* screen = GEN_GRPFACTORY.CreateScreen();
+  if(!screen)
+    {
+      if(havelist) ActionScriptQA_FreeRunningList(applist);
+      return false;
+    }
+
+  screen->SetHandle(hwnd);
+
+  int clientw = 0;
+  int clienth = 0;
+  if(!screen->GetClientSize(clientw, clienth) || (clientw <= 0) || (clienth <= 0))
+    {
+      clientw = (int)winrect.GetWidth()  - (border * 2);
+      clienth = (int)winrect.GetHeight() - titleh - border;
+    }
+
+  screen->SetWidth(clientw);
+  screen->SetHeight(clienth);
+
+  GRPBITMAP* bitmapscreen = screen->CaptureContent(NULL, hwnd);
+  GEN_GRPFACTORY.DeleteScreen(screen);
+
+  XPATH xpathbmp;
+  GEN_XPATHSMANAGER.GetPathOfSection(XPATHSMANAGERSECTIONTYPE_GRAPHICS, xpathbmp);
+  xpathbmp.Slash_Add();
+  xpathbmp += bmpname.Get();
+
+  GRPBITMAPFILE bmpfile(xpathbmp);
+  GRPBITMAP*    bitmapref = bmpfile.Load();
+
+  int  foundx = 0;
+  int  foundy = 0;
+  bool found  = false;
+
+  // Same defaults as generated script Screen_SetBmpFindCFG(8, 25).
+  if(bitmapscreen && bitmapref)
+    {
+      found = bitmapscreen->FindSubBitmap(bitmapref, foundx, foundy, 8, 25);
+    }
+
+  int clickx = anchordesktopx;
+  int clicky = anchordesktopy;
+
+  if(found && bitmapref)
+    {
+      clickx = winrect.x1 + foundx + ((int)bitmapref->GetWidth()  / 2) + border;
+      clicky = winrect.y1 + foundy + ((int)bitmapref->GetHeight() / 2) + titleh;
+      ScriptRecord_Print(NL("[Script Rec] VERIFY PASS: found %s at desktop %d,%d (client %d,%d)"),
+                         bmpname.Get(), clickx, clicky, foundx, foundy);
+    }
+   else
+    {
+      // Layout fallback (same idea as playback GetPosXY miss → window pos + layout).
+      clickx = winrect.x1 + layoutx;
+      clicky = winrect.y1 + layouty;
+      ScriptRecord_Print(NL("[Script Rec] VERIFY WARN: %s not found after capture — using layout fallback %d,%d"),
+                         bmpname.Get(), clickx, clicky);
+    }
+
+  if(bitmapref)    GEN_GRPFACTORY.DeleteBitmap(bitmapref);
+  if(bitmapscreen) GEN_GRPFACTORY.DeleteBitmap(bitmapscreen);
+  if(havelist)     ActionScriptQA_FreeRunningList(applist);
+
+  INPSIMULATE* sim = GEN_INPFACTORY.CreateSimulator();
+  if(!sim) return found;
+
+  if(steptype == ACTIONSCRIPTQA_SCRIPTRECORD_STEP_CLICK)
+    {
+      sim->Mouse_Click(clickx, clicky);
+      ScriptRecord_Print(NL("[Script Rec] Replay click at %d,%d"), clickx, clicky);
+      GEN_XSLEEP.MilliSeconds(400);
+    }
+   else
+    {
+      // Wait step: restore cursor to the anchored point so the user can continue aiming.
+      sim->Mouse_SetPos(anchordesktopx, anchordesktopy);
+    }
+
+  GEN_INPFACTORY.DeleteSimulator(sim);
+  return found;
+}
+
+
+/**-------------------------------------------------------------------------------------------------------------------
+*
 * @fn         bool ACTIONSCRIPTQA::ScriptRecord_CaptureClick(int screenx, int screeny, ACTIONSCRIPTQA_SCRIPTRECORD_STEPTYPE steptype)
-* @brief      Capture bitmap around cursor: CLICK (LMB) or WAIT/assert (RMB)
+* @brief      Capture bitmap around anchored desktop point: CLICK (F2) or WAIT/assert (F3)
 * @ingroup
 *
 * --------------------------------------------------------------------------------------------------------------------*/
@@ -2711,38 +3020,43 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteEnsureApplicationForApp(XFILETXT& file, X
   file.AddLine(NL("      return true;"));
   file.AddLine(NL("    }"));
   file.AddLine(NL(""));
-  file.AddLine(NL("  if(WaitWindow(appname, windowtitle, 1500))"));
+  // Short probe only: do not burn __qa_timeout_ms before OpenURL/Exec.
+  file.AddLine(NL("  var already = WaitWindow(appname, windowtitle, 2000);"));
+  file.AddLine(NL("  if(already)"));
   file.AddLine(NL("    {"));
   file.AddLine(NL("      Console_Printf(\"[Tests] Already running: %s / %s\\n\", appname, windowtitle);"));
   file.AddLine(NL("    }"));
-  file.AddLine(NL("   else"));
-  file.AddLine(NL("    {"));
+  file.AddLine(NL(""));
   if(isbrowser)
     {
-      file.AddLine(NL("      if(!OpenURL(url))"));
-      file.AddLine(NL("        {"));
-      file.AddLine(NL("          Console_Printf(\"[Tests] FAIL OpenURL %s\\n\", url);"));
-      file.AddLine(NL("          return false;"));
-      file.AddLine(NL("        }"));
+      // Always navigate: a reused Chrome on the wrong page makes the sequence look random.
+      file.AddLine(NL("  if(!OpenURL(url))"));
+      file.AddLine(NL("    {"));
+      file.AddLine(NL("      Console_Printf(\"[Tests] FAIL OpenURL %s\\n\", url);"));
+      file.AddLine(NL("      return false;"));
+      file.AddLine(NL("    }"));
       file.AddLine(NL(""));
-      file.AddLine(NL("      if(!WaitWindow(appname, windowtitle, 30000))"));
-      file.AddLine(NL("        {"));
-      file.AddLine(NL("          Console_Printf(\"[Tests] FAIL window not found: %s\\n\", windowtitle);"));
-      file.AddLine(NL("          TerminateAplication(appname);"));
-      file.AddLine(NL("          return false;"));
-      file.AddLine(NL("        }"));
+      file.AddLine(NL("  if(!WaitWindow(appname, windowtitle, __qa_timeout_ms))"));
+      file.AddLine(NL("    {"));
+      file.AddLine(NL("      Console_Printf(\"[Tests] FAIL window not found: %s\\n\", windowtitle);"));
+      file.AddLine(NL("      TerminateAplication(appname);"));
+      file.AddLine(NL("      return false;"));
+      file.AddLine(NL("    }"));
       file.AddLine(NL(""));
-      file.AddLine(NL("      Console_Printf(\"[Tests] Opened URL %s\\n\", url);"));
+      file.AddLine(NL("  Console_Printf(\"[Tests] Opened URL %s\\n\", url);"));
+      file.AddLine(NL("  Sleep(800);"));
     }
    else
     {
+      file.AddLine(NL("  if(!already)"));
+      file.AddLine(NL("    {"));
       file.AddLine(NL("      if(!ExecApplication(apppath))"));
       file.AddLine(NL("        {"));
       file.AddLine(NL("          Console_Printf(\"[Tests] FAIL ExecApplication %s\\n\", apppath);"));
       file.AddLine(NL("          return false;"));
       file.AddLine(NL("        }"));
       file.AddLine(NL(""));
-      file.AddLine(NL("      if(!WaitWindow(appname, windowtitle, 30000))"));
+      file.AddLine(NL("      if(!WaitWindow(appname, windowtitle, __qa_timeout_ms))"));
       file.AddLine(NL("        {"));
       file.AddLine(NL("          Console_Printf(\"[Tests] FAIL window not found: %s\\n\", windowtitle);"));
       file.AddLine(NL("          TerminateAplication(appname);"));
@@ -2750,8 +3064,12 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteEnsureApplicationForApp(XFILETXT& file, X
       file.AddLine(NL("        }"));
       file.AddLine(NL(""));
       file.AddLine(NL("      Console_Printf(\"[Tests] Started %s\\n\", apppath);"));
+      file.AddLine(NL("    }"));
     }
-  file.AddLine(NL("    }"));
+  file.AddLine(NL(""));
+  // Focus as soon as the window exists — before geometry / bitmap search / keys.
+  file.AddLine(NL("  Screen_SetFocus(appname, windowtitle);"));
+  file.AddLine(NL("  Sleep(200);"));
   file.AddLine(NL(""));
   if(hasgeometry)
     {
@@ -2783,19 +3101,15 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteEnsureApplicationForApp(XFILETXT& file, X
 bool ACTIONSCRIPTQA::ScriptRecord_WriteCommonHelpers(XFILETXT& file)
 {
   file.AddLine(NL("var __qa_application_ready = {};"));
+  file.AddLine(NL("// Global timeout (ms) for Screen_GetPosXY / WaitWindow / bitmap waits."));
+  file.AddLine(NL("var __qa_timeout_ms = 8000;"));
   file.AddLine(NL(""));
   file.AddLine(NL("function WaitWindow(appname, windowtitle, timeoutms)"));
   file.AddLine(NL("{"));
   file.AddLine(NL("  var outx = { value: 0 };"));
   file.AddLine(NL("  var outy = { value: 0 };"));
-  file.AddLine(NL("  var waited = 0;"));
-  file.AddLine(NL("  while(waited < timeoutms)"));
-  file.AddLine(NL("    {"));
-  file.AddLine(NL("      Sleep(500);"));
-  file.AddLine(NL("      waited = waited + 500;"));
-  file.AddLine(NL("      if(Screen_GetPosXY(appname, windowtitle, outx, outy) == 0) return true;"));
-  file.AddLine(NL("    }"));
-  file.AddLine(NL("  return false;"));
+  file.AddLine(NL("  if(timeoutms === \"\" || timeoutms === null || timeoutms === undefined) timeoutms = __qa_timeout_ms;"));
+  file.AddLine(NL("  return (Screen_GetPosXY(appname, windowtitle, outx, outy, timeoutms) == 0);"));
   file.AddLine(NL("}"));
   file.AddLine(NL(""));
   file.AddLine(NL("function ScriptBaseName(scriptname)"));
@@ -3098,7 +3412,11 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
       file.AddLine(NL("  Screen_Resize(appname, windowtitle, winw, winh);"));
       file.AddLine(NL("  Sleep(200);"));
     }
-  file.AddLine(NL("  Screen_SetBmpFindCFG(12, 40);"));
+  file.AddLine(NL("  // Take focus before any GetPosXY / WaitBitmap / key or text input."));
+  file.AddLine(NL("  Screen_SetFocus(appname, windowtitle);"));
+  file.AddLine(NL("  Sleep(200);"));
+  file.AddLine(NL("  // Tighter match reduces false positives on small placeholder / icon crops."));
+  file.AddLine(NL("  Screen_SetBmpFindCFG(8, 25);"));
   file.AddLine(NL("  Sleep(300);"));
   file.AddLine(NL(""));
 
@@ -3145,43 +3463,72 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   file.AddLine(NL("  for(i = 0; i < actions.length; i++)"));
   file.AddLine(NL("    {"));
   file.AddLine(NL("      Screen_SetFocus(appname, windowtitle);"));
-  file.AddLine(NL("      Sleep(80);"));
+  file.AddLine(NL("      Sleep(120);"));
   file.AddLine(NL("      stepresult = \"PASS\";"));
   file.AddLine(NL("      stepdesc = actions[i].type;"));
   file.AddLine(NL(""));
   file.AddLine(NL("      if(actions[i].type == \"click\")"));
   file.AddLine(NL("        {"));
+  file.AddLine(NL("          var foundby = \"bmp\";"));
   file.AddLine(NL("          outx = { value: 0 };"));
   file.AddLine(NL("          outy = { value: 0 };"));
   file.AddLine(NL("          stepdesc = \"click \" + actions[i].bmp;"));
-  file.AddLine(NL("          status = Screen_GetPosXY(appname, windowtitle, actions[i].bmp, outx, outy);"));
+  file.AddLine(NL("          status = Screen_GetPosXY(appname, windowtitle, actions[i].bmp, outx, outy, __qa_timeout_ms);"));
+  file.AddLine(NL("          var layoutwinx = { value: 0 };"));
+  file.AddLine(NL("          var layoutwiny = { value: 0 };"));
+  file.AddLine(NL("          var havewin = (Screen_GetPosXY(appname, windowtitle, layoutwinx, layoutwiny, __qa_timeout_ms) == 0);"));
+  file.AddLine(NL("          // Reject false-positive bitmap hits far from the recorded layout anchor."));
+  file.AddLine(NL("          if((status == 0) && havewin)"));
+  file.AddLine(NL("            {"));
+  file.AddLine(NL("              var expx = layoutwinx.value + actions[i].x;"));
+  file.AddLine(NL("              var expy = layoutwiny.value + actions[i].y;"));
+  file.AddLine(NL("              var dx = outx.value - expx;"));
+  file.AddLine(NL("              var dy = outy.value - expy;"));
+  file.AddLine(NL("              if(dx < 0) dx = -dx;"));
+  file.AddLine(NL("              if(dy < 0) dy = -dy;"));
+  file.AddLine(NL("              if((dx > 120) || (dy > 120))"));
+  file.AddLine(NL("                {"));
+  file.AddLine(NL("                  Console_Printf(\"[Tests] WARN %s bmp hit far from layout (dx=%d dy=%d at %d,%d) — using layout %d,%d\\n\","));
+  file.AddLine(NL("                                actions[i].bmp, dx, dy, outx.value, outy.value, expx, expy);"));
+  file.AddLine(NL("                  outx.value = expx;"));
+  file.AddLine(NL("                  outy.value = expy;"));
+  file.AddLine(NL("                  foundby = \"layout-sanity\";"));
+  file.AddLine(NL("                }"));
+  file.AddLine(NL("            }"));
   file.AddLine(NL("          if(status != 0)"));
   file.AddLine(NL("            {"));
-  file.AddLine(NL("              var layoutwinx = { value: 0 };"));
-  file.AddLine(NL("              var layoutwiny = { value: 0 };"));
-  file.AddLine(NL("              if(Screen_GetPosXY(appname, windowtitle, layoutwinx, layoutwiny) == 0)"));
+  file.AddLine(NL("              if(havewin)"));
   file.AddLine(NL("                {"));
   file.AddLine(NL("                  outx.value = layoutwinx.value + actions[i].x;"));
   file.AddLine(NL("                  outy.value = layoutwiny.value + actions[i].y;"));
   file.AddLine(NL("                  status = 0;"));
+  file.AddLine(NL("                  foundby = \"layout\";"));
+  file.AddLine(NL("                  Console_Printf(\"[Tests] WARN %s not found — layout fallback %d,%d\\n\", actions[i].bmp, outx.value, outy.value);"));
   file.AddLine(NL("                }"));
   file.AddLine(NL("            }"));
   file.AddLine(NL("          if(status == 0)"));
   file.AddLine(NL("            {"));
+  file.AddLine(NL("              Screen_SetFocus(appname, windowtitle);"));
+  file.AddLine(NL("              Sleep(80);"));
   file.AddLine(NL("              InpSim_Mouse_Click(outx.value, outy.value);"));
-  file.AddLine(NL("              Console_Printf(\"[Tests] Click %s at %d,%d\\n\", actions[i].bmp, outx.value, outy.value);"));
-  file.AddLine(NL("              Sleep(400);"));
+  file.AddLine(NL("              Console_Printf(\"[Tests] Click %s at %d,%d (%s)\\n\", actions[i].bmp, outx.value, outy.value, foundby);"));
+  file.AddLine(NL("              Sleep(600);"));
   file.AddLine(NL("            }"));
   file.AddLine(NL("           else"));
   file.AddLine(NL("            {"));
   file.AddLine(NL("              stepresult = \"FAIL\";"));
   file.AddLine(NL("              Console_Printf(\"[Tests] FAIL find %s\\n\", actions[i].bmp);"));
+  file.AddLine(NL("              EvidenceAdd(i + 1, stepdesc, stepresult);"));
+  file.AddLine(NL("              if(listloaded) TraceTests_DeleteAll();"));
+  file.AddLine(NL("              EvidenceEnd();"));
+  file.AddLine(NL("              Console_Printf(\"[Tests] FAIL %s / %s (Screen_GetPosXY)\\n\", scriptname, session);"));
+  file.AddLine(NL("              return;"));
   file.AddLine(NL("            }"));
   file.AddLine(NL("        }"));
   file.AddLine(NL("      else if(actions[i].type == \"wait\")"));
   file.AddLine(NL("        {"));
   file.AddLine(NL("          stepdesc = \"wait \" + actions[i].bmp;"));
-  file.AddLine(NL("          if(Screen_WaitBitmap(appname, windowtitle, actions[i].bmp, actions[i].timeoutms, actions[i].intervalms))"));
+  file.AddLine(NL("          if(Screen_WaitBitmap(appname, windowtitle, actions[i].bmp, __qa_timeout_ms, actions[i].intervalms))"));
   file.AddLine(NL("            {"));
   file.AddLine(NL("              Console_Printf(\"[Tests] PASS wait %s\\n\", actions[i].bmp);"));
   file.AddLine(NL("            }"));
@@ -3189,18 +3536,27 @@ bool ACTIONSCRIPTQA::ScriptRecord_WriteScript()
   file.AddLine(NL("            {"));
   file.AddLine(NL("              stepresult = \"FAIL\";"));
   file.AddLine(NL("              Console_Printf(\"[Tests] FAIL wait %s (timeout)\\n\", actions[i].bmp);"));
+  file.AddLine(NL("              EvidenceAdd(i + 1, stepdesc, stepresult);"));
+  file.AddLine(NL("              if(listloaded) TraceTests_DeleteAll();"));
+  file.AddLine(NL("              EvidenceEnd();"));
+  file.AddLine(NL("              Console_Printf(\"[Tests] FAIL %s / %s (Screen_WaitBitmap)\\n\", scriptname, session);"));
+  file.AddLine(NL("              return;"));
   file.AddLine(NL("            }"));
   file.AddLine(NL("        }"));
   file.AddLine(NL("      else if(actions[i].type == \"text\")"));
   file.AddLine(NL("        {"));
   file.AddLine(NL("          stepdesc = \"text\";"));
+  file.AddLine(NL("          Screen_SetFocus(appname, windowtitle);"));
+  file.AddLine(NL("          Sleep(150);"));
   file.AddLine(NL("          InpSim_Key_ClickByText(actions[i].value, 40);"));
   file.AddLine(NL("          Console_Printf(\"[Tests] Type text (%d chars)\\n\", actions[i].value.length);"));
-  file.AddLine(NL("          Sleep(200);"));
+  file.AddLine(NL("          Sleep(250);"));
   file.AddLine(NL("        }"));
   file.AddLine(NL("      else if(actions[i].type == \"key\")"));
   file.AddLine(NL("        {"));
   file.AddLine(NL("          stepdesc = \"key \" + actions[i].value;"));
+  file.AddLine(NL("          Screen_SetFocus(appname, windowtitle);"));
+  file.AddLine(NL("          Sleep(100);"));
   file.AddLine(NL("          InpSim_Key_ClickByLiteral(actions[i].value, 40);"));
   file.AddLine(NL("          Console_Printf(\"[Tests] Key %s\\n\", actions[i].value);"));
   file.AddLine(NL("          Sleep(200);"));
